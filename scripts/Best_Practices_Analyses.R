@@ -1,23 +1,19 @@
 ## Upload data
-panthera <- read.csv("pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-#https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv
+panthera <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
 
 #kitty_deer <- read.csv("EAP Florida Modern Deer Measurements_FORFUTRES_1_23_2020.csv", header = TRUE, stringsAsFactors = FALSE)
 #blois_ground.squirrel <- read.csv("J.Biogeo.2008.AllData.Final.csv", header = TRUE, stringsAsFactors = FALSE)
 #amelia_impala <- read.csv("Extant Aepyceros database_updated 11_2016.csv", header = TRUE, stringsAsFactors = FALSE)
 bernor_equid <- read.csv("ToFuTRESVER_12_4_16_2020_REV_19.csv", header = TRUE, stringsAsFactors = FALSE)
 
-futres <- read.csv("futres.csv", header = TRUE, stringsAsFactors = FALSE)
-#https://de.cyverse.org/dl/d/888175F3-F04D-4AB3-AB1C-FB7F9447C3ED/futres.csv
+futres <- read.csv("https://de.cyverse.org/dl/d/888175F3-F04D-4AB3-AB1C-FB7F9447C3ED/futres.csv", header = TRUE, stringsAsFactors = FALSE)
 
-bat_mass <- read.csv("vertnet_bats_body_mass_2020-04-16a.csv", header = TRUE, stringsAsFactors = FALSE)
-#
-bat_length <- read.csv("vertnet_bats_total_len_2020-04-16a.csv", header = TRUE, stringsAsFactors = FALSE)
-#
-mamm_mass <- read.csv("vertnet_no_bats_body_mass_2020-04-16a.csv", header = TRUE, stringsAsFactors = FALSE)
-#
-mamm_length <- read.csv("vertnet_no_bats_total_len_2020-04-16a.csv", header = TRUE, stringsAsFactors = FALSE)
-#
+## VertNet data
+bat_mass <- read.csv("https://de.cyverse.org/dl/d/C08C5EB3-DE0E-426B-BA83-048902DCBE49/vertnet_bats_body_mass_2020-04-16a.csv", header = TRUE, stringsAsFactors = FALSE)
+bat_length <- read.csv("https://de.cyverse.org/dl/d/A54657B7-D167-45C2-9397-5762B3A96707/vertnet_bats_total_len_2020-04-16a.csv", header = TRUE, stringsAsFactors = FALSE)
+#mamm has no bats
+mamm_mass <- read.csv("https://de.cyverse.org/dl/d/8F3D34AE-A3C8-4F7C-BF57-1C978D5C7825/vertnet_no_bats_body_mass_2020-04-16a.csv", header = TRUE, stringsAsFactors = FALSE)
+mamm_length <- read.csv("https://de.cyverse.org/dl/d/5F2F2DDA-8923-4EE0-8A0F-D3C50B07239F/vertnet_no_bats_total_len_2020-04-16a.csv", header = TRUE, stringsAsFactors = FALSE)
 
 ## Load packages
 require(tidyverse)
