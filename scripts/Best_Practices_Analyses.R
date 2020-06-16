@@ -81,7 +81,7 @@ vertnet.mass_allg <- rbind(vertnet.mass_g, vertnet.mass_kg, vertnet.mass_lb, ver
 futres.sub.mass <- futres %>%
   select(scientificName, mass = Total.Fresh.Weight..g., lifeStage = lifeStage, sex = sex)
 vertnet.sub.mass <- vertnet.mass_allg %>%
-  select(scientificName, mass = body_mass_1.value, lifeStage = lifestage_cor, sex = sex)
+  select(scientificName = scientificname, mass = body_mass_1.value, lifeStage = lifestage_cor, sex = sex)
 
 data.mass <- rbind(futres.sub.mass, vertnet.sub.mass)
 data.mass$mass <- as.numeric(data.mass$mass)
@@ -93,120 +93,8 @@ data.mass_stats <- data.mass %>%
                    min.mass = min(mass, na.rm = TRUE),
                    max.mass  = max(mass, na.rm = TRUE))
 
-#create one specific subset
-PEMA <- data.mass[data.mass$scientificName == "Peromyscus maniculatus",]
-#have a lot of NAs...
 
-## Method 1: get rid of extreme 5% of adult body masses
-
-# for now adults only
-data.mass.adult <- subset(data.mass, data.mass$lifeStage == "Adult")
-length(unique(data.mass.adult$scientificName)) #230
-
-# clean up data
-#no NAs for mass values
-clean.data.mass.adult <- data.mass.adult[!(is.na(data.mass.adult$mass)),]
-length(unique(clean.data.mass.adult$scientificName)) #229
-
-#get counts per species
-counts.adult.mass <- clean.data.mass.adult %>%
-  dplyr::group_by(scientificName) %>%
-  dplyr::summarise(n = length(mass)) 
-
-#vector of species with less than ten mass values
-omit.adult.mass <- counts.adult.mass$scientificName[counts.adult.mass$n < 10]
-
-#restricting species to only those with at least 10 counts
-clean.data.mass.adult.10 <- clean.data.mass.adult[!(clean.data.mass.adult$scientificName %in% omit.adult.mass),]
-length(unique(clean.data.mass.adult.10 $scientificName)) #72 sp
-
-# create loop to get distributions and do cutoffs at 3sigma?
-
-# 1. get mean
-# 2. get sd
-# 3. get std error of mean: (sd / sqrt(n))
-# 4. calculate 95% of distribution: mean +/- (1.96)*(std error)
-
-limits <- clean.data.mass.adult.10 %>%
-  dplyr::group_by(scientificName) %>%
-  dplyr::summarise(count = n(), 
-                   avg.mass = mean(mass, na.rm = TRUE),
-                   sd.mass = sd(mass, na.rm = TRUE),
-                   std.err = sd.mass/(sqrt(count)),
-                   upper.limit = avg.mass + (1.96)*(std.err),
-                   lower.limit = avg.mass - (1.96)*(std.err)) 
-
-# remove species above the upper.limit and below the lower.limit
-sp.adult <- unique(clean.data.mass.adult.10$scientificName)
-clean.data.mass.adult.95 <- data.frame()
-for(i in 1:length(sp.adult)){
-  sub <- subset(clean.data.mass.adult.10, clean.data.mass.adult.10$scientificName == sp.adult[i])
-  sub2 <- subset(sub, sub$mass > limits$lower.limit[limits$scientificName == sp.adult[i]] & sub$mass < limits$upper.limit[limits$scientificName == sp.adult[i]])
-  clean.data.mass.adult.95 <- rbind(clean.data.mass.adult.95, sub2)
-}
-
-#recount how many samples there are per species
-counts.adult.mass <- clean.data.mass.adult.95 %>%
-  dplyr::group_by(scientificName) %>%
-  dplyr::summarise(n = length(mass)) 
-
-#keep species with more than 10 counts
-keep.n <- counts.adult.mass$scientificName[counts.adult.mass$n > 10]
-clean.data.mass.adult.95.10 <- clean.data.mass.adult.95[clean.data.mass.adult.95$scientificName %in% keep.n,]
-length(unique(clean.data.mass.adult.95.10)) #4
-
-#get rid of useless species names
-futres.adult.95.10 <- subset(futres.adult.95.10, futres.adult.95.10$scientificName != "Sorex sp." | futres.adult.95.10$scientificName != "Peromyscus sp.")
-
-length(unique(futres.adult.95.10$scientificName)) #31 sp
-
-ggplot() +
-  geom_density(data = clean.adult.masses.10, aes(x = log10(mass), fill = scientificName), alpha = 0.7) +
-  theme(legend.position = "none") +
-  scale_x_continuous(name = expression(log[10]~Body~Mass~(g)),
-                     breaks = seq(-1, 7.5, 1),
-                     limits = c(-0, 7.5),
-                     expand=c(0,0))+
-  scale_y_continuous(limits = c(0, 0.65),breaks = c(0,0.2,0.4,0.6),expand=c(0,0), 
-                     name = 'Probability')
-
-ggplot() +
-  geom_density(data = futres.adult.95.10, aes(x = log10(mass), fill = scientificName), alpha = 0.7) +
-  theme(legend.position = "none") +
-  scale_x_continuous(name = expression(log[10]~Body~Mass~(g)),
-                     breaks = seq(-1, 7.5, 1),
-                     limits = c(-0, 7.5),
-                     expand=c(0,0))+
-  scale_y_continuous(limits = c(0, 0.65),breaks = c(0,0.2,0.4,0.6),expand=c(0,0), 
-                     name = 'Probability')
-
-## Method 2: get rid of extreme top 5% of adult body masses; 
-## only allow 5% overlap between largest juveniles & smallest adults
-
-futres.all.mass
-
-#using same routine as above, but only trimming top 5% of adults
-sp.adult <- unique(clean.adult.masses.10$scientificName)
-futres.adult.bottom.95 <- data.frame()
-for(i in 1:length(sp)){
-  sub <- subset(clean.adult.masses.10, clean.adult.masses.10$scientificName == sp[i])
-  sub2 <- subset(sub, sub$mass < futres.limits$upper.limit[futres.limits$scientificName == sp[i]])
-  futres.adult.bottom.95 <- rbind(futres.adult.bottom.95, sub2)
-}
-
-#using adult species from above, get matching juvenile 
-
-sp.match <- unique(futres.adult.bottom.95$scientificName)
-
-#get counts by juvenile too
-counts.mass <- clean.masses %>%
-  dplyr::group_by(scientificName,) %>%
-  dplyr::summarise(n = length(mass)) 
-
-
-
-futres.all.mass.match <- futres.all.mass[futres.all.mass$scientificName %in% sp.match,]
-
+# remove samples that are 3 sigmas outside of distribution
 
 
 ## Q1. How do distributions compare to other, recorded species' averages or ranges?
@@ -230,10 +118,10 @@ futres.all.mass <- rbind(futres.mass, bat.mass, mamm.mass)
 futres.all.mass$mass <- as.numeric(futres.all.mass$mass)
 
 # clean up data
-clean.masses <- futres.all.mass %>%
+clean.masses <- futres.mass %>%
   na.omit()
 
-counts.mass <- clean.masses %>%
+counts.mass<- clean.masses %>%
   dplyr::group_by(scientificName) %>%
   dplyr::summarise(n = length(mass)) 
 
@@ -243,6 +131,8 @@ clean.masses.10 <- clean.masses[!(clean.masses$scientificName %in% omit.mass),]
 length(unique(clean.masses$scientificName)) #98 spp
 
 #need to figure out how to get this to go clean
+clean.masses$mass <- as.numeric(clean.masses$mass)
+clean.masses.10$mass <- as.numeric(clean.masses.10$mass)
 ggplot(melt(clean.masses), aes(x = log10(value))) + 
   facet_wrap(~ scientificName,  ncol = 2) +
   ggtitle(~ scientificName) +
@@ -268,7 +158,7 @@ futres.all.length.mass$mass <- as.numeric(futres.all.length.mass$mass)
 
 
 # clean up data
-clean.length.mass <- futres.all.length.mass %>%
+clean.length.mass <- futres.length.mass %>%
   na.omit()
 
 counts <- clean.length.mass %>%
@@ -290,6 +180,44 @@ ggplot(clean.length.mass, aes(x = log10(mass), y = log10(total.length), color = 
   geom_point() + 
   geom_smooth(method = "lm", #se = FALSE
               alpha = .15, aes(fill = scientificName))
+
+# transfer function
+# log linear model; log10 or natural log
+clean.length.mass$total.length <- as.numeric(clean.length.mass$total.length)
+clean.length.mass$mass <- as.numeric(clean.length.mass$mass)
+model <- lm(log10(clean.length.mass$total.length) ~ log10(clean.length.mass$mass))
+#use fitted models for the prediction
+#how uncertainty in line is distributed with use many individuals v. many individuals to make this prediction
+#within and across species regression; able to get precise line (average for that group of species)
+#can get prediction interval (and predicted values)
+#because in log-log space, not symmetrical around the line
+#take some case studies in scotty dog book and compare (look at sampling and compare)
+#estimate and the std err or; residual error on df
+
+#std.err of slope
+#uncertainty in intercept (really, at center of the line; y mean)
+#s(y.x) = error uncertainty in residuals; amount of variance in y that is leftover after the regression
+
+#mean and std of slope and intecept and resids
+#reconstruct regression uncertainty
+
+# case 1: vertnet; have diff species and individ; can run regression with a large sample size = Best Practice
+# also do best practices for other ones (tell parameters about how they'll be constrained)
+# case 2: individ representing each species; can take vertnet data and run random replicates and run regression and compare dist of slopes to actual slope and look at uncertainty in lines to see how much it varies (how much less info do you have?)
+# case 3: avg. all individ in species and run regression across averages; can do this with vertnet (avg. mass and length) and tell us what that line looks like compared to when have all individ data; and apparent uncertainty
+# in the ms from Ray & Juha: they say that this approach is the best (#3); they claim you'd get too much noise because body mass varies so much throughout the year
+# in discussion: plant a flag that we're going to look at the effect of intra and inter-annual cyclicity on body masses
+# also call to action to get measurements of modern specimens that have mass
+
+#for this paper just show how; and that it can be applied to other things; leave case 2 & 3 for another paper
+#include Ray & Juha stuff in discussion; use reported masses adn see which regressions fit best; and that we need big mammals masses
+#show whether or not our masses line up to masses in panthera (fall w/in 2 sigma of means of vertnet data); if unbiased random sample then 95% of them should fall within 2 sigmas
+
+#discussion header: alternative approaches (Ray's data); applications (case 2 & 3; juha study w/ cougar data)
+#subset cougar to intact masses and see which it's along
+
+#vertnet: everything; family; how different are the slopes of the lines from the different families
+# can do an anova (all slopes come from the same parent distribution)
 
 # ggplot(clean.length.mass) + 
 #   facet_wrap(~ scientificName,  ncol = 2) +
