@@ -144,7 +144,7 @@ data.adult.trim.cleaner.10 <- data.adult.trim.cleaner[data.adult.trim.cleaner$sc
 #40 sp
 
 sp.models <- unique(data.adult.trim.cleaner.10$scientificName)
-model.results <- data.frame()
+model.results.species <- data.frame()
 for(i in 1:length(sp.models)){
   sub.data <- as.data.frame(data.adult.trim.cleaner.10[data.adult.trim.cleaner.10$scientificName == sp.models[i],])
   model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
@@ -157,10 +157,10 @@ for(i in 1:length(sp.models)){
                     std.err.slope =  sum.model$coefficients[4],
                     std.err.intercept = sum.model$coefficients[3],
                     r.squared = sum.model$r.squared)
-  model.results <- rbind(sub, model.results)
+  model.results.species <- rbind(sub, model.results.species)
 }
 
-#write.csv(model.results, "model.results.csv")
+#write.csv(model.results.species, "model.results.species.csv")
 
 uniq_species <- unique(data.adult.trim.cleaner.10$scientificName)
 for (i in uniq_species) {
@@ -316,193 +316,10 @@ plot(model.results$std.err.slope ~ model.results$df) #make nicer
 
 
 
+
 #Q3: or other paper compare to Scotty Dog Book
 
 
-
-
-
-
-#need to figure out how to get this to go clean
-ggplot(melt(data.adult.10), aes(x = log10(value))) + 
-  facet_wrap(~ scientificName,  ncol = 2) +
-  ggtitle(~ scientificName) +
-  scale_x_continuous(name = expression(log[10]~Body~Mass~(g))) +
-  scale_y_continuous(name = "Counts")
-
-stats.mass <- clean.masses.10 %>%
-  dplyr::group_by(scientificName) %>%
-  dplyr::summarise(mean.mass = mean(mass), median.mass = median(mass),
-                   min.mass = min(mass), max.mass = max(mass))
-
-
-
-
-
-
-
-
-
-
-
-
-# remove species above the +3.dev and -3 dev
-sp.adult <- unique(data.adults.10$scientificName)
-data.mass.adults.trim <- data.frame()
-for(i in 1:length(sp.adult)){
-  data.sub <- subset(data.adults.10, data.adults.10$scientificName == sp.adult[i])
-  sigma.sub <- subset(data.adult.sigma, data.adult.sigma$scientificName == sp.adult[i])
-  for(j in 1:length(data.sub$scientificName)){
-    if(isTRUE(data.sub$mass[j] < sigma.sub$mass.lower.limit | data.sub$mass[j] > sigma.sub$mass.upper.limit)){
-      data.sub$mass[j] <- "oulier"
-    }
-  else if(isTRUE(data.sub$total.length[j] < sigma.sub$length.lower.limit | data.sub2$total.length[j] > sigma.sub$mass.upper.limit)){
-    data.sub$total.length[j] <- "outlier"
-  }
-else{
-  next
-}
-  }
-  data.mass.adults.trim <- rbind(data.mass.adults.trim, data.sub)
-}
-
-length(unique(data.mass.adults.trim$scientificName)) #44 species
-
-## do the same for LENGTH now
-## need to get rid of subspecies
-bat_length$scientificName <- word(bat_length$scientificname, 1,2, sep = " ") #435 unique spp
-mamm_length$scientificName <- word(mamm_length$scientificname, 1,2, sep = " ") #1190 unique spp
-
-#combine VertNet datasets
-vertnet.length <- rbind(bat_length, mamm_length)
-
-
-
-futres.sub.length <- futres %>%
-  select(scientificName, length = TL..mm...Total.Length., lifeStage = lifeStage, sex = sex)
-vertnet.sub.length <- vertnet.length_allmm %>%
-  select(scientificName = scientificname, length = total_length_1.value, lifeStage = lifestage_cor, sex = sex)
-
-data.length <- rbind(futres.sub.length, vertnet.sub.length)
-data.length$length <- as.numeric(data.length$length)
-length(unique(data.mass$scientificName)) #1284
-
-data.length.adults <- subset(data.length, data.length$lifeStage == "Adult")
-length(unique(data.length.adults$scientificName)) #333
-
-data.length.adults_stats <- data.length.adults %>%
-  group_by(scientificName, lifeStage) %>%
-  dplyr::summarise(sample.size = n(), 
-                   min.length = min(length, na.rm = TRUE),
-                   max.length  = max(length, na.rm = TRUE))
-
-keep.length <- data.length.adults_stats$scientificName[data.length.adults_stats$sample.size >= 10]
-data.length.adults.10 <- data.length.adults[data.length.adults$scientificName %in% keep.length,]
-length(unique(data.length.adults.10$scientificName)) #75
-
-# remove samples that are 3 sigmas outside of distribution
-# find 3xsigma
-data.length.adults.sigma <- data.length.adults.10 %>%
-  group_by(scientificName) %>%
-  dplyr::summarise(sigma = sd(length, na.rm = TRUE),
-                   sample.size = n(),
-                   upper.limit = 3*sigma,
-                   lower.limit = -3*sigma)
-
-# remove species above the +three.dev and -three.dev
-sp.adult <- unique(data.length.adults.10$scientificName)
-data.length.adults.trim <- data.frame()
-for(i in 1:length(sp.adult)){
-  sub <- subset(data.length.adults.10, data.length.adults.10$scientificName == sp.adult[i])
-  sub2 <- subset(sub, sub$length < data.length.adults.sigma$three.dev[data.length.adults.sigma$scientificName == sp.adult[i]] & sub$length > -1*(data.length.adults.sigma$three.dev[data.length.adults.sigma$scientificName == sp.adult[i]]))
-  data.length.adults.trim <- rbind(data.length.adults.trim, sub2)
-}
-
-length(unique(data.length.adults.trim$scientificName)) #7 species
-
-## Q1. How do distributions compare to other, recorded species' averages or ranges?
-# create loop of histograms and insert pan line
-
-#align datasets
-sp.futres <- unique(futres$scientificName)
-
-#subset panthera to only include species that are in futres
-pan <- panthera[(panthera$MSW05_Binomial %in% sp.futres),]
-
-#weight
-futres.mass <- futres.adult %>%
-  select(scientificName, mass = Total.Fresh.Weight..g.)
-bat.mass <- bat.adult %>%
-  select(scientificName, mass = body_mass_1.value)
-mamm.mass <- mamm.adult %>%
-  select(scientificName, mass = body_mass_1.value)
-
-futres.all.mass <- rbind(futres.mass, bat.mass, mamm.mass)
-futres.all.mass$mass <- as.numeric(futres.all.mass$mass)
-
-# clean up data
-clean.masses <- futres.mass %>%
-  na.omit()
-
-counts.mass<- clean.masses %>%
-  dplyr::group_by(scientificName) %>%
-  dplyr::summarise(n = length(mass)) 
-
-omit.mass <- counts.mass$scientificName[counts.mass$n < 10]
-
-clean.masses.10 <- clean.masses[!(clean.masses$scientificName %in% omit.mass),]
-length(unique(clean.masses$scientificName)) #98 spp
-
-#need to figure out how to get this to go clean
-clean.masses$mass <- as.numeric(clean.masses$mass)
-clean.masses.10$mass <- as.numeric(clean.masses.10$mass)
-ggplot(melt(clean.masses), aes(x = log10(value))) + 
-  facet_wrap(~ scientificName,  ncol = 2) +
-  ggtitle(~ scientificName) +
-  scale_x_continuous(name = expression(log[10]~Body~Mass~(g))) +
-  scale_y_continuous(name = "Counts")
-
-stats.mass <- clean.masses.10 %>%
-  dplyr::group_by(scientificName) %>%
-  dplyr::summarise(mean.mass = mean(mass), median.mass = median(mass),
-            min.mass = min(mass), max.mass = max(mass))
-
-# length by mass regression
-futres.length.mass <- futres.adult %>%
-  select(scientificName, mass = Total.Fresh.Weight..g., total.length = TL..mm...Total.Length.)
-bat.length.mass <- bat.adult %>%
-  select(scientificName, mass = body_mass_1.value, total.length = total_length_1.value)
-mamm.length.mass <- mamm.adult %>%
-  select(scientificName, mass = body_mass_1.value, total.length = total_length_1.value)
-
-futres.all.length.mass <- rbind(futres.length.mass, bat.length.mass, mamm.length.mass)
-futres.all.length.mass$total.length <- as.numeric(futres.all.length.mass$total.length)
-futres.all.length.mass$mass <- as.numeric(futres.all.length.mass$mass)
-
-
-# clean up data
-clean.length.mass <- futres.length.mass %>%
-  na.omit()
-
-counts <- clean.length.mass %>%
-  dplyr::group_by(scientificName) %>%
-  dplyr::summarise(n.mass = length(mass), n.length = length(total.length)) 
-
-omit.length.mass <- counts$scientificName[counts$n.mass < 10 | counts$n.length < 10]
-
-clean.length.mass.10 <- clean.length.mass[!(clean.length.mass$scientificName %in% omit.length.mass),] #103 species
-
-length(unique(clean.length.mass.10$scientificName)) #94
-
-models <- plyr::dlply(clean.length.mass, "scientificName", function(df) 
-  lm(total.length ~ mass, data = df))
-plyr::ldply(models, coef)
-plyr::l_ply(models, summary, .print = TRUE)
-
-ggplot(clean.length.mass, aes(x = log10(mass), y = log10(total.length), color = scientificName)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", #se = FALSE
-              alpha = .15, aes(fill = scientificName))
 
 # transfer function
 # log linear model; log10 or natural log
