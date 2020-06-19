@@ -1,2 +1,2 @@
-"","binomial","intercept","slope","resid.std.err","df","std.err.slope","std.err.intercept","r.squared"
-"1","Clethrionomys gapperi",-3.92518942464152,2.49394809998354,1.07848051302487,2381,0.0709382394097303,0.159994252003045,0.341717347439546
+"","binomial","intercept","slope","resid.std.err","df","std.err.slope","std.err.intercept","r.squared","sample.size"
+"1","Clethrionomys gapperi",-3.92518942464152,2.49394809998354,1.07848051302487,2381,0.0709382394097303,0.159994252003045,0.341717347439546,1882

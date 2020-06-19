@@ -156,7 +156,8 @@ for(i in 1:length(sp.models)){
                     df = max(sum.model$df),
                     std.err.slope =  sum.model$coefficients[4],
                     std.err.intercept = sum.model$coefficients[3],
-                    r.squared = sum.model$r.squared)
+                    r.squared = sum.model$r.squared,
+                    sample.size = length(sub.data$mass))
   model.results.species <- rbind(sub, model.results.species)
 }
 
@@ -247,7 +248,8 @@ for(i in 1:length(gn.models)){
                     df = max(sum.model$df),
                     std.err.slope =  sum.model$coefficients[4],
                     std.err.intercept = sum.model$coefficients[3],
-                    r.squared = sum.model$r.squared)
+                    r.squared = sum.model$r.squared,
+                    sample.size = length(sub.data$mass))
   model.results.genus <- rbind(sub, model.results.genus)
 }
 
@@ -267,7 +269,8 @@ for(i in 1:length(fm.models)){
                     df = max(sum.model$df),
                     std.err.slope =  sum.model$coefficients[4],
                     std.err.intercept = sum.model$coefficients[3],
-                    r.squared = sum.model$r.squared)
+                    r.squared = sum.model$r.squared,
+                    sample.size = length(sub.data$mass))
   model.results.family <- rbind(sub, model.results.family)
 }
 
@@ -287,7 +290,8 @@ for(i in 1:length(or.models)){
                     df = max(sum.model$df),
                     std.err.slope =  sum.model$coefficients[4],
                     std.err.intercept = sum.model$coefficients[3],
-                    r.squared = sum.model$r.squared)
+                    r.squared = sum.model$r.squared,
+                    sample.size = length(sub.data$mass))
   model.results.order <- rbind(sub, model.results.order)
 }
 
@@ -302,7 +306,8 @@ everything.model.results <- data.frame(binomial = sub.data$scientificName[1],
                                        df = max(sum.model$df),
                                        std.err.slope =  sum.model$coefficients[4],
                                        std.err.intercept = sum.model$coefficients[3],
-                                       r.squared = sum.model$r.squared)
+                                       r.squared = sum.model$r.squared,
+                                       sample.size = length(sub.data$mass))
 #write.csv(everything.model.results, "everything.model.results.csv")
 
 #show skeletal v vertnet
@@ -311,6 +316,34 @@ everything.model.results <- data.frame(binomial = sub.data$scientificName[1],
 
 #plots!
 #1. show confidence in line as function of sample size
+con.genus.sample <- lm(model.results.genus$std.err.slope ~ model.results.genus$sample.size)
+con.family.sample <- lm(model.results.family$std.err.slope ~ model.results.family$sample.size)
+con.order.sample <- lm(model.results.order$std.err.slope ~ model.results.order$sample.size)
+sum.con.sample.species <- summary(con.species.sample)
+sum.con.sample.genus <- summary(con.genus.sample)
+sum.con.sample.family <- summary(con.family.sample)
+sum.con.sample.order <- summary(con.order.sample)
+
+con.samples.models <- list(model.results.species, model.results.genus, model.results.family, model.results.order)
+model.names <- c("model.results.species", "model.results.genus", "model.results.family", "model.results.order")
+
+con.sample.results <- data.frame()
+for(i in 1:length(model.names)){
+  model <- lm(con.samples.models[[i]][6] ~ con.samples.models$sample.size[[i]][9])
+  sum.model <- summary(model)
+  sub <- data.frame(binomial = model.names[i],
+                                   intercept = model$coefficients[[1]],
+                                   slope = model$coefficients[[2]],
+                                   resid.std.err = sum.model$sigma,
+                                   df = max(sum.model$df),
+                                   std.err.slope =  sum.model$coefficients[4],
+                                   std.err.intercept = sum.model$coefficients[3],
+                                   r.squared = sum.model$r.squared)
+  con.sample.results <- rbind(con.sample.results, sub)
+}
+
+
+
 plot(model.results$std.err.slope ~ model.results$df) #make nicer
 
 
