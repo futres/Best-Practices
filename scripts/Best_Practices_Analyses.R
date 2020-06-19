@@ -13,7 +13,7 @@ require(stringr)
 
 ## Upload data
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data.clean <- read.csv()
+data.clean <- read.csv("https://de.cyverse.org/dl/d/B5D15FDC-B0ED-4F78-B733-2658A4502AE9/clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
 
 data.adult <- data.clean[data.clean$lifeStage == "Adult",]
 length(unique(data.adult$scientificName)) #327 spp
@@ -82,7 +82,6 @@ keep.trim <- data.adult.trim_stats$scientificName[data.adult.trim_stats$counts >
 data.adult.trim.10 <- data.adult.trim[data.adult.trim$scientificName %in% keep.trim,]
 length(unique(data.adult.trim.10$scientificName)) #117
 
-
 #Q1 compare to pantheria 
 sp.data <- unique(data.adult.trim.10$scientificName) #117 spp
 pan <- pan[pan$MSW05_Binomial %in% sp.data,] #105 spp
@@ -107,6 +106,10 @@ pan.data.adult_stats.10 <- pan.data.adult_stats %>%
   filter(sample.size >= 10)
 #write.csv(pan.data.adult_stats.10, "pan.results.csv")
 
+keep.pan <- pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10 >= 10]
+pan.data.adult.clean.10 <- pan.data.adult.clean[pan.data.adult.clean$MSW05_Binomial %in% keep.pan,]
+#59 sp
+
 #13 out of 59 are not significant; 46 that are different; 22% are ok, 78%of them are diff
 #if assume VertNet is randomly collected, it is a better representation than pan
 #but if biased, then a problem (e.g., during a season, sex); or newer data
@@ -114,8 +117,18 @@ pan.data.adult_stats.10 <- pan.data.adult_stats %>%
 
 # FIGURE: body mass distributions w/ line from PanTHERIA
 
+uniq_species <- unique(pan.data.adult.clean.10$MSW05_Binomial)
+for (i in uniq_species) {
+  p = ggplot(data = subset(pan.data.adult.clean.10, MSW05_Binomial == i)) + 
+    geom_density(aes(log10(mass)), fill = "darkslateblue") +
+    ggtitle(i) +
+    scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
+    scale_y_continuous(name = 'Probability') + 
+    geom_vline(xintercept = log10(pan.data.adult.clean.10$X5.1_AdultBodyMass_g[pan.data.adult.clean.10$MSW05_Binomial == i][1]))
+  ggsave(p, file=paste0("dist_", i,".png"), width = 14, height = 10, units = "cm")
+}
 
-
+################################
 #Q2: length v. mass
 data.adult.trim.clean <- data.adult.trim.10[!is.na(data.adult.trim.10$mass),]
 data.adult.trim.cleaner <- data.adult.trim.clean[!is.na(data.adult.trim.clean$total.length),]
@@ -147,14 +160,150 @@ for(i in 1:length(sp.models)){
   model.results <- rbind(sub, model.results)
 }
 
-#write.csv(model.results, "model.restults.csv")
+#write.csv(model.results, "model.results.csv")
+
+uniq_species <- unique(data.adult.trim.cleaner.10$scientificName)
+for (i in uniq_species) {
+  p = ggplot(data = subset(data.adult.trim.cleaner.10, scientificName  == i)) + 
+    geom_point(aes(x = log10(mass), y = log10(total.length))) +
+    geom_smooth(aes(x = log10(mass), y = log10(total.length)),
+                method = "lm", color = "slateblue4")
+    ggtitle(i) +
+    scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
+    scale_y_log10(name = expression(log[10]~Total~Length~(mm))) + 
+  ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
+}
 
 #family, order
 #link species to higher taxonomy
 #how do confidence in these to compare?
 #how many individuals or spp do you need for it to be sensible
 
-#everything
+sp.pan <- unique(data.adult.trim.cleaner$scientificName) #73 spp
+pan.models <- pan[pan$MSW05_Binomial %in% sp.pan,] #68 spp
+pan.models <- pan.models[,1:5]
+
+taxon.data.adult.trim.cleaner <- merge(data.adult.trim.cleaner, pan.models, by.x = "scientificName", by.y = "MSW05_Binomial", all.x = TRUE, all.y = FALSE)
+na.taxon <- taxon.data.adult.trim.cleaner[is.na(taxon.data.adult.trim.cleaner$MSW05_Order),]
+#"Clethrionomys gapperi" "Lutra canadensis"      "Myotis aurascens"     "Peromyscus sp." "Urocitellus parryii"  
+
+taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Clethrionomys gapperi"] <- "Rodentia"
+taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Clethrionomys gapperi"] <- "Cricetidae"
+taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Clethrionomys gapperi"] <- "Clethrionomys"
+
+taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Lutra canadensis"] <- "Carnivora"
+taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Lutra canadensis"] <- "Mustelidae"
+taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Lutra canadensis"] <- "Lutra"
+
+taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Myotis aurascens"] <- "Chiroptera"
+taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Myotis aurascens"] <- "Vespertilionidae"
+taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Myotis aurascens"] <- "Myotis"
+
+taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Peromyscus sp."] <- "Rodentia"
+taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Peromyscus sp."] <- "Cricetidae"
+taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Peromyscus sp."] <- "Peromyscus"
+
+taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Urocitellus parryii"] <- "Rodentia"
+taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Urocitellus parryii"] <- "Sciuridae"
+taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Urocitellus parryii"] <- "Urocitellus"
+
+#recount for sample size to 10 for genus, family, and order
+#genus
+data.genus_stats <- taxon.data.adult.trim.cleaner %>%
+  group_by(MSW05_Genus) %>%
+  dplyr::summarise(counts = n())
+#49 genera
+
+keep.genus <- data.genus_stats$MSW05_Genus[data.genus_stats$counts >= 10] #29 genera
+data.genus.10 <- taxon.data.adult.trim.cleaner[taxon.data.adult.trim.cleaner$MSW05_Genus %in% keep.genus,]
+
+#family
+data.family_stats <- taxon.data.adult.trim.cleaner %>%
+  group_by(MSW05_Family) %>%
+  dplyr::summarise(counts = n()) #19 families
+
+keep.family <- data.family_stats$MSW05_Family[data.family_stats$counts >= 10] #12 families
+data.family.10 <- taxon.data.adult.trim.cleaner[taxon.data.adult.trim.cleaner$MSW05_Family %in% keep.family,]
+
+#order
+data.order_stats <- taxon.data.adult.trim.cleaner %>%
+  group_by(MSW05_Order) %>%
+  dplyr::summarise(counts = n()) #7 orders
+
+keep.order <- data.order_stats$MSW05_Order[data.order_stats$counts >= 10] #4 orders
+data.order.10 <- taxon.data.adult.trim.cleaner[taxon.data.adult.trim.cleaner$MSW05_Order %in% keep.order,]
+
+#genus
+gn.models <- unique(data.genus.10$MSW05_Genus)
+model.results.genus <- data.frame()
+for(i in 1:length(gn.models)){
+  sub.data <- as.data.frame(data.genus.10[data.genus.10$MSW05_Genus == gn.models[i],])
+  model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
+  sum.model <- summary(model)
+  sub <- data.frame(binomial = sub.data$scientificName[1],
+                    intercept = model$coefficients[[1]],
+                    slope = model$coefficients[[2]],
+                    resid.std.err = sum.model$sigma,
+                    df = max(sum.model$df),
+                    std.err.slope =  sum.model$coefficients[4],
+                    std.err.intercept = sum.model$coefficients[3],
+                    r.squared = sum.model$r.squared)
+  model.results.genus <- rbind(sub, model.results.genus)
+}
+
+#write.csv(model.results.genus, "model.results.genus.csv")
+
+#family
+fm.models <- unique(data.family.10$MSW05_Family)
+model.results.family <- data.frame()
+for(i in 1:length(fm.models)){
+  sub.data <- as.data.frame(data.family.10[data.family.10$MSW05_Family == fm.models[i],])
+  model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
+  sum.model <- summary(model)
+  sub <- data.frame(binomial = sub.data$scientificName[1],
+                    intercept = model$coefficients[[1]],
+                    slope = model$coefficients[[2]],
+                    resid.std.err = sum.model$sigma,
+                    df = max(sum.model$df),
+                    std.err.slope =  sum.model$coefficients[4],
+                    std.err.intercept = sum.model$coefficients[3],
+                    r.squared = sum.model$r.squared)
+  model.results.family <- rbind(sub, model.results.family)
+}
+
+#write.csv(model.results.family, "model.results.family.csv")
+
+#order
+or.models <- unique(data.order.10$MSW05_Order)
+model.results.order <- data.frame()
+for(i in 1:length(or.models)){
+  sub.data <- as.data.frame(data.order.10[data.order.10$MSW05_Order == or.models[i],])
+  model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
+  sum.model <- summary(model)
+  sub <- data.frame(binomial = sub.data$scientificName[1],
+                    intercept = model$coefficients[[1]],
+                    slope = model$coefficients[[2]],
+                    resid.std.err = sum.model$sigma,
+                    df = max(sum.model$df),
+                    std.err.slope =  sum.model$coefficients[4],
+                    std.err.intercept = sum.model$coefficients[3],
+                    r.squared = sum.model$r.squared)
+  model.results.order <- rbind(sub, model.results.order)
+}
+
+#write.csv(model.results.order, "model.results.order.csv")
+
+#everything #2383 obs
+model <- lm(log10(data.adult.trim.cleaner$mass) ~ log10(data.adult.trim.cleaner$total.length), na.action=na.exclude)
+sum.model <- summary(model)
+everything.model.results <- data.frame(binomial = sub.data$scientificName[1],
+                                       intercept = model$coefficients[[1]],slope = model$coefficients[[2]],
+                                       resid.std.err = sum.model$sigma,
+                                       df = max(sum.model$df),
+                                       std.err.slope =  sum.model$coefficients[4],
+                                       std.err.intercept = sum.model$coefficients[3],
+                                       r.squared = sum.model$r.squared)
+#write.csv(everything.model.results, "everything.model.results.csv")
 
 #show skeletal v vertnet
 
@@ -162,7 +311,10 @@ for(i in 1:length(sp.models)){
 
 #plots!
 #1. show confidence in line as function of sample size
-plot(model.results.10$std.err.slope ~ model.results.10$df) #make nicer
+plot(model.results$std.err.slope ~ model.results$df) #make nicer
+
+
+
 
 #Q3: or other paper compare to Scotty Dog Book
 
