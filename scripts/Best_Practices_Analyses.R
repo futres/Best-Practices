@@ -12,90 +12,261 @@ require(plyr)
 require(stringr)
 
 ## Upload data
-panthera <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
+pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
+data.clean <- read.csv()
 
-#kitty_deer <- read.csv("EAP Florida Modern Deer Measurements_FORFUTRES_1_23_2020.csv", header = TRUE, stringsAsFactors = FALSE)
-#blois_ground.squirrel <- read.csv("J.Biogeo.2008.AllData.Final.csv", header = TRUE, stringsAsFactors = FALSE)
-#amelia_impala <- read.csv("Extant Aepyceros database_updated 11_2016.csv", header = TRUE, stringsAsFactors = FALSE)
-#bernor_equid <- read.csv("ToFuTRESVER_12_4_16_2020_REV_19.csv", header = TRUE, stringsAsFactors = FALSE)
-#cougar_OR <- read.csv("1987-2019 Cougar Weight-Length Public Request.csv", header = TRUE, stringsAsFactors = FALSE)
+data.adult <- data.clean[data.clean$lifeStage == "Adult",]
+length(unique(data.adult$scientificName)) #327 spp
 
-futres <- read.csv("https://de.cyverse.org/dl/d/888175F3-F04D-4AB3-AB1C-FB7F9447C3ED/futres.csv", header = TRUE, stringsAsFactors = FALSE)
-#about futres data:
-#has various terms for adult and juvenile
-#currently aligned manually
+data.adult$mass <- as.numeric(data.adult$mass)
+data.adult$total.length <- as.numeric(data.adult$total.length)
+data.adult$hindfoot.length <- as.numeric(data.adult$hindfoot.length)
+data.adult$Calcaneus.GB <- as.numeric(data.adult$Calcaneus.GB)
+data.adult$Calcaneus.GL <- as.numeric(data.adult$Calcaneus.GL)
+data.adult$tooth.row <- as.numeric(data.adult$tooth.row)
 
-
-## VertNet data
-bat_mass <- read.csv("https://de.cyverse.org/dl/d/2A542CDF-BDED-4486-AB15-445B53F80F08/vertnet_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
-bat_length <- read.csv("https://de.cyverse.org/dl/d/896A54B4-1E52-4976-95AB-71449384B3A4/vertnet_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
-#mamm has no bats
-mamm_mass <- read.csv("https://de.cyverse.org/dl/d/EF537422-2246-4B25-A9BC-D8259C78BFA2/vertnet_no_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
-mamm_length <- read.csv("https://de.cyverse.org/dl/d/DA7E36EF-0008-4DED-A49C-C7DCCC71E98C/vertnet_no_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
-
-#about VertNet data:
-#has adult, juvenile, and NA for lifestage
-#has mass in different units, sometimes inferreed
-
-#bernor_equid$binomial <- paste(bernor_equid$GENUS, bernor_equid$SPECIES)
-#deal with this once mapped
-
-## need to get rid of subspecies
-bat_mass$scientificName <- word(bat_mass$scientificname, 1,2, sep = " ") #435 unique spp
-mamm_mass$scientificName <- word(mamm_mass$scientificname, 1,2, sep = " ") #1190 unique spp
-#mamm_mass has some weird spp. names: e.g.,: (new SW
-#will deal with later
-
-# group lifeStages
-futres$lifeStage[futres$lifeStage == "young adult" | futres$lifeStage == "Adult" | futres$lifeStage == "Prime Adult" | futres$lifeStage == "adult"] <- "Adult"
-futres$lifeStage[futres$lifeStage == "Juvenile" | futres$lifeStage == "juvenile"] <- "Juvenile"
-
-#combine VertNet datasets
-vertnet.mass <- rbind(bat_mass, mamm_mass)
-
-#convert to g for mammal & bat mass
-vertnet.mass$body_mass_1.value <- as.numeric(vertnet.mass$body_mass_1.value)
-
-vertnet.mass_g <- subset(vertnet.mass, vertnet.mass$body_mass_1.units == "g" | vertnet.mass$body_mass_1.units == "Grams")
-vertnet.mass_g$body_mass_1.units <- "g"
-
-vertnet.mass_kg <- subset(vertnet.mass, vertnet.mass$body_mass_1.units == "kg")
-vertnet.mass_kg$body_mass_1.value <- vertnet.mass_kg$body_mass_1.value / 1000
-vertnet.mass_kg$body_mass_1.units <- "g"
-
-vertnet.mass_lb <- subset(vertnet.mass, vertnet.mass$body_mass_1.units == "lb" | vertnet.mass$body_mass_1.units == "lbs" | vertnet.mass$body_mass_1.units == "pounds")
-# 1 lb = 453.592g
-vertnet.mass_lb$body_mass_1.value <- vertnet.mass_lb$body_mass_1.value * 453.592
-vertnet.mass_lb$body_mass_1.units <- "g"
-
-vertnet.mass_oz <- subset(vertnet.mass, vertnet.mass$body_mass_1.units == "oz")
-#1 oz = 28.3495 g
-vertnet.mass_oz$body_mass_1.value <- vertnet.mass_oz$body_mass_1.value * 28.3495
-vertnet.mass_oz$body_mass_1.units <- "g"
-
-vertnet.mass_allg <- rbind(vertnet.mass_g, vertnet.mass_kg, vertnet.mass_lb, vertnet.mass_oz)
-
-#deal with these later
-#vertnet.mass_mix <- subset(vertnet.mass, vertnet.mass$body_mass_1.units == "['lb', 'oz']" | vertnet.mass$body_mass_1.units == "['lbs', 'oz']")
-
-futres.sub.mass <- futres %>%
-  select(scientificName, mass = Total.Fresh.Weight..g., lifeStage = lifeStage, sex = sex)
-vertnet.sub.mass <- vertnet.mass_allg %>%
-  select(scientificName = scientificname, mass = body_mass_1.value, lifeStage = lifestage_cor, sex = sex)
-
-data.mass <- rbind(futres.sub.mass, vertnet.sub.mass)
-data.mass$mass <- as.numeric(data.mass$mass)
-length(unique(data.mass$scientificName)) #876
-
-data.mass_stats <- data.mass %>%
-  group_by(scientificName, lifeStage) %>%
+data.adult_stats <- data.adult %>%
+  group_by(scientificName) %>%
   dplyr::summarise(sample.size = n(), 
                    min.mass = min(mass, na.rm = TRUE),
-                   max.mass  = max(mass, na.rm = TRUE))
+                   avg.mass = 
+                     mean(mass, na.rm = TRUE),
+                   max.mass  = max(mass, na.rm = TRUE),
+                   min.length = min(total.length, na.rm = TRUE),
+                   max.length = max(total.length, na.rm = TRUE),
+                   avg.length = mean(total.length, na.rm = TRUE))
 
+keep.adult <- data.adult_stats$scientificName[data.adult_stats$sample.size >= 10]
+data.adult.10 <- data.adult[data.adult$scientificName %in% keep.adult,]
+length(unique(data.adult.10$scientificName)) #118
 
 # remove samples that are 3 sigmas outside of distribution
+# find 3xsigma
+data.adult.sigma <- data.adult.10 %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(sample.size = n(),
+    mass.sigma = sd(mass, na.rm = TRUE),
+    mass.upper.limit = 3*mass.sigma,
+    mass.lower.limt = -3*mass.sigma,
+    length.sigma = sd(total.length, na.rm = TRUE),
+    length.upper.limit = 3*length.sigma,
+    length.lower.limt = -3*length.sigma) %>%
+    as.data.frame()
 
+# get rid of outliers
+sp.adult <- unique(data.adult.10$scientificName)
+data.adult.trim <- data.frame()
+for(i in 1:length(sp.adult)){
+  data.sub <- subset(data.adult.10, data.adult.10$scientificName == sp.adult[i])
+  sigma.sub <- subset(data.adult.sigma, data.adult.sigma$scientificName == sp.adult[i])
+  for(j in 1:length(data.sub$scientificName)){
+    if(isTRUE(data.sub$mass[j] < sigma.sub$mass.lower.limit | data.sub$mass[j] > sigma.sub$mass.upper.limit)){
+      data.sub$mass[j] <- "oulier"
+    }
+    else if(isTRUE(data.sub$total.length[j] < sigma.sub$length.lower.limit | data.sub$total.length[j] > sigma.sub$mass.upper.limit)){
+      data.sub$total.length[j] <- "outlier"
+    }
+    else{
+      next
+    }
+  }
+  data.adult.trim <- rbind(data.adult.trim, data.sub)
+}
+
+data.adult.trim_stats <- data.adult.trim %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(counts = n()) %>%
+  as.data.frame()
+
+keep.trim <- data.adult.trim_stats$scientificName[data.adult.trim_stats$counts >= 10]
+data.adult.trim.10 <- data.adult.trim[data.adult.trim$scientificName %in% keep.trim,]
+length(unique(data.adult.trim.10$scientificName)) #117
+
+
+#Q1 compare to pantheria 
+sp.data <- unique(data.adult.trim.10$scientificName) #117 spp
+pan <- pan[pan$MSW05_Binomial %in% sp.data,] #105 spp
+pan.sub <- subset(pan, select = c("MSW05_Binomial", "X5.1_AdultBodyMass_g"))
+pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #98 sp
+
+pan.data.adult <- merge(pan.sub.clean, data.adult.trim.10, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
+#98 sp
+
+pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #81 sp
+
+pan.data.adult_stats <- pan.data.adult.clean %>%
+  group_by(MSW05_Binomial) %>%
+  dplyr::summarise(sample.size = n(), 
+                   min.mass = min(mass, na.rm = TRUE),
+                   max.mass  = max(mass, na.rm = TRUE),
+                   avg.mass = mean(mass, na.rm = TRUE),
+                   sd.err.mass = sd(mass, na.rm = TRUE)/sqrt(sample.size),
+                   pan.mass = X5.1_AdultBodyMass_g[1],
+                   mass.diff = abs((pan.mass - avg.mass) / sd.err.mass))
+pan.data.adult_stats.10 <- pan.data.adult_stats %>%
+  filter(sample.size >= 10)
+#write.csv(pan.data.adult_stats.10, "pan.results.csv")
+
+#13 out of 59 are not significant; 46 that are different; 22% are ok, 78%of them are diff
+#if assume VertNet is randomly collected, it is a better representation than pan
+#but if biased, then a problem (e.g., during a season, sex); or newer data
+#is the difference more pronounced in smaller or larger mammals?
+
+# FIGURE: body mass distributions w/ line from PanTHERIA
+
+
+
+#Q2: length v. mass
+data.adult.trim.clean <- data.adult.trim.10[!is.na(data.adult.trim.10$mass),]
+data.adult.trim.cleaner <- data.adult.trim.clean[!is.na(data.adult.trim.clean$total.length),]
+#73 spp
+
+#recount sample sizes
+data.adult.trim.cleaner_stats <- data.adult.trim.cleaner %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(counts = n())
+
+keep.adult.trim.clean <- data.adult.trim.cleaner_stats$scientificName[data.adult.trim.cleaner_stats$counts >= 10]
+data.adult.trim.cleaner.10 <- data.adult.trim.cleaner[data.adult.trim.cleaner$scientificName %in% keep.adult.trim.clean,]
+#40 sp
+
+sp.models <- unique(data.adult.trim.cleaner.10$scientificName)
+model.results <- data.frame()
+for(i in 1:length(sp.models)){
+  sub.data <- as.data.frame(data.adult.trim.cleaner.10[data.adult.trim.cleaner.10$scientificName == sp.models[i],])
+  model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
+  sum.model <- summary(model)
+  sub <- data.frame(binomial = sub.data$scientificName[1],
+                    intercept = model$coefficients[[1]],
+                    slope = model$coefficients[[2]],
+                    resid.std.err = sum.model$sigma,
+                    df = max(sum.model$df),
+                    std.err.slope =  sum.model$coefficients[4],
+                    std.err.intercept = sum.model$coefficients[3],
+                    r.squared = sum.model$r.squared)
+  model.results <- rbind(sub, model.results)
+}
+
+#write.csv(model.results, "model.restults.csv")
+
+#family, order
+#link species to higher taxonomy
+#how do confidence in these to compare?
+#how many individuals or spp do you need for it to be sensible
+
+#everything
+
+#show skeletal v vertnet
+
+##THOUGHT: exclude juvs, keep everything else,and then do three sigma
+
+#plots!
+#1. show confidence in line as function of sample size
+plot(model.results.10$std.err.slope ~ model.results.10$df) #make nicer
+
+#Q3: or other paper compare to Scotty Dog Book
+
+
+
+
+
+
+#need to figure out how to get this to go clean
+ggplot(melt(data.adult.10), aes(x = log10(value))) + 
+  facet_wrap(~ scientificName,  ncol = 2) +
+  ggtitle(~ scientificName) +
+  scale_x_continuous(name = expression(log[10]~Body~Mass~(g))) +
+  scale_y_continuous(name = "Counts")
+
+stats.mass <- clean.masses.10 %>%
+  dplyr::group_by(scientificName) %>%
+  dplyr::summarise(mean.mass = mean(mass), median.mass = median(mass),
+                   min.mass = min(mass), max.mass = max(mass))
+
+
+
+
+
+
+
+
+
+
+
+
+# remove species above the +3.dev and -3 dev
+sp.adult <- unique(data.adults.10$scientificName)
+data.mass.adults.trim <- data.frame()
+for(i in 1:length(sp.adult)){
+  data.sub <- subset(data.adults.10, data.adults.10$scientificName == sp.adult[i])
+  sigma.sub <- subset(data.adult.sigma, data.adult.sigma$scientificName == sp.adult[i])
+  for(j in 1:length(data.sub$scientificName)){
+    if(isTRUE(data.sub$mass[j] < sigma.sub$mass.lower.limit | data.sub$mass[j] > sigma.sub$mass.upper.limit)){
+      data.sub$mass[j] <- "oulier"
+    }
+  else if(isTRUE(data.sub$total.length[j] < sigma.sub$length.lower.limit | data.sub2$total.length[j] > sigma.sub$mass.upper.limit)){
+    data.sub$total.length[j] <- "outlier"
+  }
+else{
+  next
+}
+  }
+  data.mass.adults.trim <- rbind(data.mass.adults.trim, data.sub)
+}
+
+length(unique(data.mass.adults.trim$scientificName)) #44 species
+
+## do the same for LENGTH now
+## need to get rid of subspecies
+bat_length$scientificName <- word(bat_length$scientificname, 1,2, sep = " ") #435 unique spp
+mamm_length$scientificName <- word(mamm_length$scientificname, 1,2, sep = " ") #1190 unique spp
+
+#combine VertNet datasets
+vertnet.length <- rbind(bat_length, mamm_length)
+
+
+
+futres.sub.length <- futres %>%
+  select(scientificName, length = TL..mm...Total.Length., lifeStage = lifeStage, sex = sex)
+vertnet.sub.length <- vertnet.length_allmm %>%
+  select(scientificName = scientificname, length = total_length_1.value, lifeStage = lifestage_cor, sex = sex)
+
+data.length <- rbind(futres.sub.length, vertnet.sub.length)
+data.length$length <- as.numeric(data.length$length)
+length(unique(data.mass$scientificName)) #1284
+
+data.length.adults <- subset(data.length, data.length$lifeStage == "Adult")
+length(unique(data.length.adults$scientificName)) #333
+
+data.length.adults_stats <- data.length.adults %>%
+  group_by(scientificName, lifeStage) %>%
+  dplyr::summarise(sample.size = n(), 
+                   min.length = min(length, na.rm = TRUE),
+                   max.length  = max(length, na.rm = TRUE))
+
+keep.length <- data.length.adults_stats$scientificName[data.length.adults_stats$sample.size >= 10]
+data.length.adults.10 <- data.length.adults[data.length.adults$scientificName %in% keep.length,]
+length(unique(data.length.adults.10$scientificName)) #75
+
+# remove samples that are 3 sigmas outside of distribution
+# find 3xsigma
+data.length.adults.sigma <- data.length.adults.10 %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(sigma = sd(length, na.rm = TRUE),
+                   sample.size = n(),
+                   upper.limit = 3*sigma,
+                   lower.limit = -3*sigma)
+
+# remove species above the +three.dev and -three.dev
+sp.adult <- unique(data.length.adults.10$scientificName)
+data.length.adults.trim <- data.frame()
+for(i in 1:length(sp.adult)){
+  sub <- subset(data.length.adults.10, data.length.adults.10$scientificName == sp.adult[i])
+  sub2 <- subset(sub, sub$length < data.length.adults.sigma$three.dev[data.length.adults.sigma$scientificName == sp.adult[i]] & sub$length > -1*(data.length.adults.sigma$three.dev[data.length.adults.sigma$scientificName == sp.adult[i]]))
+  data.length.adults.trim <- rbind(data.length.adults.trim, sub2)
+}
+
+length(unique(data.length.adults.trim$scientificName)) #7 species
 
 ## Q1. How do distributions compare to other, recorded species' averages or ranges?
 # create loop of histograms and insert pan line
