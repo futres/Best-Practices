@@ -27,9 +27,11 @@ futres <- read.csv("https://de.cyverse.org/dl/d/42CF8FC4-13FC-4D57-A73B-90668E2A
 ## VertNet data
 bat_mass <- read.csv("https://de.cyverse.org/dl/d/2A542CDF-BDED-4486-AB15-445B53F80F08/vertnet_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
 #706 spp
+bat_mass.clean <- bat_mass[!(duplicated(bat_mass)),]
 
 bat_length <- read.csv("https://de.cyverse.org/dl/d/896A54B4-1E52-4976-95AB-71449384B3A4/vertnet_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
 #696 spp
+bat_length.clean <- bat_length[!(duplicated(bat_length)),]
 
 #mamm has no bats
 mamm_mass <- read.csv("https://de.cyverse.org/dl/d/EF537422-2246-4B25-A9BC-D8259C78BFA2/vertnet_no_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -64,7 +66,7 @@ cols <- as.data.frame(cbind(x,y))
 cols$same <- cols$x[1] == cols$y[1]
 #all TRUE!
 
-vertnet <- rbind(bats, mamm)
+vertnet <- rbind(bats, mamm) #sum = bats rows + mamm rows
 
 ## need to get rid of subspecies
 vertnet$scientificName <- word(vertnet$scientificname, 1,2, sep = " ") 
@@ -94,6 +96,7 @@ for(i in 1:length(vertnet$occurrenceid)){
   else{
     next
   }
+}
 # }
 # 
 #   else if(isTRUE(vertnet$body_mass_1.units[i] == "mg")){
@@ -121,97 +124,117 @@ for(i in 1:length(vertnet$occurrenceid)){
   if(isTRUE(vertnet$total_length_1.units[i] == "mm_shorthand" | vertnet$total_length_1.units[i] == "MM" | vertnet$total_length_1.units[i] == "Millimeters")){
     vertnet$total_length_1.units[i] <- "mm"
   }
-  else if(isTRUE(vertnet$total_length_1.units[i] == "cm")){
-    vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 10
-    vertnet$total_length_1.units[i] <- "mm"
-  }
-  else if(isTRUE(vertnet$total_length_1.units[i] == "in" | vertnet$total_length_1.units[i] == "inches")){
-    vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] * 25.4
-    vertnet$total_length_1.units[i] <- "mm"
-  }
-  else if(isTRUE(vertnet$total_length_1.units[i] == "Foot" | vertnet$total_length_1.units[i] == "ft" | vertnet$total_length_1.units[i] == "FT" | vertnet$total_length_1.units[i] == "feet" | vertnet$total_length_1.units[i] == "'")){
-    vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] * 304.8
-    vertnet$total_length_1.units[i] <- "mm"
-  }
   else{
     next
   }
 }
+#   else if(isTRUE(vertnet$total_length_1.units[i] == "cm")){
+#     vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 10
+#     vertnet$total_length_1.units[i] <- "mm"
+#   }
+#   else if(isTRUE(vertnet$total_length_1.units[i] == "in" | vertnet$total_length_1.units[i] == "inches")){
+#     vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] * 25.4
+#     vertnet$total_length_1.units[i] <- "mm"
+#   }
+#   else if(isTRUE(vertnet$total_length_1.units[i] == "Foot" | vertnet$total_length_1.units[i] == "ft" | vertnet$total_length_1.units[i] == "FT" | vertnet$total_length_1.units[i] == "feet" | vertnet$total_length_1.units[i] == "'")){
+#     vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] * 304.8
+#     vertnet$total_length_1.units[i] <- "mm"
+#   }
+#   else{
+#     next
+#   }
+# }
 
 for(i in 1:length(vertnet$occurrenceid)){
   if(isTRUE(vertnet$hind_foot_length_1.units[i] == "MM" | vertnet$hind_foot_length_1.units[i] == "mm_shorthand" | vertnet$hind_foot_length_1.units[i] == "Millimeters" | vertnet$hind_foot_length_1.units[i] == "['MM', 'mm']")){
     vertnet$hind_foot_length_1.units[i] <- "mm"
   }
-  else if(isTRUE(vertnet$hind_foot_length_1.units[i] == "cm")){
-    vertnet$hind_foot_length_1.value[i] <- vertnet$hind_foot_length_1.value[i] / 10
-    vertnet$hind_foot_length_1.units[i] <- "mm"
-  }
-  else if(isTRUE(vertnet$hind_foot_length_1.units[i] == "in" | vertnet$hind_foot_length_1.units[i] == "inches")){
-    vertnet$hind_foot_length_1.value[i] <- vertnet$hind_foot_length_1.value[i] * 25.4
-    vertnet$hind_foot_length_1.units[i] <- "mm"
-  }
   else{
     next
   }
 }
+#   else if(isTRUE(vertnet$hind_foot_length_1.units[i] == "cm")){
+#     vertnet$hind_foot_length_1.value[i] <- vertnet$hind_foot_length_1.value[i] / 10
+#     vertnet$hind_foot_length_1.units[i] <- "mm"
+#   }
+#   else if(isTRUE(vertnet$hind_foot_length_1.units[i] == "in" | vertnet$hind_foot_length_1.units[i] == "inches")){
+#     vertnet$hind_foot_length_1.value[i] <- vertnet$hind_foot_length_1.value[i] * 25.4
+#     vertnet$hind_foot_length_1.units[i] <- "mm"
+#   }
+#   else{
+#     next
+#   }
+# }
 
 for(i in 1:length(vertnet$occurrenceid)){
   if(isTRUE(vertnet$ear_length_1.units[i] == "MM" | vertnet$ear_length_1.units[i] == "mm_shorthand" | vertnet$ear_length_1.units[i] == "Millimeters" | vertnet$ear_length_1.units[i] == "['MM', 'mm']")){
     vertnet$ear_length_1.units[i] <- "mm"
   }
-  else if(isTRUE(vertnet$ear_length_1.units[i] == "cm")){
-    vertnet$ear_length_1.value[i] <- vertnet$ear_length_1.value[i] / 10
-    vertnet$ear_length_1.units[i] <- "mm"
-  }
-  else if(isTRUE(vertnet$ear_length_1.units[i] == "in")){
-    vertnet$ear_length_1.value[i] <- vertnet$ear_length_1.value[i] * 25.4
-    vertnet$ear_length_1.units[i] <- "mm"
-  }
   else{
     next
   }
 }
+#   else if(isTRUE(vertnet$ear_length_1.units[i] == "cm")){
+#     vertnet$ear_length_1.value[i] <- vertnet$ear_length_1.value[i] / 10
+#     vertnet$ear_length_1.units[i] <- "mm"
+#   }
+#   else if(isTRUE(vertnet$ear_length_1.units[i] == "in")){
+#     vertnet$ear_length_1.value[i] <- vertnet$ear_length_1.value[i] * 25.4
+#     vertnet$ear_length_1.units[i] <- "mm"
+#   }
+#   else{
+#     next
+#   }
+# }
 
 for(i in 1:length(vertnet$occurrenceid)){
   if(isTRUE(vertnet$forearm_length_1.units[i] == "MM" | vertnet$forearm_length_1.units[i] == "mm_shorthand" | vertnet$forearm_length_1.units[i] == "Millimeters" | vertnet$forearm_length_1.units[i] == "['MM', 'mm']")){
     vertnet$forearm_length_1.units[i] <- "mm"
   }
-  else if(isTRUE(vertnet$forearm_length_1.units[i] == "cm")){
-    vertnet$forearm_length_1.value[i] <- vertnet$forearm_length_1.value[i] / 10
-    vertnet$forearm_length_1.units[i] <- "mm"
-  }
-  else if(isTRUE(vertnet$forearm_length_1.units[i] == "G")){
-    vertnet$forearm_length_1.units[i] <- "g"
-  }
-  else if(isTRUE(vertnet$forearm_length_1.units[i] == "lbs")){
-    vertnet$forearm_length_1.value[i] <- vertnet$forearm_length_1.value[i] * 453.592
-    vertnet$forearm_length_1.units[i] <- "g"
-  }
   else{
     next
   }
 }
+#   else if(isTRUE(vertnet$forearm_length_1.units[i] == "cm")){
+#     vertnet$forearm_length_1.value[i] <- vertnet$forearm_length_1.value[i] / 10
+#     vertnet$forearm_length_1.units[i] <- "mm"
+#   }
+#   else if(isTRUE(vertnet$forearm_length_1.units[i] == "G")){
+#     vertnet$forearm_length_1.units[i] <- "g"
+#   }
+#   else if(isTRUE(vertnet$forearm_length_1.units[i] == "lbs")){
+#     vertnet$forearm_length_1.value[i] <- vertnet$forearm_length_1.value[i] * 453.592
+#     vertnet$forearm_length_1.units[i] <- "g"
+#   }
+#   else{
+#     next
+#   }
+# }
 
 for(i in 1:length(vertnet$occurrenceid)){
   if(isTRUE(vertnet$tail_length_1.units[i] == "MM" | vertnet$tail_length_1.units[i] == "mm_shorthand" | vertnet$tail_length_1.units[i] == "Millimeters" | vertnet$tail_length_1.units[i] == "['MM', 'mm']")){
     vertnet$tail_length_1.units[i] <- "mm"
   }
-  else if(isTRUE(vertnet$tail_length_1.units[i] == "cm")){
-    vertnet$tail_length_1.value[i] <- vertnet$tail_length_1.value[i] / 10
-    vertnet$tail_length_1.units[i] <- "mm"
-  }
-  else if(isTRUE(vertnet$tail_length_1.units[i] == "in" | vertnet$tail_length_1.units[i] == "['inches', 'in']" | vertnet$tail_length_1.units[i] == "inches")){
-    vertnet$tail_length_1.value[i] <- vertnet$tail_length_1.value[i] * 25.4
-    vertnet$tail_length_1.units[i] <- "mm"
-  }
-  else if(isTRUE(vertnet$tail_1.units[i] == "Foot" | vertnet$tail_1.units[i] == "ft" | vertnet$tail_1.units[i] == "FT" | vertnet$tail_1.units[i] == "feet" | vertnet$tail_1.units[i] == "'")){
-    vertnet$tail_1.value[i] <- vertnet$tail_1.value[i] * 304.8
-    vertnet$tail_1.units[i] <- "mm"
-  }
   else{
     next
   }
 }
+#   else if(isTRUE(vertnet$tail_length_1.units[i] == "cm")){
+#     vertnet$tail_length_1.value[i] <- vertnet$tail_length_1.value[i] / 10
+#     vertnet$tail_length_1.units[i] <- "mm"
+#   }
+#   else if(isTRUE(vertnet$tail_length_1.units[i] == "in" | vertnet$tail_length_1.units[i] == "['inches', 'in']" | vertnet$tail_length_1.units[i] == "inches")){
+#     vertnet$tail_length_1.value[i] <- vertnet$tail_length_1.value[i] * 25.4
+#     vertnet$tail_length_1.units[i] <- "mm"
+#   }
+#   else if(isTRUE(vertnet$tail_1.units[i] == "Foot" | vertnet$tail_1.units[i] == "ft" | vertnet$tail_1.units[i] == "FT" | vertnet$tail_1.units[i] == "feet" | vertnet$tail_1.units[i] == "'")){
+#     vertnet$tail_1.value[i] <- vertnet$tail_1.value[i] * 304.8
+#     vertnet$tail_1.units[i] <- "mm"
+#   }
+#   else{
+#     next
+#   }
+# }
 
 #write.csv(vertnet, "vertnet.clean.csv")
 
