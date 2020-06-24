@@ -46,46 +46,29 @@ mamm_length <- read.csv("https://de.cyverse.org/dl/d/DA7E36EF-0008-4DED-A49C-C7D
 #deal with this once mapped
 
 ## combine mass & length
-bat_mass_occ <- bat_mass$occurrenceid #18530 records
-bat_length_occ <- bat_length$occurrenceid #16313 records
-bat_diff <- setdiff(bat_length_occ, bat_mass_occ) #284 #note: order matters; are things in bat_length that aren't in bat_mass
-bat_length_diff <- bat_length[bat_length$occurrenceid %in% bat_diff,] #295; 284 unique, there see to be dupes
-
-#are column names in the same order?
-x <- colnames(bat_mass)
-y <- colnames(bat_length_diff)
-cols <- as.data.frame(cbind(x,y))
-cols$same <- cols$x[1] == cols$y[1]
-#all TRUE!
-
-bats <- rbind(bat_mass, bat_length_diff) #724 spp #only added 18 spp
+bat_length.sub <- subset(bat_length, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
+bat_mass.sub <- dplyr::select(bat_mass, -c('total_length_1.value', 'total_length_1.units'))
+bats <- full_join(bat_mass.sub, bat_length.sub, by = c("occurrenceid", "scientificname"))
+length(unique(bats$scientificname)) #724
 
 ## combine mass & length
-mamm_mass_occ <- mamm_mass$occurrenceid #225237records
-mamm_length_occ <- mamm_length$occurrenceid #245647 records
-mamm.diff <- setdiff(mamm_length_occ, mamm_mass_occ) #11852 records
-mamm_length_diff <- mamm_length[mamm_length$occurrenceid %in% mamm.diff,] #seems to be dupes, 30228; 11852 unique
+mamm_length.sub <- subset(mamm_length, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
+mamm_mass.sub <- dplyr::select(mamm_mass, -c('total_length_1.value', 'total_length_1.units'))
+mamm <- full_join(mamm_mass.sub, mamm_length.sub, by = c("occurrenceid", "scientificname"))
+length(unique(mamm$scientificname)) #2766
 
 #are column names in the same order?
-x <- colnames(mamm_mass)
-y <- colnames(mamm_length_diff)
-cols <- as.data.frame(cbind(x,y))
-cols$same <- cols$x[1] == cols$y[1]
-#all TRUE!
-
-mamms <- rbind(mamm_mass, mamm_length_diff) #2766 spp #only added 327 spp
-
-#are column names in the same order?
-x <- colnames(mamms)
+x <- colnames(mamm)
 y <- colnames(bats)
 cols <- as.data.frame(cbind(x,y))
 cols$same <- cols$x[1] == cols$y[1]
 #all TRUE!
 
-vertnet <- rbind(bats, mamms)
+vertnet <- rbind(bats, mamm)
 
 ## need to get rid of subspecies
 vertnet$scientificName <- word(vertnet$scientificname, 1,2, sep = " ") 
+length(unique(vertnet$scientificName)) #1738
 #some weird spp. names: e.g.,: (new SW
 #will deal with later
 
@@ -108,26 +91,31 @@ for(i in 1:length(vertnet$occurrenceid)){
   if(isTRUE(vertnet$body_mass_1.units[i] == "GRAMS" | vertnet$body_mass_1.units[i] == "GR" | vertnet$body_mass_1.units[i] == "G" | vertnet$body_mass_1.units[i] == "gm" | vertnet$body_mass_1.units[i] == "grams" | vertnet$body_mass_1.units[i] == "gms" | vertnet$body_mass_1.units[i] == "GMS" | vertnet$body_mass_1.units[i] == "gr" | vertnet$body_mass_1.units[i] == "['Grams', 'gm']")){
     vertnet$body_mass_1.units[i] == "g"
   }
-  else if(isTRUE(vertnet$body_mass_1.units[i] == "mg")){
-    vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 1000
-    vertnet$body_mass_1.units[i] <- "g"
-  }
-  else if(isTRUE(vertnet$body_mass_1.units[i] == "kg")){
-    vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] / 1000
-    vertnet$body_mass_1.units[i] <- "g"
-  }
-  else if(isTRUE(vertnet$body_mass_1.units[i] == "lb" | vertnet$body_mass_1.units[i] == "lbs" | vertnet$body_mass_1.units[i] == "pounds")){
-    vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 453.592
-    vertnet$body_mass_1.units[i] <- "g"
-  }
-  else if(isTRUE(vertnet$body_mass_1.units[i] == "oz")){
-    vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 28.3495
-    vertnet$body_mass_1.units[i] <- "g"
-  }
   else{
     next
   }
-}
+# }
+# 
+#   else if(isTRUE(vertnet$body_mass_1.units[i] == "mg")){
+#     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 1000
+#     vertnet$body_mass_1.units[i] <- "g"
+#   }
+#   else if(isTRUE(vertnet$body_mass_1.units[i] == "kg")){
+#     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] / 1000
+#     vertnet$body_mass_1.units[i] <- "g"
+#   }
+#   else if(isTRUE(vertnet$body_mass_1.units[i] == "lb" | vertnet$body_mass_1.units[i] == "lbs" | vertnet$body_mass_1.units[i] == "pounds")){
+#     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 453.592
+#     vertnet$body_mass_1.units[i] <- "g"
+#   }
+#   else if(isTRUE(vertnet$body_mass_1.units[i] == "oz")){
+#     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 28.3495
+#     vertnet$body_mass_1.units[i] <- "g"
+#   }
+#   else{
+#     next
+#   }
+# }
 
 for(i in 1:length(vertnet$occurrenceid)){
   if(isTRUE(vertnet$total_length_1.units[i] == "mm_shorthand" | vertnet$total_length_1.units[i] == "MM" | vertnet$total_length_1.units[i] == "Millimeters")){
@@ -227,24 +215,6 @@ for(i in 1:length(vertnet$occurrenceid)){
 
 #write.csv(vertnet, "vertnet.clean.csv")
 
-# #data for Noé
-# vertnet.noe <- vertnet %>%
-#   dplyr::select(scientificName = scientificname, lifeStage = lifestage_cor, sex = sex,
-#          mass = body_mass_1.value,
-#          mass.units = body_mass_1.units,
-#          total.length = total_length_1.value, 
-#          total.length.units = total_length_1.units,
-#          hindfoot.length = hind_foot_length_1.value,
-#          hindfoot.length.units = hind_foot_length_1.units,
-#          ear.length = ear_length_1.value,
-#          ear.length.units = ear_length_1.value,
-#          forearm.length = forearm_length_1.value,
-#          forearm.length.units = forearm_length_1.units,
-#          tail.length = tail_length_1.value,
-#          tail.length.units = tail_length_1.units)
-# write.csv(vertnet.noe, "vertnet_for_noe.csv")
-# 
-
 #deal with these later
 #vertnet.length_mix
 
@@ -262,6 +232,7 @@ futres.sub$hindfoot.length.units <- "mm"
 futres.sub$Calcaneus.GB.units <- "mm"
 futres.sub$Calcaneus.GL.units <- "mm"
 futres.sub$tooth.row.units <- "mm"
+futres.sub$occurrence.id <- c(1:length(futres.sub$scientificName))
 
 vertnet.sub <- vertnet %>%
   select(scientificName = scientificName, lifeStage = lifestage_cor, sex = sex,
@@ -270,7 +241,8 @@ vertnet.sub <- vertnet %>%
          total.length = total_length_1.value, 
          total.length.units = total_length_1.units,
          hindfoot.length = hind_foot_length_1.value,
-         hindfoot.length.units = hind_foot_length_1.units)
+         hindfoot.length.units = hind_foot_length_1.units,
+         occurrence.id = occurrenceid)
 vertnet.sub$Calcaneus.GL = "NA"
 vertnet.sub$Calcaneus.GL.units = "NA"
 vertnet.sub$Calcaneus.GB = "NA"
@@ -289,25 +261,25 @@ data <- rbind(vertnet.sub, futres.sub)
 length(unique(data$scientificName)) #1739 spp
 
 data$mass <- as.numeric(data$mass)
-data$length <- as.numeric(data$length)
+data$length <- as.numeric(data$total.length)
 data$hindfoot.length <- as.numeric(data$hindfoot.length)
 data$Calcaneus.GB <- as.numeric(data$Calcaneus.GB)
 data$Calcaneus.GL <- as.numeric(data$Calcaneus.GL)
 data$tooth.row <- as.numeric(data$tooth.row)
 
 data.clean <- data
+data.clean$mass.use <- rep(NA, length(data.clean$mass))
+data.clean$total.length.use <- rep(NA, length(data.clean$total.length))
 for(i in 1:length(data$scientificName)){
-  if(isTRUE(data.clean$mass.units[i] != "g")){
-    data.clean$mass[i] <- "NA"
-    data.clean$mass.units[i] <- "NA"
+  if(isTRUE(data.clean$mass.units[i] == "g")){
+    data.clean$mass.use[i] <- "yes"
   }
-  else if(isTRUE(data.clean$total.length.units[i] != "mm")){
-    data.clean$total.length[i] <- "NA"
-    data.clean$total.length.units[i] <- "NA"
+  else if(isTRUE(data.clean$total.length.units[i] == "mm")){
+    data.clean$total.length.use[i] <- "yes"
   }
   else {
     next
   }
 }
 
-#write.csv(data.clean, "clean.data.csv")
+write.csv(data.clean, "clean.data.csv")

@@ -60,10 +60,16 @@ for(i in 1:length(sp.adult)){
   data.sub <- subset(data.adult.10, data.adult.10$scientificName == sp.adult[i])
   sigma.sub <- subset(data.adult.sigma, data.adult.sigma$scientificName == sp.adult[i])
   for(j in 1:length(data.sub$scientificName)){
-    if(isTRUE(data.sub$mass[j] < sigma.sub$mass.lower.limit | data.sub$mass[j] > sigma.sub$mass.upper.limit)){
-      data.sub$mass[j] <- "oulier"
+    if(isTRUE(data.sub$mass[j] < sigma.sub$mass.lower.limit)){
+      data.sub$mass[j] <- "outlier"
     }
-    else if(isTRUE(data.sub$total.length[j] < sigma.sub$length.lower.limit | data.sub$total.length[j] > sigma.sub$mass.upper.limit)){
+    else if(isTRUE(data.sub$mass[j] > sigma.sub$mass.upper.limit)){
+      data.sub$mass[j] <- "outlier"
+    }
+    else if(isTRUE(data.sub$total.length[j] < sigma.sub$length.lower.limit)){
+      data.sub$total.length[j] <- "outlier"
+    }
+    else if(isTRUE(data.sub$total.length[j] > sigma.sub$mass.upper.limit)){
       data.sub$total.length[j] <- "outlier"
     }
     else{
@@ -72,6 +78,8 @@ for(i in 1:length(sp.adult)){
   }
   data.adult.trim <- rbind(data.adult.trim, data.sub)
 }
+data.adult.trim$mass <- as.numeric(data.adult.trim$mass)
+data.adult.trim$total.length <- as.numeric(data.adult.trim$total.length)
 
 data.adult.trim_stats <- data.adult.trim %>%
   group_by(scientificName) %>%
@@ -90,6 +98,10 @@ pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #98 sp
 
 pan.data.adult <- merge(pan.sub.clean, data.adult.trim.10, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
 #98 sp
+
+## some are in kg and not g....why???
+# what is X?
+
 
 pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #81 sp
 
