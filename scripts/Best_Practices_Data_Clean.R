@@ -26,19 +26,37 @@ futres <- read.csv("https://de.cyverse.org/dl/d/42CF8FC4-13FC-4D57-A73B-90668E2A
 
 ## VertNet data
 bat_mass <- read.csv("https://de.cyverse.org/dl/d/2A542CDF-BDED-4486-AB15-445B53F80F08/vertnet_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
-#706 spp
+#706 spp; 18530 rows; 10350 occurrenceids
+
+#get rid of dups
 bat_mass.clean <- bat_mass[!(duplicated(bat_mass)),]
+#706 spp; 10350 rows; 10350 occurrenceids
+#8000 diff
 
 bat_length <- read.csv("https://de.cyverse.org/dl/d/896A54B4-1E52-4976-95AB-71449384B3A4/vertnet_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
-#696 spp
+#696 spp; 16313 rows; 9460 occurrence ids
+
+#get rid of dups
 bat_length.clean <- bat_length[!(duplicated(bat_length)),]
+#696 spp; 9460 rows; 9460 occurrence ids
+#6853 diff
 
 #mamm has no bats
 mamm_mass <- read.csv("https://de.cyverse.org/dl/d/EF537422-2246-4B25-A9BC-D8259C78BFA2/vertnet_no_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
-#2439 spp
+#2439 spp; 225237 rows; 89588 occurrenceids
+
+#get rid of dups
+mamm_mass.clean <- mamm_mass[!(duplicated(mamm_mass)),]
+#2439 spp; 89588 rows; 89588 occurrenceids
+#135649 diff
 
 mamm_length <- read.csv("https://de.cyverse.org/dl/d/DA7E36EF-0008-4DED-A49C-C7DCCC71E98C/vertnet_no_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
-#2728 spp
+#2728 spp; 245647 rows; 97225 occurrenceids
+
+#get rid of dups
+mamm_length.clean <- mamm_length[!(duplicated(mamm_length)),]
+#2728 spp; 97225 rows; 97225 occurrenceids
+#148422 diff
 
 #about VertNet data:
 #has adult, juvenile, and NA for lifestage
@@ -51,13 +69,17 @@ mamm_length <- read.csv("https://de.cyverse.org/dl/d/DA7E36EF-0008-4DED-A49C-C7D
 bat_length.sub <- subset(bat_length, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
 bat_mass.sub <- dplyr::select(bat_mass, -c('total_length_1.value', 'total_length_1.units'))
 bats <- full_join(bat_mass.sub, bat_length.sub, by = c("occurrenceid", "scientificname"))
-length(unique(bats$scientificname)) #724
+length(unique(bats$scientificname)) #724; added 28 spp
+#10634 occurrenceids; 48657 rows; added 284 occ. ids
+
+
 
 ## combine mass & length
 mamm_length.sub <- subset(mamm_length, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
 mamm_mass.sub <- dplyr::select(mamm_mass, -c('total_length_1.value', 'total_length_1.units'))
 mamm <- full_join(mamm_mass.sub, mamm_length.sub, by = c("occurrenceid", "scientificname"))
-length(unique(mamm$scientificname)) #2766
+length(unique(mamm$scientificname)) #2766; added 38 spp
+#795495 rows; 101440 occ ids; added 11852 occ. ids
 
 #are column names in the same order?
 x <- colnames(mamm)
@@ -71,6 +93,7 @@ vertnet <- rbind(bats, mamm) #sum = bats rows + mamm rows
 ## need to get rid of subspecies
 vertnet$scientificName <- word(vertnet$scientificname, 1,2, sep = " ") 
 length(unique(vertnet$scientificName)) #1738
+# in mamm: 2766 spp; and now 1738 because got rid of trinomials
 #some weird spp. names: e.g.,: (new SW
 #will deal with later
 
