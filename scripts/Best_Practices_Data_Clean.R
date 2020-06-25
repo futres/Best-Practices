@@ -66,17 +66,18 @@ mamm_length.clean <- mamm_length[!(duplicated(mamm_length)),]
 #deal with this once mapped
 
 ## combine mass & length
-bat_length.sub <- subset(bat_length, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
-bat_mass.sub <- dplyr::select(bat_mass, -c('total_length_1.value', 'total_length_1.units'))
+bat_length.sub <- subset(bat_length.clean, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
+bat_mass.sub <- dplyr::select(bat_mass.clean, -c('total_length_1.value', 'total_length_1.units'))
 bats <- full_join(bat_mass.sub, bat_length.sub, by = c("occurrenceid", "scientificname"))
 length(unique(bats$scientificname)) #724; added 28 spp
 #10634 occurrenceids; 48657 rows; added 284 occ. ids
+#why are there dupes???
 
 
 
 ## combine mass & length
-mamm_length.sub <- subset(mamm_length, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
-mamm_mass.sub <- dplyr::select(mamm_mass, -c('total_length_1.value', 'total_length_1.units'))
+mamm_length.sub <- subset(mamm_length.clean, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
+mamm_mass.sub <- dplyr::select(mamm_mass.clean, -c('total_length_1.value', 'total_length_1.units'))
 mamm <- full_join(mamm_mass.sub, mamm_length.sub, by = c("occurrenceid", "scientificname"))
 length(unique(mamm$scientificname)) #2766; added 38 spp
 #795495 rows; 101440 occ ids; added 11852 occ. ids
@@ -355,9 +356,9 @@ data.adult_stats <- data.adult.clean %>%
                    max.length = max(total.length, na.rm = TRUE),
                    avg.length = mean(total.length, na.rm = TRUE))
 
-keep.adult <- data.adult_stats$scientificName[data.adult_stats$sample.size >= 10] #148
+keep.adult <- data.adult_stats$scientificName[data.adult_stats$sample.size >= 10] #59
 data.adult.10 <- data.adult.clean[data.adult.clean$scientificName %in% keep.adult,]
-length(unique(data.adult.10$scientificName)) #148
+length(unique(data.adult.10$scientificName)) #59
 
 #write.csv(data.adult.10, "data.adult.10.csv")
 
@@ -374,7 +375,7 @@ data.stand_stats <- data.stand %>%
                    max.length = max(total.length, na.rm = TRUE),
                    avg.length = mean(total.length, na.rm = TRUE))
 
-keep.stand <- data.stand_stats$scientificName[data.stand_stats$sample.size >= 10] #43
+keep.stand <- data.stand_stats$scientificName[data.stand_stats$sample.size >= 10] #25
 data.stand.10 <- data.stand[data.stand$scientificName %in% keep.stand,]
 length(unique(data.stand.10$scientificName)) #43
 
@@ -420,8 +421,8 @@ for(i in 1:length(sp.stand)){
   data.stand.trim <- rbind(data.stand.trim, data.sub)
 }
 
-length(data.stand.trim$scientificName[data.stand.trim$mass == "outlier"]) #3274 outliers (~50%)
-length(data.stand.trim$scientificName) #6541 total
+length(data.stand.trim$scientificName[data.stand.trim$mass == "outlier"]) #878 outliers (~50%)
+length(data.stand.trim$scientificName) #1260 total
 
 data.stand.trim$mass <- as.numeric(data.stand.trim$mass)
 data.stand.trim$total.length <- as.numeric(data.stand.trim$total.length)
@@ -431,9 +432,9 @@ data.stand.trim_stats <- data.stand.trim %>%
   dplyr::summarise(counts = n()) %>%
   as.data.frame()
 
-keep.trim <- data.stand.trim_stats$scientificName[data.stand.trim_stats$counts >= 10] #43
+keep.trim <- data.stand.trim_stats$scientificName[data.stand.trim_stats$counts >= 10] #25
 data.stand.trim.10 <- data.stand.trim[data.stand.trim$scientificName %in% keep.trim,]
-length(unique(data.stand.trim.10$scientificName)) #43
+length(unique(data.stand.trim.10$scientificName)) #25
 
 #write.csv(data.stand.trim.10, "data.mass.length.csv")
 

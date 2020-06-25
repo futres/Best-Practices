@@ -17,16 +17,16 @@ data.mass.length <- read.csv("https://de.cyverse.org/dl/d/B88DB89F-4438-4868-AC2
 
 
 #Q1 compare to pantheria 
-sp.data <- unique(data.mass.length$scientificName) #43 spp
-pan <- pan[pan$MSW05_Binomial %in% sp.data,] #40 spp
+sp.data <- unique(data.mass.length$scientificName) #25 spp
+pan <- pan[pan$MSW05_Binomial %in% sp.data,] #23 spp
 pan.sub <- subset(pan, select = c("MSW05_Binomial", "X5.1_AdultBodyMass_g"))
-pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #38 sp
+pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #22 sp
 
 pan.data.adult <- merge(pan.sub.clean, data.mass.length, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
-#38 sp
+#22 sp
 
 
-pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #20 sp
+pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #16 sp
 
 pan.data.adult_stats <- pan.data.adult.clean %>%
   group_by(MSW05_Binomial) %>%
@@ -38,16 +38,18 @@ pan.data.adult_stats <- pan.data.adult.clean %>%
                    pan.mass = X5.1_AdultBodyMass_g[1],
                    mass.diff = abs((pan.mass - avg.mass) / sd.err.mass))
 pan.data.adult_stats.10 <- pan.data.adult_stats %>%
-  filter(sample.size >= 10)
+  filter(sample.size >= 10) #8 spp
 #write.csv(pan.data.adult_stats.10, "pan.results.csv")
 
 
-#2 out of 14 are not significant; 12 that are different; 14% are ok, 86% of them are diff
+#1 out of 8 are not significant; 12 that are different; 12.5% are ok, 87.5% of them are diff
 #if assume VertNet is randomly collected, it is a better representation than pan
 #but if biased, then a problem (e.g., during a season, sex); or newer data
 #is the difference more pronounced in smaller or larger mammals?
 
 # FIGURE: body mass distributions w/ line from PanTHERIA
+
+pan.data.adult.clean.10 <- pan.data.adult.clean[pan.data.adult.clean$MSW05_Binomial %in% pan.data.adult_stats.10$MSW05_Binomial,]
 
 uniq_species <- unique(pan.data.adult.clean.10$MSW05_Binomial)
 for (i in uniq_species) {
@@ -64,7 +66,7 @@ for (i in uniq_species) {
 #Q2: length v. mass
 data.adult.trim.clean <- data.mass.length[!is.na(data.mass.length$mass),]
 data.adult.trim.cleaner <- data.adult.trim.clean[!is.na(data.adult.trim.clean$total.length),]
-#16 spp
+#13 spp
 
 #recount sample sizes
 data.adult.trim.cleaner_stats <- data.adult.trim.cleaner %>%
@@ -73,7 +75,7 @@ data.adult.trim.cleaner_stats <- data.adult.trim.cleaner %>%
 
 keep.adult.trim.clean <- data.adult.trim.cleaner_stats$scientificName[data.adult.trim.cleaner_stats$counts >= 10]
 data.adult.trim.cleaner.10 <- data.adult.trim.cleaner[data.adult.trim.cleaner$scientificName %in% keep.adult.trim.clean,]
-#15 sp
+#8 sp
 
 sp.models <- unique(data.adult.trim.cleaner.10$scientificName)
 model.results.species <- data.frame()
