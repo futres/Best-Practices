@@ -13,97 +13,20 @@ require(stringr)
 
 ## Upload data
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data.clean <- read.csv("https://de.cyverse.org/dl/d/B5D15FDC-B0ED-4F78-B733-2658A4502AE9/clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
+data.mass.length <- read.csv("https://de.cyverse.org/dl/d/B88DB89F-4438-4868-AC22-8BDA10B83E48/data.mass.length.csv", header = TRUE, stringsAsFactors = FALSE)
 
-data.adult <- data.clean[data.clean$lifeStage == "Adult",]
-length(unique(data.adult$scientificName)) #327 spp
-
-data.adult$mass <- as.numeric(data.adult$mass)
-data.adult$total.length <- as.numeric(data.adult$total.length)
-data.adult$hindfoot.length <- as.numeric(data.adult$hindfoot.length)
-data.adult$Calcaneus.GB <- as.numeric(data.adult$Calcaneus.GB)
-data.adult$Calcaneus.GL <- as.numeric(data.adult$Calcaneus.GL)
-data.adult$tooth.row <- as.numeric(data.adult$tooth.row)
-
-data.adult_stats <- data.adult %>%
-  group_by(scientificName) %>%
-  dplyr::summarise(sample.size = n(), 
-                   min.mass = min(mass, na.rm = TRUE),
-                   avg.mass = 
-                     mean(mass, na.rm = TRUE),
-                   max.mass  = max(mass, na.rm = TRUE),
-                   min.length = min(total.length, na.rm = TRUE),
-                   max.length = max(total.length, na.rm = TRUE),
-                   avg.length = mean(total.length, na.rm = TRUE))
-
-keep.adult <- data.adult_stats$scientificName[data.adult_stats$sample.size >= 10]
-data.adult.10 <- data.adult[data.adult$scientificName %in% keep.adult,]
-length(unique(data.adult.10$scientificName)) #118
-
-# remove samples that are 3 sigmas outside of distribution
-# find 3xsigma
-data.adult.sigma <- data.adult.10 %>%
-  group_by(scientificName) %>%
-  dplyr::summarise(sample.size = n(),
-    mass.sigma = sd(mass, na.rm = TRUE),
-    mass.upper.limit = 3*mass.sigma,
-    mass.lower.limt = -3*mass.sigma,
-    length.sigma = sd(total.length, na.rm = TRUE),
-    length.upper.limit = 3*length.sigma,
-    length.lower.limt = -3*length.sigma) %>%
-    as.data.frame()
-
-# get rid of outliers
-sp.adult <- unique(data.adult.10$scientificName)
-data.adult.trim <- data.frame()
-for(i in 1:length(sp.adult)){
-  data.sub <- subset(data.adult.10, data.adult.10$scientificName == sp.adult[i])
-  sigma.sub <- subset(data.adult.sigma, data.adult.sigma$scientificName == sp.adult[i])
-  for(j in 1:length(data.sub$scientificName)){
-    if(isTRUE(data.sub$mass[j] < sigma.sub$mass.lower.limit)){
-      data.sub$mass[j] <- "outlier"
-    }
-    else if(isTRUE(data.sub$mass[j] > sigma.sub$mass.upper.limit)){
-      data.sub$mass[j] <- "outlier"
-    }
-    else if(isTRUE(data.sub$total.length[j] < sigma.sub$length.lower.limit)){
-      data.sub$total.length[j] <- "outlier"
-    }
-    else if(isTRUE(data.sub$total.length[j] > sigma.sub$mass.upper.limit)){
-      data.sub$total.length[j] <- "outlier"
-    }
-    else{
-      next
-    }
-  }
-  data.adult.trim <- rbind(data.adult.trim, data.sub)
-}
-data.adult.trim$mass <- as.numeric(data.adult.trim$mass)
-data.adult.trim$total.length <- as.numeric(data.adult.trim$total.length)
-
-data.adult.trim_stats <- data.adult.trim %>%
-  group_by(scientificName) %>%
-  dplyr::summarise(counts = n()) %>%
-  as.data.frame()
-
-keep.trim <- data.adult.trim_stats$scientificName[data.adult.trim_stats$counts >= 10]
-data.adult.trim.10 <- data.adult.trim[data.adult.trim$scientificName %in% keep.trim,]
-length(unique(data.adult.trim.10$scientificName)) #117
 
 #Q1 compare to pantheria 
-sp.data <- unique(data.adult.trim.10$scientificName) #117 spp
-pan <- pan[pan$MSW05_Binomial %in% sp.data,] #105 spp
+sp.data <- unique(data.mass.length$scientificName) #43 spp
+pan <- pan[pan$MSW05_Binomial %in% sp.data,] #40 spp
 pan.sub <- subset(pan, select = c("MSW05_Binomial", "X5.1_AdultBodyMass_g"))
-pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #98 sp
+pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #38 sp
 
-pan.data.adult <- merge(pan.sub.clean, data.adult.trim.10, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
-#98 sp
-
-## some are in kg and not g....why???
-# what is X?
+pan.data.adult <- merge(pan.sub.clean, data.mass.length, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
+#38 sp
 
 
-pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #81 sp
+pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #20 sp
 
 pan.data.adult_stats <- pan.data.adult.clean %>%
   group_by(MSW05_Binomial) %>%
@@ -118,11 +41,8 @@ pan.data.adult_stats.10 <- pan.data.adult_stats %>%
   filter(sample.size >= 10)
 #write.csv(pan.data.adult_stats.10, "pan.results.csv")
 
-keep.pan <- pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10 >= 10]
-pan.data.adult.clean.10 <- pan.data.adult.clean[pan.data.adult.clean$MSW05_Binomial %in% keep.pan,]
-#59 sp
 
-#13 out of 59 are not significant; 46 that are different; 22% are ok, 78%of them are diff
+#2 out of 14 are not significant; 12 that are different; 14% are ok, 86% of them are diff
 #if assume VertNet is randomly collected, it is a better representation than pan
 #but if biased, then a problem (e.g., during a season, sex); or newer data
 #is the difference more pronounced in smaller or larger mammals?
@@ -142,9 +62,9 @@ for (i in uniq_species) {
 
 ################################
 #Q2: length v. mass
-data.adult.trim.clean <- data.adult.trim.10[!is.na(data.adult.trim.10$mass),]
+data.adult.trim.clean <- data.mass.length[!is.na(data.mass.length$mass),]
 data.adult.trim.cleaner <- data.adult.trim.clean[!is.na(data.adult.trim.clean$total.length),]
-#73 spp
+#16 spp
 
 #recount sample sizes
 data.adult.trim.cleaner_stats <- data.adult.trim.cleaner %>%
@@ -153,7 +73,7 @@ data.adult.trim.cleaner_stats <- data.adult.trim.cleaner %>%
 
 keep.adult.trim.clean <- data.adult.trim.cleaner_stats$scientificName[data.adult.trim.cleaner_stats$counts >= 10]
 data.adult.trim.cleaner.10 <- data.adult.trim.cleaner[data.adult.trim.cleaner$scientificName %in% keep.adult.trim.clean,]
-#40 sp
+#15 sp
 
 sp.models <- unique(data.adult.trim.cleaner.10$scientificName)
 model.results.species <- data.frame()
@@ -172,6 +92,8 @@ for(i in 1:length(sp.models)){
                     sample.size = length(sub.data$mass))
   model.results.species <- rbind(sub, model.results.species)
 }
+
+#lots of repeats for Neofiber alleni; only 4 unique occurrence ids....why???
 
 #write.csv(model.results.species, "model.results.species.csv")
 

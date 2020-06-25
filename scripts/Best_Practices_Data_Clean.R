@@ -306,26 +306,135 @@ cols$same <- cols$x[1] == cols$y[1]
 data <- rbind(vertnet.sub, futres.sub)
 length(unique(data$scientificName)) #1739 spp
 
-data$mass <- as.numeric(data$mass)
-data$length <- as.numeric(data$total.length)
-data$hindfoot.length <- as.numeric(data$hindfoot.length)
-data$Calcaneus.GB <- as.numeric(data$Calcaneus.GB)
-data$Calcaneus.GL <- as.numeric(data$Calcaneus.GL)
-data$tooth.row <- as.numeric(data$tooth.row)
+# data$mass <- as.numeric(data$mass)
+# data$length <- as.numeric(data$total.length)
+# data$hindfoot.length <- as.numeric(data$hindfoot.length)
+# data$Calcaneus.GB <- as.numeric(data$Calcaneus.GB)
+# data$Calcaneus.GL <- as.numeric(data$Calcaneus.GL)
+# data$tooth.row <- as.numeric(data$tooth.row)
 
-data.clean <- data
-data.clean$mass.use <- rep(NA, length(data.clean$mass))
-data.clean$total.length.use <- rep(NA, length(data.clean$total.length))
-for(i in 1:length(data$scientificName)){
-  if(isTRUE(data.clean$mass.units[i] == "g")){
-    data.clean$mass.use[i] <- "yes"
+# data.clean <- data
+# data.clean$mass.use <- rep(NA, length(data.clean$mass))
+# data.clean$total.length.use <- rep(NA, length(data.clean$total.length))
+# for(i in 1:length(data$scientificName)){
+#   if(isTRUE(data.clean$mass.units[i] == "g")){
+#     data.clean$mass.use[i] <- "yes"
+#   }
+#   else if(isTRUE(data.clean$total.length.units[i] == "mm")){
+#     data.clean$total.length.use[i] <- "yes"
+#   }
+#   else {
+#     next
+#   }
+# }
+
+#write.csv(data.clean, "clean.data.csv")
+
+data.adult <- data[data$lifeStage == "Adult",]
+length(unique(data.adult$scientificName)) #295 spp
+#still some animals w/ "sp."
+
+data.adult.clean <- data.adult[!grepl('sp.',data.adult$scientificName),] #274 spp
+
+
+data.adult.clean$mass <- as.numeric(data.adult.clean$mass)
+data.adult.clean$total.length <- as.numeric(data.adult.clean$total.length)
+data.adult.clean$hindfoot.length <- as.numeric(data.adult.clean$hindfoot.length)
+data.adult.clean$Calcaneus.GB <- as.numeric(data.adult.clean$Calcaneus.GB)
+data.adult.clean$Calcaneus.GL <- as.numeric(data.adult.clean$Calcaneus.GL)
+data.adult.clean$tooth.row <- as.numeric(data.adult.clean$tooth.row)
+
+data.adult_stats <- data.adult.clean %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(sample.size = n(), 
+                   min.mass = min(mass, na.rm = TRUE),
+                   avg.mass = 
+                     mean(mass, na.rm = TRUE),
+                   max.mass  = max(mass, na.rm = TRUE),
+                   min.length = min(total.length, na.rm = TRUE),
+                   max.length = max(total.length, na.rm = TRUE),
+                   avg.length = mean(total.length, na.rm = TRUE))
+
+keep.adult <- data.adult_stats$scientificName[data.adult_stats$sample.size >= 10] #148
+data.adult.10 <- data.adult.clean[data.adult.clean$scientificName %in% keep.adult,]
+length(unique(data.adult.10$scientificName)) #148
+
+#write.csv(data.adult.10, "data.adult.10.csv")
+
+data.stand <- as.data.frame(subset(data.adult.10, data.adult.10$mass.units == "g" & data.adult.10$total.length.units == "mm")) #67 spp
+
+data.stand_stats <- data.stand %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(sample.size = n(), 
+                   min.mass = min(mass, na.rm = TRUE),
+                   avg.mass = 
+                     mean(mass, na.rm = TRUE),
+                   max.mass  = max(mass, na.rm = TRUE),
+                   min.length = min(total.length, na.rm = TRUE),
+                   max.length = max(total.length, na.rm = TRUE),
+                   avg.length = mean(total.length, na.rm = TRUE))
+
+keep.stand <- data.stand_stats$scientificName[data.stand_stats$sample.size >= 10] #43
+data.stand.10 <- data.stand[data.stand$scientificName %in% keep.stand,]
+length(unique(data.stand.10$scientificName)) #43
+
+# remove samples that are 3 sigmas outside of distribution
+# find 3xsigma
+data.stand.sigma <- data.stand.10 %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(sample.size = n(),
+                   mass.sigma = sd(mass, na.rm = TRUE),
+                   mass.upper.limit = 3*mass.sigma,
+                   mass.lower.limt = -3*mass.sigma,
+                   length.sigma = sd(total.length, na.rm = TRUE),
+                   length.upper.limit = 3*length.sigma,
+                   length.lower.limt = -3*length.sigma) %>%
+  as.data.frame()
+
+# get rid of outliers
+# but include full dataset? or ignore? [go back to data.adult.10 %iN%]
+# for now just the dataset with appropriate datasets
+
+sp.stand <- unique(data.stand.10$scientificName)
+data.stand.trim <- data.frame()
+for(i in 1:length(sp.stand)){
+  data.sub <- subset(data.stand.10, data.stand.10$scientificName == sp.stand[i])
+  sigma.sub <- subset(data.stand.sigma, data.stand.sigma$scientificName == sp.stand[i])
+  for(j in 1:length(data.sub$scientificName)){
+    if(isTRUE(data.sub$mass[j] < sigma.sub$mass.lower.limit)){
+      data.sub$mass[j] <- "outlier"
+    }
+    else if(isTRUE(data.sub$mass[j] > sigma.sub$mass.upper.limit)){
+      data.sub$mass[j] <- "outlier"
+    }
+    else if(isTRUE(data.sub$total.length[j] < sigma.sub$length.lower.limit)){
+      data.sub$total.length[j] <- "outlier"
+    }
+    else if(isTRUE(data.sub$total.length[j] > sigma.sub$mass.upper.limit)){
+      data.sub$total.length[j] <- "outlier"
+    }
+    else{
+      next
+    }
   }
-  else if(isTRUE(data.clean$total.length.units[i] == "mm")){
-    data.clean$total.length.use[i] <- "yes"
-  }
-  else {
-    next
-  }
+  data.stand.trim <- rbind(data.stand.trim, data.sub)
 }
 
-write.csv(data.clean, "clean.data.csv")
+length(data.stand.trim$scientificName[data.stand.trim$mass == "outlier"]) #3274 outliers (~50%)
+length(data.stand.trim$scientificName) #6541 total
+
+data.stand.trim$mass <- as.numeric(data.stand.trim$mass)
+data.stand.trim$total.length <- as.numeric(data.stand.trim$total.length)
+
+data.stand.trim_stats <- data.stand.trim %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(counts = n()) %>%
+  as.data.frame()
+
+keep.trim <- data.stand.trim_stats$scientificName[data.stand.trim_stats$counts >= 10] #43
+data.stand.trim.10 <- data.stand.trim[data.stand.trim$scientificName %in% keep.trim,]
+length(unique(data.stand.trim.10$scientificName)) #43
+
+#write.csv(data.stand.trim.10, "data.mass.length.csv")
+
+
