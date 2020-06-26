@@ -15,6 +15,8 @@ require(stringr)
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
 data.mass.length <- read.csv("https://de.cyverse.org/dl/d/B88DB89F-4438-4868-AC22-8BDA10B83E48/data.mass.length.csv", header = TRUE, stringsAsFactors = FALSE)
 
+data.mass.length <- data.stand.trim.10
+data.mass.length$mass[data.mass.length$scientificName == "Puma concolor"] <- data.mass.length$mass[data.mass.length$scientificName == "Puma concolor"] / .0022
 
 #Q1 compare to pantheria 
 sp.data <- unique(data.mass.length$scientificName) #25 spp

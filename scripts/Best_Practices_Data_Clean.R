@@ -103,7 +103,9 @@ futres$lifeStage[futres$lifeStage == "young adult" | futres$lifeStage == "Adult"
 futres$lifeStage[futres$lifeStage == "Juvenile" | futres$lifeStage == "juvenile"] <- "Juvenile"
 # need to convert to g
 futres$Total.Fresh.Weight..g. <- as.numeric(futres$Total.Fresh.Weight..g.)
-futres$Total.Fresh.Weight..g.[futres$scientificName == "Aepyceros melampus"] <- futres$Total.Fresh.Weight..g.[futres$scientificName == "Aepyceros melampus"] * 453.592 
+futres$Total.Fresh.Weight..g.[futres$scientificName == "Aepyceros melampus"] <- futres$Total.Fresh.Weight..g.[futres$scientificName == "Aepyceros melampus"] / .0022 
+futres$Total.Fresh.Weight..g.[futres$scientificName == "Puma concolor"] <- futres$Total.Fresh.Weight..g.[futres$scientificName == "Puma concolor"] / .0022
+
 
 #convert to g for mammal & bat mass
 vertnet$body_mass_1.value <- as.numeric(vertnet$body_mass_1.value)
