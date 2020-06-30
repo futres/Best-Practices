@@ -371,7 +371,6 @@ length(unique(data.adult.10$scientificName)) #59
 # look for inferred units!
 # interquartile ranges (look for 2-3 values outside); creating bins of data
 
-
 data.stand <- as.data.frame(subset(data.adult.10, data.adult.10$mass.units == "g" & data.adult.10$total.length.units == "mm")) #67 spp
 
 data.stand_stats <- data.stand %>%
