@@ -73,8 +73,6 @@ length(unique(bats$scientificname)) #724; added 28 spp
 #10634 occurrenceids; 48657 rows; added 284 occ. ids
 #why are there dupes???
 
-
-
 ## combine mass & length
 mamm_length.sub <- subset(mamm_length.clean, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
 mamm_mass.sub <- dplyr::select(mamm_mass.clean, -c('total_length_1.value', 'total_length_1.units'))
@@ -364,6 +362,16 @@ length(unique(data.adult.10$scientificName)) #59
 
 #write.csv(data.adult.10, "data.adult.10.csv")
 
+##Find outliers; 2 sigmas
+# look at size of sigmas
+  # plot sigmas; (COV: std v mean); those with issues would be outliers on the line
+# highlight those outside of 2 sigmas and not "g" or "mm"
+# change those within 2 sigmas and change to correct units "g" or "mm"
+# for analysis use 2 or 3 sigmas
+# look for inferred units!
+# interquartile ranges (look for 2-3 values outside); creating bins of data
+
+
 data.stand <- as.data.frame(subset(data.adult.10, data.adult.10$mass.units == "g" & data.adult.10$total.length.units == "mm")) #67 spp
 
 data.stand_stats <- data.stand %>%
@@ -440,4 +448,4 @@ length(unique(data.stand.trim.10$scientificName)) #25
 
 #write.csv(data.stand.trim.10, "data.mass.length.csv")
 
-
+#create tool to identify outliers and to then fix the units
