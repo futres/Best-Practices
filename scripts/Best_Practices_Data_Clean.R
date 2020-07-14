@@ -113,127 +113,127 @@ vertnet$ear_length_1.value <- as.numeric(vertnet$ear_length_1.value)
 vertnet$forearm_length_1.value <- as.numeric(vertnet$forearm_length_1.value)
 
 #convert to standard units
-# for(i in 1:length(vertnet$occurrenceid)){
-#   if(isTRUE(vertnet$body_mass_1.units[i] == "GRAMS" | vertnet$body_mass_1.units[i] == "GR" | vertnet$body_mass_1.units[i] == "G" | vertnet$body_mass_1.units[i] == "gm" | vertnet$body_mass_1.units[i] == "grams" | vertnet$body_mass_1.units[i] == "gms" | vertnet$body_mass_1.units[i] == "GMS" | vertnet$body_mass_1.units[i] == "gr" | vertnet$body_mass_1.units[i] == "['Grams', 'gm']")){
-#     vertnet$body_mass_1.units[i] == "g"
-#  }
-# 
-#   else if(isTRUE(vertnet$body_mass_1.units[i] == "mg")){
-#     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 1000
-#     vertnet$body_mass_1.units[i] <- "g"
-#   }
-#   else if(isTRUE(vertnet$body_mass_1.units[i] == "kg")){
-#     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] / 1000
-#     vertnet$body_mass_1.units[i] <- "g"
-#   }
-#   else if(isTRUE(vertnet$body_mass_1.units[i] == "lb" | vertnet$body_mass_1.units[i] == "lbs" | vertnet$body_mass_1.units[i] == "pounds")){
-#     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] / 0.002204623
-#     vertnet$body_mass_1.units[i] <- "g"
-#   }
-#   else if(isTRUE(vertnet$body_mass_1.units[i] == "oz")){
-#     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] / 0.03527396
-#     vertnet$body_mass_1.units[i] <- "g"
-#   }
-#   else{
-#     next
-#   }
-# }
-# 
-# for(i in 1:length(vertnet$occurrenceid)){
-#   if(isTRUE(vertnet$total_length_1.units[i] == "mm_shorthand" | vertnet$total_length_1.units[i] == "MM" | vertnet$total_length_1.units[i] == "Millimeters")){
-#     vertnet$total_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$total_length_1.units[i] == "cm")){
-#     vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 10
-#     vertnet$total_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$total_length_1.units[i] == "in" | vertnet$total_length_1.units[i] == "inches")){
-#     vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 0.03937008
-#     vertnet$total_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$total_length_1.units[i] == "Foot" | vertnet$total_length_1.units[i] == "ft" | vertnet$total_length_1.units[i] == "FT" | vertnet$total_length_1.units[i] == "feet" | vertnet$total_length_1.units[i] == "'")){
-#     vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 0.00328084
-#     vertnet$total_length_1.units[i] <- "mm"
-#   }
-#   else{
-#     next
-#   }
-# }
-# 
-# for(i in 1:length(vertnet$occurrenceid)){
-#   if(isTRUE(vertnet$hind_foot_length_1.units[i] == "MM" | vertnet$hind_foot_length_1.units[i] == "mm_shorthand" | vertnet$hind_foot_length_1.units[i] == "Millimeters" | vertnet$hind_foot_length_1.units[i] == "['MM', 'mm']")){
-#     vertnet$hind_foot_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$hind_foot_length_1.units[i] == "cm")){
-#     vertnet$hind_foot_length_1.value[i] <- vertnet$hind_foot_length_1.value[i] / 10
-#     vertnet$hind_foot_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$hind_foot_length_1.units[i] == "in" | vertnet$hind_foot_length_1.units[i] == "inches")){
-#     vertnet$hind_foot_length_1.value[i] <- vertnet$hind_foot_length_1.value[i] / 0.03937008
-#     vertnet$hind_foot_length_1.units[i] <- "mm"
-#   }
-#   else{
-#     next
-#   }
-# }
-# 
-# for(i in 1:length(vertnet$occurrenceid)){
-#   if(isTRUE(vertnet$ear_length_1.units[i] == "MM" | vertnet$ear_length_1.units[i] == "mm_shorthand" | vertnet$ear_length_1.units[i] == "Millimeters" | vertnet$ear_length_1.units[i] == "['MM', 'mm']")){
-#     vertnet$ear_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$ear_length_1.units[i] == "cm")){
-#     vertnet$ear_length_1.value[i] <- vertnet$ear_length_1.value[i] / 10
-#     vertnet$ear_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$ear_length_1.units[i] == "in")){
-#     vertnet$ear_length_1.value[i] <- vertnet$ear_length_1.value[i] / 0.03937008
-#     vertnet$ear_length_1.units[i] <- "mm"
-#   }
-#   else{
-#     next
-#   }
-# }
-# 
-# for(i in 1:length(vertnet$occurrenceid)){
-#   if(isTRUE(vertnet$forearm_length_1.units[i] == "MM" | vertnet$forearm_length_1.units[i] == "mm_shorthand" | vertnet$forearm_length_1.units[i] == "Millimeters" | vertnet$forearm_length_1.units[i] == "['MM', 'mm']")){
-#     vertnet$forearm_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$forearm_length_1.units[i] == "cm")){
-#     vertnet$forearm_length_1.value[i] <- vertnet$forearm_length_1.value[i] / 10
-#     vertnet$forearm_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$forearm_length_1.units[i] == "G")){
-#     vertnet$forearm_length_1.units[i] <- "g"
-#   }
-#   else if(isTRUE(vertnet$forearm_length_1.units[i] == "lbs")){
-#     vertnet$forearm_length_1.value[i] <- vertnet$forearm_length_1.value[i] / 0.002204623
-#     vertnet$forearm_length_1.units[i] <- "g"
-#   }
-#   else{
-#     next
-#   }
-# }
-# 
-# for(i in 1:length(vertnet$occurrenceid)){
-#   if(isTRUE(vertnet$tail_length_1.units[i] == "MM" | vertnet$tail_length_1.units[i] == "mm_shorthand" | vertnet$tail_length_1.units[i] == "Millimeters" | vertnet$tail_length_1.units[i] == "['MM', 'mm']")){
-#     vertnet$tail_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$tail_length_1.units[i] == "cm")){
-#     vertnet$tail_length_1.value[i] <- vertnet$tail_length_1.value[i] / 10
-#     vertnet$tail_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$tail_length_1.units[i] == "in" | vertnet$tail_length_1.units[i] == "['inches', 'in']" | vertnet$tail_length_1.units[i] == "inches")){
-#     vertnet$tail_length_1.value[i] <- vertnet$tail_length_1.value[i] / 0.03937008
-#     vertnet$tail_length_1.units[i] <- "mm"
-#   }
-#   else if(isTRUE(vertnet$tail_1.units[i] == "Foot" | vertnet$tail_1.units[i] == "ft" | vertnet$tail_1.units[i] == "FT" | vertnet$tail_1.units[i] == "feet" | vertnet$tail_1.units[i] == "'")){
-#     vertnet$tail_1.value[i] <- vertnet$tail_1.value[i] / 0.00328084
-#     vertnet$tail_1.units[i] <- "mm"
-#   }
-#   else{
-#     next
-#   }
-# }
+for(i in 1:length(vertnet$occurrenceid)){
+  if(isTRUE(vertnet$body_mass_1.units[i] == "GRAMS" | vertnet$body_mass_1.units[i] == "GR" | vertnet$body_mass_1.units[i] == "G" | vertnet$body_mass_1.units[i] == "gm" | vertnet$body_mass_1.units[i] == "grams" | vertnet$body_mass_1.units[i] == "gms" | vertnet$body_mass_1.units[i] == "GMS" | vertnet$body_mass_1.units[i] == "gr" | vertnet$body_mass_1.units[i] == "['Grams', 'gm']")){
+    vertnet$body_mass_1.units[i] == "g"
+ }
+
+  else if(isTRUE(vertnet$body_mass_1.units[i] == "mg")){
+    vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 1000
+    vertnet$body_mass_1.units[i] <- "g"
+  }
+  else if(isTRUE(vertnet$body_mass_1.units[i] == "kg")){
+    vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] / 1000
+    vertnet$body_mass_1.units[i] <- "g"
+  }
+  else if(isTRUE(vertnet$body_mass_1.units[i] == "lb" | vertnet$body_mass_1.units[i] == "lbs" | vertnet$body_mass_1.units[i] == "pounds")){
+    vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] / 0.002204623
+    vertnet$body_mass_1.units[i] <- "g"
+  }
+  else if(isTRUE(vertnet$body_mass_1.units[i] == "oz")){
+    vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] / 0.03527396
+    vertnet$body_mass_1.units[i] <- "g"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(vertnet$occurrenceid)){
+  if(isTRUE(vertnet$total_length_1.units[i] == "mm_shorthand" | vertnet$total_length_1.units[i] == "MM" | vertnet$total_length_1.units[i] == "Millimeters")){
+    vertnet$total_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$total_length_1.units[i] == "cm")){
+    vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 10
+    vertnet$total_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$total_length_1.units[i] == "in" | vertnet$total_length_1.units[i] == "inches")){
+    vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 0.03937008
+    vertnet$total_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$total_length_1.units[i] == "Foot" | vertnet$total_length_1.units[i] == "ft" | vertnet$total_length_1.units[i] == "FT" | vertnet$total_length_1.units[i] == "feet" | vertnet$total_length_1.units[i] == "'")){
+    vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 0.00328084
+    vertnet$total_length_1.units[i] <- "mm"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(vertnet$occurrenceid)){
+  if(isTRUE(vertnet$hind_foot_length_1.units[i] == "MM" | vertnet$hind_foot_length_1.units[i] == "mm_shorthand" | vertnet$hind_foot_length_1.units[i] == "Millimeters" | vertnet$hind_foot_length_1.units[i] == "['MM', 'mm']")){
+    vertnet$hind_foot_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$hind_foot_length_1.units[i] == "cm")){
+    vertnet$hind_foot_length_1.value[i] <- vertnet$hind_foot_length_1.value[i] / 10
+    vertnet$hind_foot_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$hind_foot_length_1.units[i] == "in" | vertnet$hind_foot_length_1.units[i] == "inches")){
+    vertnet$hind_foot_length_1.value[i] <- vertnet$hind_foot_length_1.value[i] / 0.03937008
+    vertnet$hind_foot_length_1.units[i] <- "mm"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(vertnet$occurrenceid)){
+  if(isTRUE(vertnet$ear_length_1.units[i] == "MM" | vertnet$ear_length_1.units[i] == "mm_shorthand" | vertnet$ear_length_1.units[i] == "Millimeters" | vertnet$ear_length_1.units[i] == "['MM', 'mm']")){
+    vertnet$ear_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$ear_length_1.units[i] == "cm")){
+    vertnet$ear_length_1.value[i] <- vertnet$ear_length_1.value[i] / 10
+    vertnet$ear_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$ear_length_1.units[i] == "in")){
+    vertnet$ear_length_1.value[i] <- vertnet$ear_length_1.value[i] / 0.03937008
+    vertnet$ear_length_1.units[i] <- "mm"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(vertnet$occurrenceid)){
+  if(isTRUE(vertnet$forearm_length_1.units[i] == "MM" | vertnet$forearm_length_1.units[i] == "mm_shorthand" | vertnet$forearm_length_1.units[i] == "Millimeters" | vertnet$forearm_length_1.units[i] == "['MM', 'mm']")){
+    vertnet$forearm_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$forearm_length_1.units[i] == "cm")){
+    vertnet$forearm_length_1.value[i] <- vertnet$forearm_length_1.value[i] / 10
+    vertnet$forearm_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$forearm_length_1.units[i] == "G")){
+    vertnet$forearm_length_1.units[i] <- "g"
+  }
+  else if(isTRUE(vertnet$forearm_length_1.units[i] == "lbs")){
+    vertnet$forearm_length_1.value[i] <- vertnet$forearm_length_1.value[i] / 0.002204623
+    vertnet$forearm_length_1.units[i] <- "g"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(vertnet$occurrenceid)){
+  if(isTRUE(vertnet$tail_length_1.units[i] == "MM" | vertnet$tail_length_1.units[i] == "mm_shorthand" | vertnet$tail_length_1.units[i] == "Millimeters" | vertnet$tail_length_1.units[i] == "['MM', 'mm']")){
+    vertnet$tail_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$tail_length_1.units[i] == "cm")){
+    vertnet$tail_length_1.value[i] <- vertnet$tail_length_1.value[i] / 10
+    vertnet$tail_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$tail_length_1.units[i] == "in" | vertnet$tail_length_1.units[i] == "['inches', 'in']" | vertnet$tail_length_1.units[i] == "inches")){
+    vertnet$tail_length_1.value[i] <- vertnet$tail_length_1.value[i] / 0.03937008
+    vertnet$tail_length_1.units[i] <- "mm"
+  }
+  else if(isTRUE(vertnet$tail_1.units[i] == "Foot" | vertnet$tail_1.units[i] == "ft" | vertnet$tail_1.units[i] == "FT" | vertnet$tail_1.units[i] == "feet" | vertnet$tail_1.units[i] == "'")){
+    vertnet$tail_1.value[i] <- vertnet$tail_1.value[i] / 0.00328084
+    vertnet$tail_1.units[i] <- "mm"
+  }
+  else{
+    next
+  }
+}
 
 #deal with these later
 #vertnet.length_mix
@@ -400,71 +400,4 @@ keep.clean <- data.clean_stats$scientificName[data.clean_stats$sample.size >= 10
 data.clean.10 <- data.clean[data.clean$scientificName %in% keep.clean,]
 length(unique(data.clean.10$scientificName)) #564
 
-
-
-
-
-
-
-
-
-  # remove samples that are 3 sigmas outside of distribution
-# find 3xsigma
-data.stand.sigma <- data.stand.10 %>%
-  group_by(scientificName) %>%
-  dplyr::summarise(sample.size = n(),
-                   mass.sigma = sd(mass, na.rm = TRUE),
-                   mass.upper.limit = 3*mass.sigma,
-                   mass.lower.limt = -3*mass.sigma,
-                   length.sigma = sd(total.length, na.rm = TRUE),
-                   length.upper.limit = 3*length.sigma,
-                   length.lower.limt = -3*length.sigma) %>%
-  as.data.frame()
-
-# get rid of outliers
-# but include full dataset? or ignore? [go back to data.adult.10 %iN%]
-# for now just the dataset with appropriate datasets
-
-sp.stand <- unique(data.stand.10$scientificName)
-data.stand.trim <- data.frame()
-for(i in 1:length(sp.stand)){
-  data.sub <- subset(data.stand.10, data.stand.10$scientificName == sp.stand[i])
-  sigma.sub <- subset(data.stand.sigma, data.stand.sigma$scientificName == sp.stand[i])
-  for(j in 1:length(data.sub$scientificName)){
-    if(isTRUE(data.sub$mass[j] < sigma.sub$mass.lower.limit)){
-      data.sub$mass[j] <- "outlier"
-    }
-    else if(isTRUE(data.sub$mass[j] > sigma.sub$mass.upper.limit)){
-      data.sub$mass[j] <- "outlier"
-    }
-    else if(isTRUE(data.sub$total.length[j] < sigma.sub$length.lower.limit)){
-      data.sub$total.length[j] <- "outlier"
-    }
-    else if(isTRUE(data.sub$total.length[j] > sigma.sub$mass.upper.limit)){
-      data.sub$total.length[j] <- "outlier"
-    }
-    else{
-      next
-    }
-  }
-  data.stand.trim <- rbind(data.stand.trim, data.sub)
-}
-
-length(data.stand.trim$scientificName[data.stand.trim$mass == "outlier"]) #878 outliers (~50%)
-length(data.stand.trim$scientificName) #1260 total
-
-data.stand.trim$mass <- as.numeric(data.stand.trim$mass)
-data.stand.trim$total.length <- as.numeric(data.stand.trim$total.length)
-
-data.stand.trim_stats <- data.stand.trim %>%
-  group_by(scientificName) %>%
-  dplyr::summarise(counts = n()) %>%
-  as.data.frame()
-
-keep.trim <- data.stand.trim_stats$scientificName[data.stand.trim_stats$counts >= 10] #25
-data.stand.trim.10 <- data.stand.trim[data.stand.trim$scientificName %in% keep.trim,]
-length(unique(data.stand.trim.10$scientificName)) #25
-
-#write.csv(data.stand.trim.10, "data.mass.length.csv")
-
-#create tool to identify outliers and to then fix the units
+#write.csv(data.clean.10, "clean.data.csv")

@@ -13,20 +13,16 @@ require(stringr)
 
 ## Upload data
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data.mass.length <- read.csv("https://de.cyverse.org/dl/d/B88DB89F-4438-4868-AC22-8BDA10B83E48/data.mass.length.csv", header = TRUE, stringsAsFactors = FALSE)
-
-data.mass.length <- data.stand.trim.10
-data.mass.length$mass[data.mass.length$scientificName == "Puma concolor"] <- data.mass.length$mass[data.mass.length$scientificName == "Puma concolor"] / .0022
+data.mass.length <- read.csv("https://de.cyverse.org/dl/d/ED8B65C7-927D-44E8-ADAA-38AF4540EC75/clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
 
 #Q1 compare to pantheria 
-sp.data <- unique(data.mass.length$scientificName) #25 spp
-pan <- pan[pan$MSW05_Binomial %in% sp.data,] #23 spp
+sp.data <- unique(data.mass.length$scientificName) #564 spp
+pan <- pan[pan$MSW05_Binomial %in% sp.data,] #501 spp
 pan.sub <- subset(pan, select = c("MSW05_Binomial", "X5.1_AdultBodyMass_g"))
 pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #22 sp
 
 pan.data.adult <- merge(pan.sub.clean, data.mass.length, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
 #22 sp
-
 
 pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #16 sp
 
@@ -43,11 +39,10 @@ pan.data.adult_stats.10 <- pan.data.adult_stats %>%
   filter(sample.size >= 10) #8 spp
 #write.csv(pan.data.adult_stats.10, "pan.results.csv")
 
+length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff <= 2]) #136
+length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff > 2]) #273
 
-#1 out of 8 are not significant; 12 that are different; 12.5% are ok, 87.5% of them are diff
-#if assume VertNet is randomly collected, it is a better representation than pan
-#but if biased, then a problem (e.g., during a season, sex); or newer data
-#is the difference more pronounced in smaller or larger mammals?
+#136 out of 409 are different; 33.3%
 
 # FIGURE: body mass distributions w/ line from PanTHERIA
 
