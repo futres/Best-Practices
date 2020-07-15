@@ -112,13 +112,161 @@ vertnet$tail_length_1.value <- as.numeric(vertnet$tail_length_1.value)
 vertnet$ear_length_1.value <- as.numeric(vertnet$ear_length_1.value)
 vertnet$forearm_length_1.value <- as.numeric(vertnet$forearm_length_1.value)
 
+futres.sub <- futres %>%
+  select(scientificName, lifeStage = lifeStage, sex = sex,
+         mass = Total.Fresh.Weight..g.,
+         total.length = TL..mm...Total.Length.,
+         hindfoot.length = HF..mm...Hind.Foot.Length.,
+         Calcaneus.GL = Calcaneus.GL...greatest.length..von.den.Driesch..1976...mm,
+         Calcaneus.GB = Calcaneus.GB...greatest.breadth..von.den.Driesch.1976...mm,
+         tooth.row = c.toothrow.1.mm)
+futres.sub$mass.units <- "g"
+futres.sub$total.length.units <- "mm"
+futres.sub$hindfoot.length.units <- "mm"
+futres.sub$Calcaneus.GB.units <- "mm"
+futres.sub$Calcaneus.GL.units <- "mm"
+futres.sub$tooth.row.units <- "mm"
+futres.sub$occurrence.id <- c(1:length(futres.sub$scientificName))
+futres.sub$mass.units.inferred <- "FALSE"
+futres.sub$total.length.units.inferred <- "FALSE"
+futres.sub$hindfoot.units.inferred <- "NA"
+
+futres.sub$mass[futres.sub$scientificName == "Puma concolor"] <- futres.sub$mass[futres.sub$scientificName == "Puma concolor"] / .002204623
+
+vertnet.sub <- vertnet %>%
+  select(scientificName = scientificName, 
+         lifeStage = lifestage_cor, 
+         sex = sex,
+         mass = body_mass_1.value,
+         mass.units = body_mass_1.units,
+         mass.units.inferred = body_mass_1.units_inferred,
+         total.length = total_length_1.value, 
+         total.length.units = total_length_1.units,
+         total.length.units.inferred = total_length_1.units_inferred,
+         hindfoot.length = hind_foot_length_1.value,
+         hindfoot.length.units = hind_foot_length_1.units,
+         hindfoot.length.units.inferred = hind_foot_length_1.units_inferred,
+         occurrence.id = occurrenceid)
+vertnet.sub$Calcaneus.GL = "NA"
+vertnet.sub$Calcaneus.GL.units = "NA"
+vertnet.sub$Calcaneus.GB = "NA"
+vertnet.sub$Calcaneus.GB.units = "NA"
+vertnet.sub$tooth.row = "NA"
+vertnet.sub$tooth.row.units = "NA"
+
+for(i in 1:length(vertnet.sub$occurrenceid)){
+  if(isTRUE(vertnet.sub$mass.units[i] == "GRAMS" | vertnet.sub$mass.units[i] == "GR" | vertnet.sub$mass.units[i] == "G" | vertnet.sub$mass.units[i] == "gm" | vertnet.sub$mass.units[i] == "grams" | vertnet.sub$mass.units[i] == "gms" | vertnet.sub$mass.units[i] == "GMS" | vertnet.sub$mass.units[i] == "gr" | vertnet.sub$mass.units[i] == "['Grams', 'gm']")){
+    vertnet$body_mass_1.units[i] == "g"
+  }
+  else {
+    next
+  }
+}
+
+for(i in 1:length(vertnet.sub$occurrenceid)){
+  if(isTRUE(vertnet.sub$total.length.units[i] == "mm_shorthand" | vertnet.sub$total.length.units[i] == "MM" | vertnet.sub$total.length.units[i] == "Millimeters")){
+    vertnet.sub$total.length.units[i] <- "mm"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(vertnet.sub$occurrenceid)){
+  if(isTRUE(vertnet.sub$hindfoot.length.units[i] == "mm_shorthand" | vertnet.sub$hindfoot.length.units[i] == "MM" | vertnet.sub$hindfoot.length.units[i] == "Millimeters")){
+    vertnet.sub$hindfoot.length.units[i] <- "mm"
+  }
+  else{
+    next
+  }
+}
+
+
+#reorder columns
+order <- c("occurrence.id", "scientificName", "lifeStage", "sex", 
+           "mass", "mass.units", "mass.units.inferred", 
+           "total.length", "total.length.units", "total.length.units.inferred",
+           "hindfoot.length", "hindfoot.length.units", "hindfoot.length.units.inferred",
+           "Calcaneus.GB", "Calcaneus.GB.units",
+           "Calcaneus.GL", "Calcaneus.GL.units",
+           "tootl.row", "tooth.row.units")
+futres.sub <- futres.sub[,]
+
+
+
+data <- rbind(vertnet.sub, futres.sub)
+length(unique(data$scientificName)) #1739 spp
+
+data.binom<- data[!grepl('sp.',data$scientificName),]
+length(unique(data.binom$scientificName)) #1631 sp
+
+data.noJuv <- data.binom[data.binom$lifeStage != "Juvenile",]
+length(unique(data.noJuv$scientificName)) #1522 spp
+
+data.noJuv$mass <- as.numeric(data.noJuv$mass)
+data.noJuv$total.length <- as.numeric(data.noJuv$total.length)
+data.noJuv$hindfoot.length <- as.numeric(data.noJuv$hindfoot.length)
+data.noJuv$Calcaneus.GB <- as.numeric(data.noJuv$Calcaneus.GB)
+data.noJuv$Calcaneus.GL <- as.numeric(data.noJuv$Calcaneus.GL)
+data.noJuv$tooth.row <- as.numeric(data.noJuv$tooth.row)
+
+#need 10 samples per species
+data.noJuv_stats <- data.noJuv %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(sample.size = n(), 
+                   min.mass = min(mass[mass.units == "g"], na.rm = TRUE),
+                   avg.mass = mean(mass[mass.units == "g"], na.rm = TRUE),
+                   max.mass  = max(mass[mass.units == "g"], na.rm = TRUE),
+                   min.length = min(total.length[total.length.units == "mm"], na.rm = TRUE),
+                   max.length = max(total.length[total.length.units == "mm"], na.rm = TRUE),
+                   avg.length = mean(total.length[total.length.units == "mm"], na.rm = TRUE))
+data.noJuv_stats <- data.noJuv_stats[data.noJuv_stats$sample.size >= 10,]
+is.na(data.noJuv_stats) <- sapply(data.noJuv_stats, is.infinite)
+is.na(data.noJuv_stats) <- sapply(data.noJuv_stats, is.nan)
+
+keep.data <- data.noJuv_stats$scientificName[data.noJuv_stats$sample.size >= 10] #566
+data.10 <- data.noJuv[data.noJuv$scientificName %in% keep.data,]
+data.10 <- data.10[!(is.na(data.10$scientificName)),]
+length(unique(data.10$scientificName)) #565
+
+#check to see if data already there are within min and max for units before converting
+data.infer <- data.frame()
+
+sp.stats <- data.noJuv_stats$scientificName
+for(i in 1:length(sp.stats)){
+  sub.data <- subset(data.10, data.10$scientificName == sp.stats[i])
+  sub.stats <- subset(data.noJuv_stats, data.noJuv_stats$scientificName == sp.stats[i])
+  sub.data$min.mass <- sub.stats$min.mass
+  sub.data$max.mass <- sub.stats$max.mass
+  sub.data$min.length <- sub.stats$min.length
+  sub.data$max.length <- sub.stats$max.length
+  data.infer <- rbind(data.infer, sub.data)
+}
+
+for(i in 1:length(data.infer$occurrence.id)){
+  if(isTRUE(data.infer$mass[i] > data.infer$min.mass[i] & data.infer$mass < data.infer$max.mass)){
+    if(isTRUE(data.infer$mass.units[i] != "g"))
+    data.infer$mass.units <- "g"
+    data.infer$mass.units.infered
+  }
+}
+
+for(i in 1:length(data.outlier$scientificName)){
+  if(isTRUE(data.outlier$mass[i] < data.outlier$mass.lower.limit[i])){
+    data.outlier$mass.status[i] <- "outlier"
+  }
+  else if(isTRUE(data.outlier$mass[i] > data.outlier$mass.upper.limit[i])){
+    data.outlier$mass.status[i] <- "outlier"
+  }
+  else{
+    next
+  }
+}
+
+
 #convert to standard units
 for(i in 1:length(vertnet$occurrenceid)){
-  if(isTRUE(vertnet$body_mass_1.units[i] == "GRAMS" | vertnet$body_mass_1.units[i] == "GR" | vertnet$body_mass_1.units[i] == "G" | vertnet$body_mass_1.units[i] == "gm" | vertnet$body_mass_1.units[i] == "grams" | vertnet$body_mass_1.units[i] == "gms" | vertnet$body_mass_1.units[i] == "GMS" | vertnet$body_mass_1.units[i] == "gr" | vertnet$body_mass_1.units[i] == "['Grams', 'gm']")){
-    vertnet$body_mass_1.units[i] == "g"
- }
-
-  else if(isTRUE(vertnet$body_mass_1.units[i] == "mg")){
+  if(isTRUE(vertnet$body_mass_1.units[i] == "mg")){
     vertnet$body_mass_1.value[i] <- vertnet$body_mass_1.value[i] * 1000
     vertnet$body_mass_1.units[i] <- "g"
   }
@@ -140,10 +288,7 @@ for(i in 1:length(vertnet$occurrenceid)){
 }
 
 for(i in 1:length(vertnet$occurrenceid)){
-  if(isTRUE(vertnet$total_length_1.units[i] == "mm_shorthand" | vertnet$total_length_1.units[i] == "MM" | vertnet$total_length_1.units[i] == "Millimeters")){
-    vertnet$total_length_1.units[i] <- "mm"
-  }
-  else if(isTRUE(vertnet$total_length_1.units[i] == "cm")){
+  if(isTRUE(vertnet$total_length_1.units[i] == "cm")){
     vertnet$total_length_1.value[i] <- vertnet$total_length_1.value[i] / 10
     vertnet$total_length_1.units[i] <- "mm"
   }
@@ -237,80 +382,6 @@ for(i in 1:length(vertnet$occurrenceid)){
 
 #deal with these later
 #vertnet.length_mix
-
-futres.sub <- futres %>%
-  select(scientificName, lifeStage = lifeStage, sex = sex,
-         mass = Total.Fresh.Weight..g.,
-         total.length = TL..mm...Total.Length.,
-         hindfoot.length = HF..mm...Hind.Foot.Length.,
-         Calcaneus.GL = Calcaneus.GL...greatest.length..von.den.Driesch..1976...mm,
-         Calcaneus.GB = Calcaneus.GB...greatest.breadth..von.den.Driesch.1976...mm,
-         tooth.row = c.toothrow.1.mm)
-futres.sub$mass.units <- "g"
-futres.sub$total.length.units <- "mm"
-futres.sub$hindfoot.length.units <- "mm"
-futres.sub$Calcaneus.GB.units <- "mm"
-futres.sub$Calcaneus.GL.units <- "mm"
-futres.sub$tooth.row.units <- "mm"
-futres.sub$occurrence.id <- c(1:length(futres.sub$scientificName))
-
-futres.sub$mass[futres.sub$scientificName == "Puma concolor"] <- futres.sub$mass[futres.sub$scientificName == "Puma concolor"] / .002204623
-
-vertnet.sub <- vertnet %>%
-  select(scientificName = scientificName, lifeStage = lifestage_cor, sex = sex,
-         mass = body_mass_1.value,
-         mass.units = body_mass_1.units,
-         total.length = total_length_1.value, 
-         total.length.units = total_length_1.units,
-         hindfoot.length = hind_foot_length_1.value,
-         hindfoot.length.units = hind_foot_length_1.units,
-         occurrence.id = occurrenceid)
-vertnet.sub$Calcaneus.GL = "NA"
-vertnet.sub$Calcaneus.GL.units = "NA"
-vertnet.sub$Calcaneus.GB = "NA"
-vertnet.sub$Calcaneus.GB.units = "NA"
-vertnet.sub$tooth.row = "NA"
-vertnet.sub$tooth.row.units = "NA"
-
-#are column names in the same order?
-x <- colnames(futres.sub)
-y <- colnames(vertnet.sub)
-cols <- as.data.frame(cbind(x,y))
-cols$same <- cols$x[1] == cols$y[1]
-#all TRUE!
-
-data <- rbind(vertnet.sub, futres.sub)
-length(unique(data$scientificName)) #1739 spp
-
-data.binom<- data[!grepl('sp.',data$scientificName),]
-length(unique(data.binom$scientificName)) #1631 sp
-
-data.noJuv <- data.binom[data.binom$lifeStage != "Juvenile",]
-length(unique(data.noJuv$scientificName)) #1522 spp
-
-data.noJuv$mass <- as.numeric(data.noJuv$mass)
-data.noJuv$total.length <- as.numeric(data.noJuv$total.length)
-data.noJuv$hindfoot.length <- as.numeric(data.noJuv$hindfoot.length)
-data.noJuv$Calcaneus.GB <- as.numeric(data.noJuv$Calcaneus.GB)
-data.noJuv$Calcaneus.GL <- as.numeric(data.noJuv$Calcaneus.GL)
-data.noJuv$tooth.row <- as.numeric(data.noJuv$tooth.row)
-
-#need 10 samples per species
-data.noJuv_stats <- data.noJuv %>%
-  group_by(scientificName) %>%
-  dplyr::summarise(sample.size = n(), 
-                   min.mass = min(mass, na.rm = TRUE),
-                   avg.mass = 
-                     mean(mass, na.rm = TRUE),
-                   max.mass  = max(mass, na.rm = TRUE),
-                   min.length = min(total.length, na.rm = TRUE),
-                   max.length = max(total.length, na.rm = TRUE),
-                   avg.length = mean(total.length, na.rm = TRUE))
-
-keep.data <- data.noJuv_stats$scientificName[data.noJuv_stats$sample.size >= 10] #566
-data.10 <- data.noJuv[data.noJuv$scientificName %in% keep.data,]
-data.10 <- data.10[!(is.na(data.10$scientificName)),]
-length(unique(data.10$scientificName)) #565
 
 
 
