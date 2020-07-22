@@ -109,6 +109,11 @@ for (i in uniq_species) {
   ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
 }
 
+#WEIRD ONES: 
+#Akodon mimus
+#Aplodontia rufa
+#Artibeus lituratus, jamaicensis
+
 #family, order
 #link species to higher taxonomy
 #how do confidence in these to compare?
