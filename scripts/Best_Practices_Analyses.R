@@ -293,6 +293,10 @@ plot(model.results$std.err.slope ~ model.results$df) #make nicer
 
 
 
+#Q4
+
+
+
 # transfer function
 # log linear model; log10 or natural log
 clean.length.mass$total.length <- as.numeric(clean.length.mass$total.length)
