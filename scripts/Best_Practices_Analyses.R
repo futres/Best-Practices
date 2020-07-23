@@ -13,16 +13,17 @@ require(stringr)
 
 ## Upload data
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data.mass.length <- read.csv("https://de.cyverse.org/dl/d/ED8B65C7-927D-44E8-ADAA-38AF4540EC75/clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
+data <- read.csv("https://de.cyverse.org/dl/d/ED8B65C7-927D-44E8-ADAA-38AF4540EC75/clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
 
 #Q1 compare to pantheria 
-sp.data <- unique(data.mass.length$scientificName) #564 spp
-pan <- pan[pan$MSW05_Binomial %in% sp.data,] #501 spp
-pan.sub <- subset(pan, select = c("MSW05_Binomial", "X5.1_AdultBodyMass_g"))
-pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #22 sp
+sp.data <- unique(data$scientificName) #565 spp
+pan <- pan[pan$MSW05_Binomial %in% sp.data,] #502 spp
+pan.sub <- subset(pan, select = c("MSW05_Order", "MSW05_Family", "MSW05_Genus", "MSW05_Binomial", "X5.1_AdultBodyMass_g"))
+pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #474 sp
 
-pan.data.adult <- merge(pan.sub.clean, data.mass.length, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
-#22 sp
+pan.data.adult <- merge(pan.sub.clean, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
+
+#write.csv(pan.data.adult, "data.taxonomy.csv")
 
 pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #16 sp
 
@@ -61,7 +62,7 @@ for (i in uniq_species) {
 
 ################################
 #Q2: length v. mass
-data.adult.trim.clean <- data.mass.length[!is.na(data.mass.length$mass),]
+data.adult.trim.clean <- data[!is.na(data$mass),]
 data.adult.trim.cleaner <- data.adult.trim.clean[!is.na(data.adult.trim.clean$total.length),]
 #13 spp
 
@@ -107,6 +108,11 @@ for (i in uniq_species) {
     scale_y_log10(name = expression(log[10]~Total~Length~(mm))) + 
   ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
 }
+
+#WEIRD ONES: 
+#Akodon mimus
+#Aplodontia rufa
+#Artibeus lituratus, jamaicensis
 
 #family, order
 #link species to higher taxonomy
