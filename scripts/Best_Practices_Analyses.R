@@ -13,7 +13,7 @@ require(stringr)
 
 ## Upload data
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/ED8B65C7-927D-44E8-ADAA-38AF4540EC75/clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
+data <- read.csv("https://de.cyverse.org/dl/d/D0FE0589-D2A9-4826-9A33-8ECE00B88965/clean.futres.data.csv", header = TRUE, stringsAsFactors = FALSE)
 
 #Q1 compare to pantheria 
 sp.data <- unique(data$scientificName) #565 spp
@@ -290,6 +290,10 @@ plot(model.results$std.err.slope ~ model.results$df) #make nicer
 
 
 #Q3: or other paper compare to Scotty Dog Book
+
+
+
+#Q4
 
 
 
