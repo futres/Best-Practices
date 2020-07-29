@@ -345,6 +345,51 @@ model <- lm(log10(clean.length.mass$total.length) ~ log10(clean.length.mass$mass
 
 
 
+#code for regressions of limb data vs bodymass
+
+library(tidyr)
+
+#model results
+#potentially I could loop through columns in the dataframe. Or I could subset the data and then restructure it to be long instead of wide so I could loop through the measurements?
+data.adult.trim.clean <- data[!is.na(data$mass),]
+data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$astragalus.length),]
+
+test <- subset(data.limb, scientificName== "Aepyceros melampus", select = c("X","occurrenceID",                     "scientificName", "lifeStage", "sex", "catalogNumber", "mass", "astragalus.length", "astragalus.width", "calcaneus.GB", "calcaneus.GL", "femur.length", "humerus.length", "forearm.length", "tooth.row"))
+
+test_reshape <- gather(data = test, 
+                       key = Measurement, 
+                       value = value, 
+                       8:15)
+
+sp.models <- unique(test_reshape$Measurement)
+model.results.species.limb <- data.frame()
+for(i in 1:length(sp.models)){
+  sub.data <- as.data.frame(test_reshape[test_reshape$Measurement == sp.models[i],])
+  model <- lm(log10(sub.data$mass) ~ log10(sub.data$value), na.action=na.exclude)
+  sum.model <- summary(model)
+  sub <- data.frame(binomial = sub.data$scientificName[1],
+                    intercept = model$coefficients[[1]],
+                    slope = model$coefficients[[2]],
+                    resid.std.err = sum.model$sigma,
+                    df = max(sum.model$df),
+                    std.err.slope =  sum.model$coefficients[4],
+                    std.err.intercept = sum.model$coefficients[3],
+                    r.squared = sum.model$r.squared,
+                    sample.size = length(sub.data$mass))
+  model.results.species.limb <- rbind(sub, model.results.species.limb)
+}
+
+#plotting
+for (i in sp.models) {
+  p = ggplot(data = subset(data.adult.trim.cleaner.10, scientificName  == i)) + 
+    geom_point(aes(x = log10(mass), y = log10(total.length))) +
+    geom_smooth(aes(x = log10(mass), y = log10(total.length)),
+                method = "lm", color = "slateblue4")
+  ggtitle(i) +
+    scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
+    scale_y_log10(name = expression(log[10]~Total~Length~(mm))) + 
+    ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
+}
 
 
 
