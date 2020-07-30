@@ -293,7 +293,6 @@ correct.units <- function(data, column.unit, column.infer, values, unit){
   for(i in 1:nrow(data)){
     if(isTRUE(data[,column.unit][i] %in% values)){
       data[,column.unit][i] <- unit 
-      data[,column.infer][i] <- "TRUE"
     }
     else {
       next
@@ -303,15 +302,15 @@ correct.units <- function(data, column.unit, column.infer, values, unit){
 }
 
 #apply function for mass, total.length, tail.length, ear.length, forearm.length
-grams = c("GRAMS", "GR"," grams", "G", "gm"," gms")
-millimeters = c("mm_shorthand", "MM", "Millimeters")
+grams = c("GRAMS", "GR", "grams", "G", "gm", "gms", "gr", "Grams", "GMS", "['Grams', 'gm']")
+millimeters = c("mm_shorthand", "MM", "Millimeters", "['MM', 'mm']")
 
 data.mass <- correct.units(data = data.binom, column.unit = "mass.units", column.infer = "mass.units.inferred", values = grams, unit = "g")
 data.total.length <- correct.units(data = data.mass, column.unit = "total.length.units", column.infer = "total.length.units.inferred", values = millimeters, unit = "mm")
 data.tail.length <- correct.units(data = data.total.length, column.unit = "tail.length.units", column.infer = "tail.length.units.inferred", values = millimeters, unit = "mm")
 data.ear.length <- correct.units(data = data.tail.length, column.unit = "ear.length.units", column.infer = "ear.length.units.inferred", values = millimeters, unit = "mm")
-
 data.forearm.length <- correct.units(data = data.ear.length, column.unit = "forearm.length.units", column.infer = "forearm.length.units.inferred", values = millimeters, unit = "mm")
+data.hindfoot.length <- correct.units(data = data.forearm.length, column.unit = "hindfoot.length.units", column.infer = "hindfoot.length.units.inferred", values = millimeters, unit = "mm")
 
 ################################################################################
 
@@ -332,29 +331,29 @@ data.noJuv.noInfer_stats <- data[data$lifeStage != "Juvenile",] %>%
   dplyr::summarise(sample.size = n(),
                    avg.mass = mean(mass[mass.units.inferred != "TRUE" | mass.units.inferred != "True" & mass.units == "g"], na.rm = TRUE),
                    sigma.mass = sd(mass[mass.units.inferred != "TRUE" | mass.units.inferred != "True" & mass.units == "g"], na.rm = TRUE),
-                   mass.upper.limit = avg.mass + (2.5*sigma.mass),
-                   mass.lower.limit = avg.mass - (2.5*sigma.mass),
+                   mass.upper.limit = avg.mass + (3*sigma.mass),
+                   mass.lower.limit = avg.mass - (3*sigma.mass),
                    length.sigma = sd(total.length, na.rm = TRUE),
                    avg.length = mean(total.length[total.length.units.inferred != "TRUE" | total.length.units.inferred != "True" & total.length.units == "mm"], na.rm = TRUE),
                    sigma.length = sd(total.length[total.length.units.inferred != "TRUE" | total.length.units.inferred != "True" & total.length.units == "mm"], na.rm = TRUE),
-                   total.length.upper.limit = avg.length + (2.5*sigma.length),
-                   total.length.lower.limit = avg.length - (2.5*sigma.length),
+                   total.length.upper.limit = avg.length + (3*sigma.length),
+                   total.length.lower.limit = avg.length - (3*sigma.length),
                    avg.hindfoot.length = mean(hindfoot.length[hindfoot.length.units.inferred != "TRUE" | hindfoot.length.units.inferred != "True" & hindfoot.length.units == "mm"], na.rm = TRUE),
                    sigma.hindfoot.length = sd(hindfoot.length[hindfoot.length.units.inferred != "TRUE" | hindfoot.length.units.inferred != "True" & hindfoot.length.units == "mm"], na.rm = TRUE),
-                   hindfoot.length.upper.limit = avg.hindfoot.length + (2.5*sigma.hindfoot.length),
-                   hindfoot.length.lower.limit = avg.hindfoot.length - (2.5*sigma.hindfoot.length),
+                   hindfoot.length.upper.limit = avg.hindfoot.length + (3*sigma.hindfoot.length),
+                   hindfoot.length.lower.limit = avg.hindfoot.length - (3*sigma.hindfoot.length),
                    avg.forearm.length = mean(forearm.length[forearm.length.units.inferred != "TRUE" | forearm.length.units.inferred != "True" & forearm.length.units == "mm"], na.rm = TRUE), 
                    sigma.forearm.length = sd(forearm.length[forearm.length.units.inferred != "TRUE" | forearm.length.units.inferred != "True" & forearm.length.units == "mm"], na.rm = TRUE),
-                   forearm.length.upper.limit = avg.forearm.length + (2.5*sigma.forearm.length),
-                   forearm.length.lower.limit = avg.forearm.length - (2.5*sigma.forearm.length),
+                   forearm.length.upper.limit = avg.forearm.length + (3*sigma.forearm.length),
+                   forearm.length.lower.limit = avg.forearm.length - (3*sigma.forearm.length),
                    avg.ear.length = mean(ear.length[ear.length.units.inferred != "TRUE" | ear.length.units.inferred != "True" & ear.length.units == "mm"], na.rm = TRUE),
                    sigma.ear.length = sd(ear.length[ear.length.units.inferred != "TRUE" | ear.length.units.inferred != "True" & ear.length.units == "mm"], na.rm = TRUE),
-                   ear.length.upper.limit = avg.ear.length + (2.5*sigma.ear.length),
-                   ear.length.lower.limit = avg.ear.length - (2.5*sigma.ear.length),
+                   ear.length.upper.limit = avg.ear.length + (3*sigma.ear.length),
+                   ear.length.lower.limit = avg.ear.length - (3*sigma.ear.length),
                    avg.tail.length = mean(tail.length[tail.length.units.inferred != "TRUE" | tail.length.units.inferred != "True" & tail.length.units == "mm"], na.rm = TRUE),
                    sigma.tail.length = sd(tail.length[tail.length.units.inferred != "TRUE" | tail.length.units.inferred != "True" & tail.length.units == "mm"], na.rm = TRUE),
-                   tail.length.upper.limit = avg.tail.length + (2.5*sigma.tail.length),
-                   tail.length.lower.limit = avg.tail.length - (2.5*sigma.tail.length)) %>%
+                   tail.length.upper.limit = avg.tail.length + (3*sigma.tail.length),
+                   tail.length.lower.limit = avg.tail.length - (3*sigma.tail.length)) %>%
   as.data.frame()
 
 #select out species that have at least 10 samples
@@ -387,34 +386,49 @@ for(i in 1:nrow(data.noJuv.noInfer_stats)){
   data.check <- rbind(data.check, sub.data)
 }
 
+data.check$mass.status <- rep("", length(data.check$scientificName))
+data.check$total.length.status <- rep("", length(data.check$scientificName))
+data.check$tail.length.status <- rep("", length(data.check$scientificName))
+data.check$hindfoot.length.status <- rep("", length(data.check$scientificName))
+data.check$forearm.length.status <- rep("", length(data.check$scientificName))
+data.check$ear.length.status <- rep("", length(data.check$scientificName))
+
 #label samples that are outside of 3.5 sigma with outlier, and label those within 3.5 sigma as "g" and inferred = TRUE
-check.g <- function(data, column.value, column.units, column.infer, upper, lower){
+check.g <- function(data, column.value, column.units, column.infer, column.status, upper, lower){
   for(i in 1:nrow(data)){
-    if(isTRUE(data[,column.value][column.units != "g"][i] > data[,lower][i] && data[,column.value][column.units != "g"][i] < data[,upper][i])){
-      data[,column.infer][i] <- "TRUE"
-      data[,column.units][i] <- "g"
+    if(isTRUE(data$column.value[i] >= data$lower[i] && data$column.value[i] <= data$upper[i])){
+      data$column.infer[data$column.units != "g"][i] <- "TRUE"
+      data$column.units[data$column.unts != "g"][i] <- "g"
+      data$column.status[i] <- "GOOD"
+    }
+    else if(isTRUE(data[,column.value][column.units == "g"][i] >= data[,lower][i] && data[,column.value][column.units == "g"][i] <= data[,upper][i])){
+      data[,column.status][i] <- "GOOD"
     }
     else{
-      next
+      data[,column.status][i] <- "outlier"
     }
   }
   return(data)
 }
 
-check.mm <- function(data, column.value, column.units, column.infer, upper, lower){
+check.mm <- function(data, column.value, column.units, column.infer, column.status, upper, lower){
   for(i in 1:nrow(data)){
-    if(isTRUE(data[,column.value][column.units != "mm"][i] > data[,lower][i] && data[,column.value][column.units != "mm"][i] < data[,upper][i])){
+    if(isTRUE(data[,column.value][column.units != "mm"][i] >= data[,lower][i] && data[,column.value][column.units != "mm"][i] <= data[,upper][i])){
       data[,column.infer][i] <- "TRUE"
       data[,column.units][i] <- "mm"
+      data[,column.status][i] <- "GOOD"
+    }
+    else if(isTRUE(data[,column.value][column.units == "mm"][i] >= data[,lower][i] && data[,column.value][column.units == "mm"][i] <= data[,upper][i])){
+     data[,column.status][i] <- "GOOD" 
     }
     else{
-      next
+      data[,column.status][i] <- "outlier"
     }
   }
   return(data)
 }
 
-data.mass.check <- check.g(data = data.check, column.value = "mass", column.units = "mass.units", column.infer = "mass.units.inferred", upper = "mass.upper.limit", lower = "mass.lower.limit")
+data.mass.check <- check.g(data = data.check, column.value = "mass", column.units = "mass.units", column.infer = "mass.units.inferred", column.status = "mass.status",upper = "mass.upper.limit", lower = "mass.lower.limit")
 data.total.length.check <- check.mm(data = data.mass.check, column.value = "total.length", column.units = "total.length.units", column.infer = "total.length.units.inferred", upper = "total.length.upper.limit", lower = "total.length.lower.limit")
 data.hindfoot.length.check <- check.mm(data = data.total.length.check, column.value = "hindfoot.length", column.units = "hindfoot.length.units", column.infer = "hindfoot.length.units.inferred", upper = "hindfoot.length.upper.limit", lower = "hindfoot.length.lower.limit")
 data.ear.length.check <- check.mm(data = data.hindfoot.length.check, column.value = "ear.length", column.units = "ear.length.units", column.infer = "ear.length.units.inferred", upper = "ear.length.upper.limit", lower = "ear.length.lower.limit")
@@ -555,12 +569,6 @@ for(i in 1:nrow(data.noJuv_stats)){
 
 #ask if is true that mass and length fall in-between upper and lower limit
 data.outlier <- data.recheck
-data.outlier$mass.status <- rep("", length(data.outlier$scientificName))
-data.outlier$total.length.status <- rep("", length(data.outlier$scientificName))
-data.outlier$tail.length.status <- rep("", length(data.outlier$scientificName))
-data.outlier$hindfoot.length.status <- rep("", length(data.outlier$scientificName))
-data.outlier$forearm.length.status <- rep("", length(data.outlier$scientificName))
-data.outlier$ear.length.status <- rep("", length(data.outlier$scientificName))
 
 for(i in 1:length(data.outlier$scientificName)){
   if(isTRUE(data.outlier$mass[i] < data.outlier$mass.lower.limit[i])){
