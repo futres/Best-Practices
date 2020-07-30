@@ -109,6 +109,30 @@ for (i in uniq_species) {
   ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
 }
 
+
+data.adult.trim.cleaner.10$units.inferred <- rep("", nrow(data.adult.trim.cleaner.10))
+for(i in 1:nrow(data.adult.trim.cleaner.10)){
+  if(isTRUE(data.adult.trim.cleaner.10$total.length.units.inferred[i] ==" TRUE" | data.adult.trim.cleaner.10$total.length.units.inferred[i] == "True" & data.adult.trim.cleaner.10$mass.units.inferred[i] == "TRUE" | data.adult.trim.cleaner.10$mass.units.inferred[i] == "True")){
+    data.adult.trim.cleaner.10$units.inferred[i] <- "both"
+  }
+  else if(isTRUE(data.adult.trim.cleaner.10$total.length.units.inferred[i] ==" TRUE" | data.adult.trim.cleaner.10$total.length.units.inferred[i] == "True")){
+    data.adult.trim.cleaner.10$units.inferred[i] <- "length"
+  }
+  else if(isTRUE(data.adult.trim.cleaner.10$mass.units.inferred[i] == "TRUE" | data.adult.trim.cleaner.10$mass.units.inferred[i] == "True")){
+    data.adult.trim.cleaner.10$units.inferred[i] <- "mass"
+  }
+  else{
+    data.adult.trim.cleaner.10$units.inferred[i] <- "none"
+  }
+}
+
+ggplot(data = subset(data.adult.trim.cleaner.10, scientificName  == "Artibeus jamaicensis")) + 
+    geom_point(aes(x = log10(mass), y = log10(total.length), color = units.inferred)) +
+    geom_smooth(aes(x = log10(mass), y = log10(total.length)),
+                method = "lm", color = "slateblue4")+
+    scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
+    scale_y_log10(name = expression(log[10]~Total~Length~(mm)))
+
 #WEIRD ONES: 
 #Akodon mimus
 #Aplodontia rufa
