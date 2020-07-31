@@ -262,6 +262,7 @@ length(unique(data.binom$scientificName)) #1630
 #will deal with later
 
 #write.csv(data.binom, "dirty.data.csv")
+#data <- read.csv("https://de.cyverse.org/dl/d/73ED75F0-30D2-43FB-8B9E-1F7BC2DFA3F8/dirty.data.csv")
 
 ##functions to standardize unit type----
 
@@ -296,6 +297,9 @@ data[,cols] <- sapply(data[,cols], as.numeric)
 
 #add rownames for indexing
 rownames(data) <- seq(1, nrow(data),1)
+
+#write.csv(data, "less.dirty.data.csv")
+#data <- read.csv("")
 
 #make sure every sp. has 10 samples
 data_stats <- data %>%
