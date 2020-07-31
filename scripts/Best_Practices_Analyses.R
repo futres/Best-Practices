@@ -16,8 +16,8 @@ pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C
 data <- read.csv("https://de.cyverse.org/dl/d/D0FE0589-D2A9-4826-9A33-8ECE00B88965/clean.futres.data.csv", header = TRUE, stringsAsFactors = FALSE)
 
 #Q1 compare to pantheria 
-sp.data <- unique(data$scientificName) #565 spp
-pan <- pan[pan$MSW05_Binomial %in% sp.data,] #502 spp
+sp.data <- unique(data$scientificName) #605 spp
+pan <- pan[pan$MSW05_Binomial %in% sp.data,] #538 spp
 pan.sub <- subset(pan, select = c("MSW05_Order", "MSW05_Family", "MSW05_Genus", "MSW05_Binomial", "X5.1_AdultBodyMass_g"))
 pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #474 sp
 
@@ -25,7 +25,8 @@ pan.data.adult <- merge(pan.sub.clean, data, by.x = "MSW05_Binomial", by.y = "sc
 
 #write.csv(pan.data.adult, "data.taxonomy.csv")
 
-pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass),] #16 sp
+pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass) & pan.data.adult$mass.status != "outlier",] #489 sp
+length(unique(pan.data.adult.clean$MSW05_Binomial)) #344
 
 pan.data.adult_stats <- pan.data.adult.clean %>%
   group_by(MSW05_Binomial) %>%
@@ -37,13 +38,12 @@ pan.data.adult_stats <- pan.data.adult.clean %>%
                    pan.mass = X5.1_AdultBodyMass_g[1],
                    mass.diff = abs((pan.mass - avg.mass) / sd.err.mass))
 pan.data.adult_stats.10 <- pan.data.adult_stats %>%
-  filter(sample.size >= 10) #8 spp
+  filter(sample.size >= 10) #298 spp
 #write.csv(pan.data.adult_stats.10, "pan.results.csv")
 
-length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff <= 2]) #136
-length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff > 2]) #273
-
-#136 out of 409 are different; 33.3%
+length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff <= 2]) #67
+length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff > 2]) #231
+#22.5% are ok; 77.5% are not
 
 # FIGURE: body mass distributions w/ line from PanTHERIA
 
@@ -63,7 +63,7 @@ for (i in uniq_species) {
 ################################
 #Q2: length v. mass
 data.adult.trim.clean <- data[!is.na(data$mass),]
-data.adult.trim.cleaner <- data.adult.trim.clean[!is.na(data.adult.trim.clean$total.length),]
+data.adult.trim.cleaner <- data.adult.trim.clean[!is.na(data.adult.trim.clean$total.length) & data.adult.trim.clean$total.length.status != "outlier",]
 #13 spp
 
 #recount sample sizes
