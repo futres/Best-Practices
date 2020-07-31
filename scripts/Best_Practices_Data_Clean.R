@@ -299,7 +299,7 @@ data[,cols] <- sapply(data[,cols], as.numeric)
 rownames(data) <- seq(1, nrow(data),1)
 
 #write.csv(data, "less.dirty.data.csv")
-#data <- read.csv("")
+#data <- read.csv("https://de.cyverse.org/dl/d/293487CC-5E12-4BB3-9EC0-80AA8C2B0562/less.dirty.data.csv")
 
 #make sure every sp. has 10 samples
 data_stats <- data %>%
