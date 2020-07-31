@@ -2,9 +2,7 @@
 # Meghan A. Balk
 # balkm@email.arizona.edu
 
-################################################################################
-
-## Load packages
+##Load packages----
 require(tidyverse)
 require(nlme)
 require(dplyr)
@@ -12,10 +10,9 @@ require(ggplot2)
 require(reshape2)
 require(plyr)
 require(stringr)
+require(OutlierDetection)
 
-################################################################################
-
-## Load data
+##Load data----
 
 #kitty_deer <- read.csv("EAP Florida Modern Deer Measurements_FORFUTRES_1_23_2020.csv", header = TRUE, stringsAsFactors = FALSE)
 #blois_ground.squirrel <- read.csv("J.Biogeo.2008.AllData.Final.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -34,7 +31,7 @@ bat_mass <- read.csv("https://de.cyverse.org/dl/d/2A542CDF-BDED-4486-AB15-445B53
 #706 spp; 18530 rows; 10350 occurrenceids
 
 #get rid of dups
-bat_mass.clean <- bat_mass[!(duplicated(bat_mass)),]
+bat_mass.clean <- bat_mass[!(duplicated(bat_mass$occurrenceid)),]
 #706 spp; 10350 rows; 10350 occurrenceids
 #8000 diff
 
@@ -42,7 +39,7 @@ bat_length <- read.csv("https://de.cyverse.org/dl/d/896A54B4-1E52-4976-95AB-7144
 #696 spp; 16313 rows; 9460 occurrence ids
 
 #get rid of dups
-bat_length.clean <- bat_length[!(duplicated(bat_length)),]
+bat_length.clean <- bat_length[!(duplicated(bat_length$occurrenceid)),]
 #696 spp; 9460 rows; 9460 occurrence ids
 #6853 diff
 
@@ -51,7 +48,7 @@ mamm_mass <- read.csv("https://de.cyverse.org/dl/d/EF537422-2246-4B25-A9BC-D8259
 #2439 spp; 225237 rows; 89588 occurrenceids
 
 #get rid of dups
-mamm_mass.clean <- mamm_mass[!(duplicated(mamm_mass)),]
+mamm_mass.clean <- mamm_mass[!(duplicated(mamm_mass$occurrenceid)),]
 #2439 spp; 89588 rows; 89588 occurrenceids
 #135649 diff
 
@@ -59,7 +56,7 @@ mamm_length <- read.csv("https://de.cyverse.org/dl/d/DA7E36EF-0008-4DED-A49C-C7D
 #2728 spp; 245647 rows; 97225 occurrenceids
 
 #get rid of dups
-mamm_length.clean <- mamm_length[!(duplicated(mamm_length)),]
+mamm_length.clean <- mamm_length[!(duplicated(mamm_length$occurrenceid)),]
 #2728 spp; 97225 rows; 97225 occurrenceids
 #148422 diff
 
@@ -70,8 +67,7 @@ mamm_length.clean <- mamm_length[!(duplicated(mamm_length)),]
 #bernor_equid$binomial <- paste(bernor_equid$GENUS, bernor_equid$SPECIES)
 #deal with this once mapped
 
-################################################################################
-## VERTNET CLEANING
+##VERTNET CLEANING----
 
 ## combine mass & length
 #bat data
@@ -89,28 +85,10 @@ mamm <- full_join(mamm_mass.sub, mamm_length.sub, by = c("occurrenceid", "scient
 length(unique(mamm$scientificname)) #2766; added 38 spp
 #795495 rows; 101440 occ ids; added 11852 occ. ids
 
-#are column names in the same order?
-x <- colnames(mamm)
-y <- colnames(bats)
-cols <- as.data.frame(cbind(x,y))
-cols$same <- cols$x == cols$y
-#all TRUE!
-
 ##combine
 vertnet <- rbind(bats, mamm) #sum = bats rows + mamm rows
 
-################################################################################
-
-## need to get rid of subspecies
-vertnet$scientificName <- word(vertnet$scientificname, 1,2, sep = " ") 
-length(unique(vertnet$scientificName)) #1738
-# in mamm: 2766 spp; and now 1738 because got rid of trinomials
-#some weird spp. names: e.g.,: (new SW
-#will deal with later
-
-################################################################################
-
-##FUTRES CLEANING
+##FUTRES CLEANING----
 
 ##group lifeStages
 futres$lifeStage[futres$lifeStage == "young adult" | futres$lifeStage == "Adult" | futres$lifeStage == "Prime Adult" | futres$lifeStage == "adult"] <- "Adult"
@@ -120,12 +98,11 @@ futres$lifeStage[futres$lifeStage == "Juvenile" | futres$lifeStage == "juvenile"
 futres$Total.Fresh.Weight..g. <- as.numeric(futres$Total.Fresh.Weight..g.)
 futres$Skin.weight..g. <- as.numeric(futres$Skin.weight..g.)
 futres$Weight.field.dressed <- as.numeric(futres$Weight.field.dressed)
-futres$Total.Fresh.Weight..g.[futres$scientificName == "Aepyceros melampus"] <- futres$Total.Fresh.Weight..g.[futres$scientificName == "Aepyceros melampus"] / .0022 
 futres$Total.Fresh.Weight..g.[futres$scientificName == "Puma concolor"] <- futres$Total.Fresh.Weight..g.[futres$scientificName == "Puma concolor"] / .0022
 futres$Skin.weight..g.[futres$scientificName == "Puma concolor"] <- futres$Skin.weight..g.[futres$scientificName == "Puma concolor"] / .0022
 futres$Weight.field.dressed[futres$scientificName == "Puma concolor"] <- futres$Weight.field.dressed[futres$scientificName == "Puma concolor"] / .0022
 
-################################################################################
+##Combine Data----
 
 ##select out columns
 order <- c("occurrenceID", "scientificName", "lifeStage", "sex",
@@ -208,10 +185,9 @@ futres.sub$forearm.length.units.inferred <- NA
 futres.sub$tooth.row.units[!is.na(futres.sub$tooth.row)] <- "mm"
 futres.sub$tooth.row.units.inferred[!is.na(futres.sub$tooth.row.units)] <- "FALSE"
 
-
 ##vertnet
 vertnet.sub <- vertnet %>%
-  select(scientificName, 
+  select(scientificName = scientificname, 
          occurrenceID = occurrenceid,
          lifeStage = lifestage_cor, 
          sex,
@@ -273,21 +249,21 @@ vertnet.sub$humerus.length.units.inferred <- NA
 futres.sub <- futres.sub[,order]
 vertnet.sub <- vertnet.sub[,order]
 
-################################################################################
-
 ##comnbine datasets
 data <- rbind(vertnet.sub, futres.sub)
-length(unique(data$scientificName)) #1739 spp
+length(unique(data$scientificName)) #3491 spp
 
-################################################################################
-
-## get rid of trinomials & "sp."
+##create binomials----
+data$scientificName <- word(data$scientificName, 1,2, sep = " ") 
 data.binom<- data[!grepl('sp.',data$scientificName),]
-length(unique(data.binom$scientificName)) #1631 sp
+length(unique(data.binom$scientificName)) #1630
+# in mamm: 2766 spp; and now 1738 because got rid of trinomials
+#some weird spp. names: e.g.,: (new SW
+#will deal with later
 
-################################################################################
+#write.csv(data.binom, "dirty.data.csv")
 
-##functions to standardize unit type
+##functions to standardize unit type----
 
 correct.units <- function(data, column.unit, column.infer, values, unit){
   for(i in 1:nrow(data)){
@@ -312,25 +288,98 @@ data.ear.length <- correct.units(data = data.tail.length, column.unit = "ear.len
 data.forearm.length <- correct.units(data = data.ear.length, column.unit = "forearm.length.units", column.infer = "forearm.length.units.inferred", values = millimeters, unit = "mm")
 data.hindfoot.length <- correct.units(data = data.forearm.length, column.unit = "hindfoot.length.units", column.infer = "hindfoot.length.units.inferred", values = millimeters, unit = "mm")
 
-################################################################################
-
+##more data cleaning----
 #make measurementValue numeric
 data <- data.forearm.length
 cols <- c("mass", "skinned", "total.length", "hindfoot.length", "ear.length", "tail.length", "calcaneus.GB", "calcaneus.GL")
 data[,cols] <- sapply(data[,cols], as.numeric)
 
-################################################################################
+#add rownames for indexing
+rownames(data) <- seq(1, nrow(data),1)
 
+#make sure every sp. has 10 samples
+data_stats <- data %>%
+  group_by(scientificName) %>%
+  dplyr::summarise(sample.size = n())
+
+keep <- data_stats$scientificName[data_stats$sample.size >= 10] #609 sp
+data.10 <- data[data$scientificName %in% keep,] #609 spp
+
+##Label OUTLIERS----
+
+#create status columns
+data.10$mass.status <- rep("", nrow(data.10))
+data.10$total.length.status <- rep("", nrow(data.10))
+data.10$tail.length.status <- rep("", nrow(data.10))
+data.10$hindfoot.length.status <- rep("", nrow(data.10))
+data.10$forearm.length.status <- rep("", nrow(data.10))
+data.10$ear.length.status <- rep("", nrow(data.10))
+
+#subset of data
+pema <- subset(data, data$scientificName == "Peromyscus maniculatus")
+bat_jam <- data[data$scientificName == "Artibeus jamaicensis",]
+
+#need to select out trait
+#remove NAs from trait
+#apply maha() function
+#select out indices
+#label those rows as outliers
+
+outlier.function <- function(data, threshold, column, vector, trait, units, unit, unit.infer, values, status){
+  #data = dataframe of trait values
+  #threshold = cutoff criteria in maha()
+  #column = how the data should be subsetted (e.g., species, locality); not in quotes
+  #vector = a vector of the unique values in the column (e.g., unique(column))
+  #trait = trait of interest (e.g., mass, total body length); in quotes
+  #unit = unit type to restric it to
+  #unit.infer = column for if values were inferred
+  #value = True or False
+  #status = outlier status column for the trait
+  for(i in 1:length(vector)){
+    sub <- subset(data, subset = data$column == vector[i] & data$units == unit & data$unit.infer %in% values, select = trait) %>%
+      drop_na()
+    outlier <- maha(sub, cutoff = threshold, rnames = FALSE)
+    index <- names(outlier[[2]])
+    if(isTRUE(length(index) != 0)){
+        data[index,status] <- "outlier"
+    }
+    else{
+      next
+    }
+  }
+  return(data)
+}
+
+sp <- unique(data$scientificName)
+sp <- "Peromyscus maniculatus"
+sp <- "Artibeus jamaicensis"
+values <- c("False", "FALSE")
+df.test <- outlier.function(data = data.10, threshold = 0.95, column = scientificName, vector = sp, 
+                            trait = "mass", units = mass.units, unit = "g", unit.infer = mass.units.inferred, values = values, status = "mass.status")
+
+# Function for upper and lower limits ----
 ##create function to find upper and lower limit for each measurementType based on non-juveniles, non-inferred units, and correct units ("g" or "mm")
-##add stats to data
-##label outliers
 
 ##mean, standard deviation, and upper and lower limit
+#argument that calls a trait
+noJuv <- data[data.10$lifeStage != "Juvenile",]
+limits.specific <- function(data, column, trait, units.infer, values, status, unit, amt){
+  data %>%
+    group_by(column) %>%
+    dplyr::summarise(sample.size = n(),
+      avg = mean(trait[units.infer %in% values & status != "outlier" & units == unit], na.rm = TRUE),
+      sigma = sd(trait[units.infer %in% values & status != "outlier" & units == unit], na.rm = TRUE),
+      upper.limit = avg + amt*sigma,
+      lower.limit = avg - amt*sigma) %>%
+    as.data.frame()
+}
+
+
 data.noJuv.noInfer_stats <- data[data$lifeStage != "Juvenile",] %>%
   group_by(scientificName) %>%
-  dplyr::summarise(sample.size = n(),
-                   avg.mass = mean(mass[mass.units.inferred != "TRUE" | mass.units.inferred != "True" & mass.units == "g"], na.rm = TRUE),
-                   sigma.mass = sd(mass[mass.units.inferred != "TRUE" | mass.units.inferred != "True" & mass.units == "g"], na.rm = TRUE),
+  dplyr::summarise(sample.size = n(), #lapply #double check the sigma for a test case
+                   avg.mass = mean(mass[mass.units.inferred != "TRUE" | mass.units.inferred != "True" & mass.status != "outlier" & mass.units == "g"], na.rm = TRUE),
+                   sigma.mass = sd(mass[mass.units.inferred != "TRUE" | mass.units.inferred != "True" & mass.status != "outlier" & mass.units == "g"], na.rm = TRUE),
                    mass.upper.limit = avg.mass + (3*sigma.mass),
                    mass.lower.limit = avg.mass - (3*sigma.mass),
                    length.sigma = sd(total.length, na.rm = TRUE),
@@ -356,16 +405,9 @@ data.noJuv.noInfer_stats <- data[data$lifeStage != "Juvenile",] %>%
                    tail.length.lower.limit = avg.tail.length - (3*sigma.tail.length)) %>%
   as.data.frame()
 
-#select out species that have at least 10 samples
-data.noJuv.noInfer_stats <- data.noJuv.noInfer_stats[data.noJuv.noInfer_stats$sample.size >= 10,]
-#decreased from 1522 to 565 spp
+#write.csv
 
-#reduce main dataset to only the species that have 10 samples
-keep.data <- data.noJuv.noInfer_stats$scientificName[data.noJuv.noInfer_stats$sample.size >= 10] #566
-data.10 <- data[data$scientificName %in% keep.data,]
-data.10 <- data.10[!(is.na(data.10$scientificName)),]
-length(unique(data.10$scientificName)) #565
-
+##
 #add stats to dataframe
 data.check <- data.frame()
 for(i in 1:nrow(data.noJuv.noInfer_stats)){
@@ -386,13 +428,7 @@ for(i in 1:nrow(data.noJuv.noInfer_stats)){
   data.check <- rbind(data.check, sub.data)
 }
 
-data.check$mass.status <- rep("", length(data.check$scientificName))
-data.check$total.length.status <- rep("", length(data.check$scientificName))
-data.check$tail.length.status <- rep("", length(data.check$scientificName))
-data.check$hindfoot.length.status <- rep("", length(data.check$scientificName))
-data.check$forearm.length.status <- rep("", length(data.check$scientificName))
-data.check$ear.length.status <- rep("", length(data.check$scientificName))
-
+##label outliers
 #label samples that are outside of 3.5 sigma with outlier, and label those within 3.5 sigma as "g" and inferred = TRUE
 check.g <- function(data, column.value, column.units, column.infer, column.status, upper, lower){
   for(i in 1:nrow(data)){
@@ -401,11 +437,8 @@ check.g <- function(data, column.value, column.units, column.infer, column.statu
       data$column.units[data$column.unts != "g"][i] <- "g"
       data$column.status[i] <- "GOOD"
     }
-    else if(isTRUE(data[,column.value][column.units == "g"][i] >= data[,lower][i] && data[,column.value][column.units == "g"][i] <= data[,upper][i])){
-      data[,column.status][i] <- "GOOD"
-    }
     else{
-      data[,column.status][i] <- "outlier"
+      data$column.status[i] <- "outlier"
     }
   }
   return(data)
@@ -428,15 +461,15 @@ check.mm <- function(data, column.value, column.units, column.infer, column.stat
   return(data)
 }
 
-data.mass.check <- check.g(data = data.check, column.value = "mass", column.units = "mass.units", column.infer = "mass.units.inferred", column.status = "mass.status",upper = "mass.upper.limit", lower = "mass.lower.limit")
+data.mass.check <- check.g(data = data.check, column.value = mass, column.units = mass.units, column.infer = mass.units.inferred, column.status = mass.status,upper = mass.upper.limit, lower = mass.lower.limit)
 data.total.length.check <- check.mm(data = data.mass.check, column.value = "total.length", column.units = "total.length.units", column.infer = "total.length.units.inferred", upper = "total.length.upper.limit", lower = "total.length.lower.limit")
 data.hindfoot.length.check <- check.mm(data = data.total.length.check, column.value = "hindfoot.length", column.units = "hindfoot.length.units", column.infer = "hindfoot.length.units.inferred", upper = "hindfoot.length.upper.limit", lower = "hindfoot.length.lower.limit")
 data.ear.length.check <- check.mm(data = data.hindfoot.length.check, column.value = "ear.length", column.units = "ear.length.units", column.infer = "ear.length.units.inferred", upper = "ear.length.upper.limit", lower = "ear.length.lower.limit")
 data.tail.length.check <- check.mm(data = data.ear.length.check, column.value = "tail.length", column.units = "tail.length.units", column.infer = "tail.length.units.inferred", upper = "tail.length.upper.limit", lower = "tail.length.lower.limit")
 data.forearm.length.check <- check.mm(data = data.tail.length.check, column.value = "forearm.length", column.units = "forearm.length.units", column.infer = "forearm.length.units.inferred", upper = "forearm.length.upper.limit", lower = "forearm.length.lower.limit")
 
-################################################################################
-##convert units that are wrong (i.e., not "g" or "mm") to proper units
+##unit conversion----
+#convert units that are wrong (i.e., not "g" or "mm") to proper units
 
 #convert units to "g" or "mm"
 convert.g <- function(data, column.value, column.units, column.infer){
@@ -475,7 +508,7 @@ convert.mm <- function(data, column.value, column.units, column.infer){
       data[,column.units][i] <- "mm"
       data[,column.infer][i] <- "CONVERTED"
     }
-    else if(isTRUE(data[,column.units][i] == "in" | data[,column.units][i] == "inches")){
+    else if(isTRUE(data[,column.units][i] == "in" | data[,column.units][i] == "inches" | data[,column.units][i] == "\"" | data[,column.units][i] == "[\"'\", 'in']")){
       data[,column.value][i] <- data[,column.value][i] / 0.03937008
       data[,column.units][i] <- "mm"
       data[,column.infer][i] <- "CONVERTED"
@@ -501,18 +534,29 @@ data.convert.ear <- convert.mm(data = data.convert.hindfoot, column.value = "ear
 data.convert.tail <- convert.mm(data = data.convert.ear, column.value = "tail.length", column.units = "tail.length.units", column.infer = "tail.length.units.inferred")
 data.convert.forearm <- convert.mm(data = data.convert.tail, column.value = "forearm.length", column.units = "forearm.length.units", column.infer = "forearm.length.units.inferred")
 
-################################################################################
+##recalculate upper and lower limits----
 
 data.convert <- data.convert.forearm
 
 ##create new sigma, this time only without juveniles, but allow for inferred units
+limits.wild <- function(data, column,trait, amt){
+  data_stats <- data %>%
+    group_by(column) %>%
+    dplyr::summarise(sample.size = n(),
+                     avg = mean(trait, na.rm = TRUE),
+                     sigma = sd(trait, na.rm = TRUE),
+                     upper.limit = avg + amt*sigma,
+                     lower.limit = avg - amt*sigma) %>%
+    as.data.frame()
+}
+
 data.noJuv_stats <- data.convert[data.convert$lifeStage != "Juvenile",] %>%
   group_by(scientificName) %>%
   dplyr::summarise(sample.size = n(),
                    avg.mass = mean(mass, na.rm = TRUE),
                    sigma.mass = sd(mass, na.rm = TRUE),
-                   mass.upper.limit = avg.mass + (2.5*sigma.mass),
-                   mass.lower.limit = avg.mass - (2.5*sigma.mass),
+                   mass.upper.limit = avg.mass + (amt*sigma.mass),
+                   mass.lower.limit = avg.mass - (3*sigma.mass),
                    length.sigma = sd(total.length, na.rm = TRUE),
                    avg.length = mean(total.length, na.rm = TRUE),
                    sigma.length = sd(total.length, na.rm = TRUE),
@@ -535,15 +579,6 @@ data.noJuv_stats <- data.convert[data.convert$lifeStage != "Juvenile",] %>%
                    tail.length.upper.limit = avg.tail.length + (2.5*sigma.tail.length),
                    tail.length.lower.limit = avg.tail.length - (2.5*sigma.tail.length)) %>%
   as.data.frame()
-
-#select out species that have at least 10 samples
-data.noJuv_stats <- data.noJuv_stats[data.noJuv_stats$sample.size >= 10,]
-
-#reduce main dataset to only the species that have 10 samples
-keep <- data.noJuv_stats$scientificName[data.noJuv_stats$sample.size >= 10] #566
-data.keep <- data[data$scientificName %in% keep.data,]
-data.keep <- data.keep[!(is.na(data.keep$scientificName)),]
-length(unique(data.keep$scientificName)) #565
 
 #add stats to dataframe
 data.recheck <- data.frame()
@@ -569,6 +604,20 @@ for(i in 1:nrow(data.noJuv_stats)){
 
 #ask if is true that mass and length fall in-between upper and lower limit
 data.outlier <- data.recheck
+
+outlier.check <- function(data, triat, lower.limit, upper.limit, status){
+  for(i in nrow(data)){
+    if(isTRUE(data$trait[i] < data$lower.limit[i])){
+      data$status[i] <- "outlier"
+    }
+    else if(isTRUE(data$triat[i] > data$upper.limit[i])){
+      data$status[i] <- "outlier"
+    }
+    else{
+      next
+    }
+  }
+}
 
 for(i in 1:length(data.outlier$scientificName)){
   if(isTRUE(data.outlier$mass[i] < data.outlier$mass.lower.limit[i])){
@@ -642,9 +691,7 @@ for(i in 1:length(data.outlier$scientificName)){
   }
 }
 
-################################################################################
-
-##info about outliers
+##info about outliers----
 outlier_stats <- data.outlier %>%
   group_by(scientificName) %>%
   dplyr::summarise(sample.outlier.mass = length(mass[mass.status == "outlier" & mass >= 0]),
@@ -663,10 +710,9 @@ outlier_stats <- data.outlier %>%
 
 #write.csv(outlier_stats, "outliers.csv")
 
-################################################################################
+##remove outliers----
 
-##remove outliers
-
+#can NA values that are outliers for clean dataset
 data.clean <- subset(data.outlier, data.outlier$mass.status != "outlier" | data.outlier$total.length.status != "outlier" | data.outlier$forearm.length.status != "outlier" | data.outlier$hindfoot.length.status != "outlier" | data.outlier$ear.length.status != "outlier" | data.outlier$tail.length.status != "outlier")
 length(unique(data.clean$scientificName))
 #reduce sample size = 10 again
@@ -680,8 +726,8 @@ length(unique(data.clean.10$scientificName)) #565
 
 #write.csv(data.clean.10, "clean.futres.data.csv")
 
-################################################################################
 
+##Case studies----
 ##test out juvenile and adult distributions to narrow down an actual adult distribution
 
 PEMA <- subset(data.clean.10, data.clean.10$scientificName == "Peromyscus maniculatus")
