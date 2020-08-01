@@ -2,7 +2,7 @@
 # Meghan A. Balk
 # balkm@email.arizona.edu
 
-## Load packages
+##Load packages----
 require(tidyverse)
 require(nlme)
 require(dplyr)
@@ -11,11 +11,11 @@ require(reshape2)
 require(plyr)
 require(stringr)
 
-## Upload data
+##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/D0FE0589-D2A9-4826-9A33-8ECE00B88965/clean.futres.data.csv", header = TRUE, stringsAsFactors = FALSE)
+data <- read.csv("https://de.cyverse.org/dl/d/21B3BBBC-8CCE-4A88-90CB-1AE3F21855F2/labeled.clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
 
-#Q1 compare to pantheria 
+##Q1 compare to pantheria----
 sp.data <- unique(data$scientificName) #605 spp
 pan <- pan[pan$MSW05_Binomial %in% sp.data,] #538 spp
 pan.sub <- subset(pan, select = c("MSW05_Order", "MSW05_Family", "MSW05_Genus", "MSW05_Binomial", "X5.1_AdultBodyMass_g"))
@@ -45,7 +45,7 @@ length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff 
 length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff > 2]) #231
 #22.5% are ok; 77.5% are not
 
-# FIGURE: body mass distributions w/ line from PanTHERIA
+##FIGURE: body mass distributions w/ line from PanTHERIA----
 
 pan.data.adult.clean.10 <- pan.data.adult.clean[pan.data.adult.clean$MSW05_Binomial %in% pan.data.adult_stats.10$MSW05_Binomial,]
 
@@ -60,25 +60,30 @@ for (i in uniq_species) {
   ggsave(p, file=paste0("dist_", i,".png"), width = 14, height = 10, units = "cm")
 }
 
-################################
-#Q2: length v. mass
-data.adult.trim.clean <- data[!is.na(data$mass),]
-data.adult.trim.cleaner <- data.adult.trim.clean[!is.na(data.adult.trim.clean$total.length) & data.adult.trim.clean$total.length.status != "outlier",]
-#13 spp
+##Q2: length v. mass----
+#clean data
+data.mass <- data[!is.na(data$mass) & data$mass.status != "outlier",]
+data.mass.length <- data.mass[!is.na(data.mass$total.length) & data.mass$total.length.status != "outlier",]
+data.adult <- data.mass.length[data.mass.length$lifeStage != "Juvenile",]
+length(unique(data.adult$scientificName)) #338 sp
+
+##some measurements are zero, oy vey
+data.adult.clean <- data.adult[data.adult$mass > 0 & data.adult$total.length > 0,]
 
 #recount sample sizes
-data.adult.trim.cleaner_stats <- data.adult.trim.cleaner %>%
+data.adult_stats <- data.adult.clean %>%
   group_by(scientificName) %>%
   dplyr::summarise(counts = n())
 
-keep.adult.trim.clean <- data.adult.trim.cleaner_stats$scientificName[data.adult.trim.cleaner_stats$counts >= 10]
-data.adult.trim.cleaner.10 <- data.adult.trim.cleaner[data.adult.trim.cleaner$scientificName %in% keep.adult.trim.clean,]
-#8 sp
+keep.10 <- data.adult_stats$scientificName[data.adult_stats$counts >= 10] #286 sp
+data.adult.10 <- data.adult.clean[data.adult.clean$scientificName %in% keep.10,]
+length(unique(data.adult.10$scientificName)) #286 sp
 
-sp.models <- unique(data.adult.trim.cleaner.10$scientificName)
+
+sp.models <- unique(data.adult.10$scientificName)
 model.results.species <- data.frame()
 for(i in 1:length(sp.models)){
-  sub.data <- as.data.frame(data.adult.trim.cleaner.10[data.adult.trim.cleaner.10$scientificName == sp.models[i],])
+  sub.data <- as.data.frame(data.adult.10[data.adult.10$scientificName == sp.models[i],])
   model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
   sum.model <- summary(model)
   sub <- data.frame(binomial = sub.data$scientificName[1],
@@ -90,16 +95,16 @@ for(i in 1:length(sp.models)){
                     std.err.intercept = sum.model$coefficients[3],
                     r.squared = sum.model$r.squared,
                     sample.size = length(sub.data$mass))
-  model.results.species <- rbind(sub, model.results.species)
+  model.results.species <- rbind(model.results.species, sub)
 }
 
 #lots of repeats for Neofiber alleni; only 4 unique occurrence ids....why???
 
 #write.csv(model.results.species, "model.results.species.csv")
 
-uniq_species <- unique(data.adult.trim.cleaner.10$scientificName)
+uniq_species <- unique(data.adult.10$scientificName)
 for (i in uniq_species) {
-  p = ggplot(data = subset(data.adult.trim.cleaner.10, scientificName  == i)) + 
+  p = ggplot(data = subset(data.adult.10, scientificName  == i)) + 
     geom_point(aes(x = log10(mass), y = log10(total.length))) +
     geom_smooth(aes(x = log10(mass), y = log10(total.length)),
                 method = "lm", color = "slateblue4")
@@ -110,24 +115,24 @@ for (i in uniq_species) {
 }
 
 
-data.adult.trim.cleaner.10$units.inferred <- rep("", nrow(data.adult.trim.cleaner.10))
-for(i in 1:nrow(data.adult.trim.cleaner.10)){
-  if(isTRUE(data.adult.trim.cleaner.10$total.length.units.inferred[i] ==" TRUE" | data.adult.trim.cleaner.10$total.length.units.inferred[i] == "True" & data.adult.trim.cleaner.10$mass.units.inferred[i] == "TRUE" | data.adult.trim.cleaner.10$mass.units.inferred[i] == "True")){
-    data.adult.trim.cleaner.10$units.inferred[i] <- "both"
+data.adult.10$infer.type <- rep("", nrow(data.adult.10))
+for(i in 1:nrow(data.adult.10)){
+  if(isTRUE(data.adult.10$total.length.units.inferred[i] ==" TRUE" | data.adult.10$total.length.units.inferred[i] == "True" | data.adult.10$total.length.units.inferred[i] == "CONVERTED" & data.adult.10$mass.units.inferred[i] == "TRUE" | data.adult.10$mass.units.inferred[i] == "True" | data.adult.10$mass.units.inferred[i] == "CONVERTED")){
+    data.adult.10$infer.type[i] <- "both"
   }
-  else if(isTRUE(data.adult.trim.cleaner.10$total.length.units.inferred[i] ==" TRUE" | data.adult.trim.cleaner.10$total.length.units.inferred[i] == "True")){
-    data.adult.trim.cleaner.10$units.inferred[i] <- "length"
+  else if(isTRUE(data.adult.10$total.length.units.inferred[i] ==" TRUE" | data.adult.10$total.length.units.inferred[i] == "True" | data.adult.10$total.length.units.inferred[i] == "CONVERTED")){
+    data.adult.10$infer.type[i] <- "length"
   }
-  else if(isTRUE(data.adult.trim.cleaner.10$mass.units.inferred[i] == "TRUE" | data.adult.trim.cleaner.10$mass.units.inferred[i] == "True")){
-    data.adult.trim.cleaner.10$units.inferred[i] <- "mass"
+  else if(isTRUE(data.adult.10$mass.units.inferred[i] == "TRUE" | data.adult.10$mass.units.inferred[i] == "True" | data.adult.10$mass.units.inferred[i] == "CONVERTED")){
+    data.adult.10$infer.type[i] <- "mass"
   }
   else{
-    data.adult.trim.cleaner.10$units.inferred[i] <- "none"
+    data.adult.10$infer.type[i] <- "none"
   }
 }
 
-ggplot(data = subset(data.adult.trim.cleaner.10, scientificName  == "Artibeus jamaicensis")) + 
-    geom_point(aes(x = log10(mass), y = log10(total.length), color = units.inferred)) +
+ggplot(data = subset(data.adult.10, scientificName  == "Artibeus jamaicensis")) + 
+    geom_point(aes(x = log10(mass), y = log10(total.length), color = infer.type)) +
     geom_smooth(aes(x = log10(mass), y = log10(total.length)),
                 method = "lm", color = "slateblue4")+
     scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
