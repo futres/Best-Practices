@@ -356,13 +356,13 @@ data <- read.csv("https://de.cyverse.org/dl/d/21B3BBBC-8CCE-4A88-90CB-1AE3F21855
 data.adult.trim.clean <- data[!is.na(data$mass),]
 data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$hindfoot.length),]
 data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$forearm.length),]
-data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$femur.length),]
+data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$hindfoot.length),]
 
-test <- subset(data.adult.trim.clean, scientificName== "Odocoileus virginianus")
+test <- subset(data.adult.trim.limb, scientificName== "Odocoileus virginianus")
 
-model <- lm(log10(sub.data$mass) ~ log10(sub.data$value), na.action=na.exclude)
+model <- lm(log10(test$mass) ~ log10(test$hindfoot.length), na.action=na.exclude)
 sum.model <- summary(model)
-sub <- data.frame(binomial = sub.data$scientificName[1],
+sub <- data.frame(binomial = test$scientificName[1],
                   intercept = model$coefficients[[1]],
                   slope = model$coefficients[[2]],
                   resid.std.err = sum.model$sigma,
@@ -370,16 +370,16 @@ sub <- data.frame(binomial = sub.data$scientificName[1],
                   std.err.slope =  sum.model$coefficients[4],
                   std.err.intercept = sum.model$coefficients[3],
                   r.squared = sum.model$r.squared,
-                  sample.size = length(sub.data$mass))
+                  sample.size = length(test$mass))
 
-p = ggplot(data = subset(data.adult.trim.cleaner.10, scientificName  == i)) + 
-  geom_point(aes(x = log10(mass), y = log10(total.length))) +
-  geom_smooth(aes(x = log10(mass), y = log10(total.length)),
+p = ggplot(data = test) + 
+  geom_point(aes(x = log10(mass), y = log10(hindfoot.length))) +
+  geom_smooth(aes(x = log10(mass), y = log10(hindfoot.length)),
               method = "lm", color = "slateblue4")
-ggtitle(i) +
+ggtitle("Odocoileus virginianus") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
-  scale_y_log10(name = expression(log[10]~Total~Length~(mm))) + 
-  ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
+  scale_y_log10(name = expression(log[10]~Hindfoot~Length~(mm))) + 
+  ggsave(p, file=paste0("plot_Odocoileus virginianus_hindfoot.png"), width = 14, height = 10, units = "cm")
 
 
 #the below code is for plotting many measurments.
@@ -412,8 +412,8 @@ for(i in 1:length(sp.models.lim)){
 #plotting, I need to still fix this
 for (i in sp.models.lim) {
   p = ggplot(data = subset(test_reshape, Measurement  == i)) + 
-    geom_point(aes(x = log10(mass), y = log10(total.length))) +
-    geom_smooth(aes(x = log10(mass), y = log10(total.length)),
+    geom_point(aes(x = log10(mass), y = log10(value))) +
+    geom_smooth(aes(x = log10(mass), y = log10(value)),
                 method = "lm", color = "slateblue4")
   ggtitle(i) +
     scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
