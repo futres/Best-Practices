@@ -346,19 +346,24 @@ model <- lm(log10(clean.length.mass$total.length) ~ log10(clean.length.mass$mass
 
 
 #code for regressions of limb data vs bodymass
+#Odocoileus virginianus: hind foot, mass, ankle measurement
+#Spermophilus beecheyi: mass, toothrow
 
 library(tidyr)
 
-data <- read.csv("https://de.cyverse.org/dl/d/21B3BBBC-8CCE-4A88-90CB-1AE3F21855F2/labeled.clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
+futres <- read.csv("https://de.cyverse.org/dl/d/42CF8FC4-13FC-4D57-A73B-90668E2AFBCC/futres.csv", header = TRUE, stringsAsFactors = FALSE)
+futres[futres=="--"]<-NA
+futres[futres==""]<-NA
+futres$Total.Fresh.Weight..g. <- as.numeric(futres$Total.Fresh.Weight..g.)  
 
 #model results
 #potentially I could loop through columns in the dataframe. Or I could subset the data and then restructure it to be long instead of wide so I could loop through the measurements?
-data.adult.trim.clean <- data[!is.na(data$mass),]
+data.adult.trim.clean <- futres[!is.na(futres$Total.Fresh.Weight..g.),]
 data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$hindfoot.length),]
 data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$forearm.length),]
 data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$hindfoot.length),]
 
-test <- subset(data.adult.trim.limb, scientificName== "Odocoileus virginianus")
+test <- subset(data.adult.trim.clean, scientificName== "Odocoileus virginianus")
 
 model <- lm(log10(test$mass) ~ log10(test$hindfoot.length), na.action=na.exclude)
 sum.model <- summary(model)
@@ -420,6 +425,7 @@ for (i in sp.models.lim) {
     scale_y_log10(name = expression(log[10]~Total~Length~(mm))) + 
     ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
 }
+
 
 
 
