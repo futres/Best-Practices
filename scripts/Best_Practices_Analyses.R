@@ -13,7 +13,7 @@ require(stringr)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/21B3BBBC-8CCE-4A88-90CB-1AE3F21855F2/labeled.clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
+data <- read.csv("https://de.cyverse.org/dl/d/9A1CB483-4ABF-49F2-9F4C-1201EFA774E6/labeled.clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
 
 ##Q1 compare to pantheria----
 sp.data <- unique(data$scientificName) #605 spp
@@ -323,7 +323,11 @@ plot(model.results$std.err.slope ~ model.results$df) #make nicer
 
 
 #Q4
-
+deer <- subset(pan.data.adult, pan.data.adult$MSW05_Binomial == "Odocoileus virginianus")
+bats <- subset(pan.data.adult, pan.data.adult$MSW05_Order == "Chiroptera")
+bats.clean.mass <- subset(bats, !is.na(bats$mass) & bats$mass != 0)
+bats.clean.length <- subset(bats.clean.mass, !is.na(bats.clean.mass$total.length) & bats.clean.mass$total.length != 0)
+bats.clean <- bats.clean.length
 
 
 # transfer function

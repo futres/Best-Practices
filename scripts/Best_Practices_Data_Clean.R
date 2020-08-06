@@ -441,7 +441,7 @@ check <- function(data, trait, units, units.infer, status, upper, lower, unit){
   for(i in 1:nrow(data)){
     if(isTRUE(data[i,trait][units != unit] >= data[i,lower] & data[i,trait][units != unit] <= data[i,upper])){
       data[i,units.infer] <- "TRUE"
-      data[i,units] <- "g"
+      data[i,units] <- unit
       data[i,status] <- "GOOD"
     }
     else if(isTRUE(data[i,trait][units == unit] >= data[i,lower] & data[i,trait][units == unit] <= data[i,upper])){
@@ -721,3 +721,9 @@ ggplot() +
 # ggplot() + geom_density(data = PEMA.juvenile, aes(x = log10(mass), alpha = 0.7))
 # 
 # ggplot() + geom_density(data = PEMA.adult, aes(x = log10(mass), alpha = 0.7))
+
+
+##Lagomorphs - work well
+##Carnivores
+##Chiroptera
+##split up data in other ways? Family (phylo); function but not related; shape; guilds
