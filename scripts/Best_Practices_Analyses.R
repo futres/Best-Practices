@@ -359,13 +359,18 @@ futres$Total.Fresh.Weight..g. <- as.numeric(futres$Total.Fresh.Weight..g.)
 #model results
 #potentially I could loop through columns in the dataframe. Or I could subset the data and then restructure it to be long instead of wide so I could loop through the measurements?
 data.adult.trim.clean <- futres[!is.na(futres$Total.Fresh.Weight..g.),]
-data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$hindfoot.length),]
-data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$forearm.length),]
-data.adult.trim.limb <- data.adult.trim.clean[!is.na(data.adult.trim.clean$hindfoot.length),]
+data.adult.trim.foot <- data.adult.trim.clean[!is.na(data.adult.trim.clean$HF..mm...Hind.Foot.Length.),]
+data.adult.trim.ankle <- futres[!is.na(futres$Astragalus.Length),]
 
 test <- subset(data.adult.trim.clean, scientificName== "Odocoileus virginianus")
+#any juneniles? There are some young adults but no juveniles
+unique(test$lifeStage)
+#seems to be no foot data?
+unique(test$HF..mm...Hind.Foot.Length.)
+#seems to be no astragalus data either
+unique(test$Astragalus.Length)
 
-model <- lm(log10(test$mass) ~ log10(test$hindfoot.length), na.action=na.exclude)
+model <- lm(log10(test$Total.Fresh.Weight..g.) ~ log10(test$HF..mm...Hind.Foot.Length.), na.action=na.exclude)
 sum.model <- summary(model)
 sub <- data.frame(binomial = test$scientificName[1],
                   intercept = model$coefficients[[1]],
@@ -375,17 +380,69 @@ sub <- data.frame(binomial = test$scientificName[1],
                   std.err.slope =  sum.model$coefficients[4],
                   std.err.intercept = sum.model$coefficients[3],
                   r.squared = sum.model$r.squared,
-                  sample.size = length(test$mass))
+                  sample.size = length(test$Total.Fresh.Weight..g.))
 
+#ggtitle doesn't seem to be doing anything because it is not connected to p. When I do connect it scale_x and scale y takes away the axis tick marks. 
 p = ggplot(data = test) + 
-  geom_point(aes(x = log10(mass), y = log10(hindfoot.length))) +
-  geom_smooth(aes(x = log10(mass), y = log10(hindfoot.length)),
+  geom_point(aes(x = log10(Total.Fresh.Weight..g.), y = log10(HF..mm...Hind.Foot.Length.))) +
+  geom_smooth(aes(x = log10(Total.Fresh.Weight..g.), y = log10(HF..mm...Hind.Foot.Length.)),
               method = "lm", color = "slateblue4")
 ggtitle("Odocoileus virginianus") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
   scale_y_log10(name = expression(log[10]~Hindfoot~Length~(mm))) + 
-  ggsave(p, file=paste0("plot_Odocoileus virginianus_hindfoot.png"), width = 14, height = 10, units = "cm")
+  ggsave(p, file=paste0("plot_Odocoileus virginianus_hindfoot2.png"), width = 14, height = 10, units = "cm")
 
+#Code for plotting Spermophilus beecheyi mass vs toothrow length
+test2 <- subset(data.adult.trim.clean, scientificName== "Spermophilus beecheyi")
+#no juveniles so that is good
+unique(test2$lifeStage)
+#outliers?
+unique(test2$c.toothrow.1.mm)
+
+model <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
+sum.model <- summary(model)
+sub <- data.frame(binomial = test2$scientificName[1],
+                  intercept = model$coefficients[[1]],
+                  slope = model$coefficients[[2]],
+                  resid.std.err = sum.model$sigma,
+                  df = max(sum.model$df),
+                  std.err.slope =  sum.model$coefficients[4],
+                  std.err.intercept = sum.model$coefficients[3],
+                  r.squared = sum.model$r.squared,
+                  sample.size = length(test2$Total.Fresh.Weight..g.))
+
+p = ggplot(data = test2) + 
+  geom_point(aes(x = log10(Total.Fresh.Weight..g.), y = log10(c.toothrow.1.mm))) +
+  geom_smooth(aes(x = log10(Total.Fresh.Weight..g.), y = log10(c.toothrow.1.mm)),
+              method = "lm", color = "slateblue4") +
+  ggtitle("Spermophilus beecheyi") +
+  xlab(expression(log[10]~Body~Mass~(g))) +
+  ylab(expression(log[10]~Hindfoot~Length~(mm)))
+ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow.png"), width = 14, height = 10, units = "cm")
+
+#mass vs hindfoot
+test2$HF..mm...Hind.Foot.Length. <- as.numeric(test2$HF..mm...Hind.Foot.Length.)  
+
+model <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$HF..mm...Hind.Foot.Length.), na.action=na.exclude)
+sum.model <- summary(model)
+sub <- data.frame(binomial = test2$scientificName[1],
+                  intercept = model$coefficients[[1]],
+                  slope = model$coefficients[[2]],
+                  resid.std.err = sum.model$sigma,
+                  df = max(sum.model$df),
+                  std.err.slope =  sum.model$coefficients[4],
+                  std.err.intercept = sum.model$coefficients[3],
+                  r.squared = sum.model$r.squared,
+                  sample.size = length(test2$Total.Fresh.Weight..g.))
+
+p = ggplot(data = test2) + 
+  geom_point(aes(x = log10(Total.Fresh.Weight..g.), y = log10(HF..mm...Hind.Foot.Length.))) +
+  geom_smooth(aes(x = log10(Total.Fresh.Weight..g.), y = log10(HF..mm...Hind.Foot.Length.)),
+              method = "lm", color = "slateblue4")
+ggtitle("Spermophilus beecheyi") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
+  scale_y_log10(name = expression(log[10]~Hindfoot~Length~(mm))) + 
+  ggsave(p, file=paste0("plot_Spermophilus beecheyi_hingfoot.png"), width = 14, height = 10, units = "cm")
 
 #the below code is for plotting many measurments.
 #can switch out species name for whichever is the target
