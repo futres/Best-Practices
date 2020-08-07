@@ -315,14 +315,40 @@ for(i in 1:length(model.names)){
 plot(model.results$std.err.slope ~ model.results$df) #make nicer
 
 
+##Q2a. Phylogenetic signal----
+require(ape)
+tree <- read.tree("mamtree.txt")
+plot(tree)
+
+#filter species that don't match
+tree$tip.label #give indices for each mamm
+#use tip labels to filter the results
+results$binomial <- gsub(" ", "_", results$binomial)
+results_sub <- subset(results, binomial %in% tree$tip.label) #265
+
+#creates list of species and value
+slope <- setNames(results_sub$slope, results_sub$binomial)
+std.err <- setNames(results_sub$std.err.slope, results_sub$binomial)
+#Blomberg's K
+phylosig(tree, slope, method="lambda", test = TRUE, nsim = 1000, se = NULL, start = NULL, control = list())
+phylosig(tree, slope, method="K", test = TRUE, nsim = 1000, se = NULL, start = NULL, control = list())
+phylosig(tree, slope, method="lambda", test = TRUE, nsim = 1000, se = std.err, start = NULL, control = list())
+phylosig(tree, slope, method="K", test = TRUE, nsim = 1000, se = std.err, start = NULL, control = list())
+
+#merge panthera summary stats
+#examine non-phylo model (slope~avg.mass)
+#avg bs phylo controlled, but not a predictor of slope
+mass <- setNames(combo$avg.mass, binomial)
+phylosig(mass, )
+#mass and slope highly constrained, but slope and mass are not correlated
+#get centroid lat of sp; trop v polar and how these relationships change; geogr range
+#use pan for those metrics; non-phylo controlled models
+
+##Q3: or other paper compare to Scotty Dog Book----
 
 
 
-#Q3: or other paper compare to Scotty Dog Book
-
-
-
-#Q4
+##Q4
 deer <- subset(pan.data.adult, pan.data.adult$MSW05_Binomial == "Odocoileus virginianus")
 bats <- subset(pan.data.adult, pan.data.adult$MSW05_Order == "Chiroptera")
 bats.clean.mass <- subset(bats, !is.na(bats$mass) & bats$mass != 0)
