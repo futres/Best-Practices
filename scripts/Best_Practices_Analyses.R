@@ -10,22 +10,49 @@ require(ggplot2)
 require(reshape2)
 require(plyr)
 require(stringr)
+require(ape)
+require(caper)
+require(phytools)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/9A1CB483-4ABF-49F2-9F4C-1201EFA774E6/labeled.clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
+data <- read.csv("https://de.cyverse.org/dl/d/9A1CB483-4ABF-49F2-9F4C-1201EFA774E6/labeled.clean.data.csv", header = TRUE)
+mamm.tree <- read.tree("https://de.cyverse.org/dl/d/DD53DD75-07A0-4609-A321-F3819E72AE5D/Mammal2.tre")
+
+##combine with pantheria----
+sp.data <- unique(data$scientificName) #605 spp
+length(pan[pan$MSW05_Binomial %in% sp.data,]) #538 spp
+
+pan.data <- merge(pan, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
+length(unique(pan.data$MSW05_Binomial))
+
+###head-body-length----
+pan.data$head.body.length <- pan.data$total.length - pan.data$tail.length
+# need to get bunnies and deer
+for(i in 1:nrow(pan.data)){
+  if(is.na(pan.data$head.body.length[pan.data$MSW05_Family == "Cervidae"][i])){
+    pan.data$head.body.length[i] <- pan.data$total.length[i]
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:nrow(pan.data)){
+  if(is.na(pan.data$head.body.length[pan.data$MSW05_Family == "Leporidae"][i])){
+    pan.data$head.body.length[i] <- pan.data$total.length[i]
+  }
+  else{
+    next
+  }
+}
+
+#write.csv(pan.data, "data.taxonomy.csv")
 
 ##Q1 compare to pantheria----
-sp.data <- unique(data$scientificName) #605 spp
-pan <- pan[pan$MSW05_Binomial %in% sp.data,] #538 spp
-pan.sub <- subset(pan, select = c("MSW05_Order", "MSW05_Family", "MSW05_Genus", "MSW05_Binomial", "X5.1_AdultBodyMass_g"))
-pan.sub.clean <- pan.sub[!is.na(pan.sub$X5.1_AdultBodyMass_g),] #474 sp
+pan.clean <- pan[!is.na(pan$X5.1_AdultBodyMass_g),] #474 sp
 
-pan.data.adult <- merge(pan.sub.clean, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = FALSE, all.x = FALSE)
-
-#write.csv(pan.data.adult, "data.taxonomy.csv")
-
-pan.data.adult.clean <- pan.data.adult[!is.na(pan.data.adult$mass) & pan.data.adult$mass.status != "outlier",] #489 sp
+pan.data.clean <- pan.data[!is.na(pan.data.adult$mass) & pan.data.adult$mass.status != "outlier",] #489 sp
 length(unique(pan.data.adult.clean$MSW05_Binomial)) #344
 
 pan.data.adult_stats <- pan.data.adult.clean %>%
@@ -62,31 +89,30 @@ for (i in uniq_species) {
 
 ##Q2: length v. mass----
 #clean data
-data.mass <- data[!is.na(data$mass) & data$mass.status != "outlier",]
-data.mass.length <- data.mass[!is.na(data.mass$total.length) & data.mass$total.length.status != "outlier",]
-data.adult <- data.mass.length[data.mass.length$lifeStage != "Juvenile",]
-length(unique(data.adult$scientificName)) #338 sp
+pan.data.mass <- pan.data[!is.na(pan.data$mass) & pan.data$mass.status != "outlier",]
+pan.data.mass.length <- pan.data.mass[!is.na(pan.data.mass$total.length) & pan.data.mass$total.length.status != "outlier",]
+pan.data.adult <- pan.data.mass.length[pan.data.mass.length$lifeStage != "Juvenile",]
+length(unique(pan.data.adult$MSW05_Binomial)) #338sp
 
 ##some measurements are zero, oy vey
-data.adult.clean <- data.adult[data.adult$mass > 0 & data.adult$total.length > 0,]
+pan.data.adult.clean <- pan.data.adult[pan.data.adult$mass > 0 & pan.data.adult$head.body.length > 0,]
 
 #recount sample sizes
-data.adult_stats <- data.adult.clean %>%
-  group_by(scientificName) %>%
+pan.data.adult_stats <- pan.data.adult.clean %>%
+  group_by(MSW05_Binomial) %>%
   dplyr::summarise(counts = n())
 
-keep.10 <- data.adult_stats$scientificName[data.adult_stats$counts >= 10] #286 sp
-data.adult.10 <- data.adult.clean[data.adult.clean$scientificName %in% keep.10,]
-length(unique(data.adult.10$scientificName)) #286 sp
+keep.10 <- pan.data.adult_stats$MSW05_Binomial[pan.data.adult_stats$counts >= 10] #286 sp
+pan.data.adult.10 <- pan.data.adult.clean[pan.data.adult.clean$MSW05_Binomial %in% keep.10,]
+length(unique(pan.data.adult.10$MSW05_Binomial)) #286 sp
 
-
-sp.models <- unique(data.adult.10$scientificName)
+sp.models <- unique(pan.data.adult.10$MSW05_Binomial)
 model.results.species <- data.frame()
 for(i in 1:length(sp.models)){
-  sub.data <- as.data.frame(data.adult.10[data.adult.10$scientificName == sp.models[i],])
-  model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
+  sub.data <- as.data.frame(pan.data.adult.10[pan.data.adult.10$MSW05_Binomial == sp.models[i],])
+  model <- lm(log10(sub.data$mass) ~ log10(sub.data$head.body.length), na.action=na.exclude)
   sum.model <- summary(model)
-  sub <- data.frame(binomial = sub.data$scientificName[1],
+  sub <- data.frame(binomial = sub.data$MSW05_Binomial[1],
                     intercept = model$coefficients[[1]],
                     slope = model$coefficients[[2]],
                     resid.std.err = sum.model$sigma,
@@ -102,41 +128,41 @@ for(i in 1:length(sp.models)){
 
 #write.csv(model.results.species, "model.results.species.csv")
 
-uniq_species <- unique(data.adult.10$scientificName)
+uniq_species <- unique(pan.data.adult.10$MSW05_Binomial)
 for (i in uniq_species) {
-  p = ggplot(data = subset(data.adult.10, scientificName  == i)) + 
-    geom_point(aes(x = log10(mass), y = log10(total.length))) +
-    geom_smooth(aes(x = log10(mass), y = log10(total.length)),
+  p = ggplot(data = subset(pan.data.adult.10, MSW05_Binomial  == i)) + 
+    geom_point(aes(x = log10(mass), y = log10(head.body.length))) +
+    geom_smooth(aes(x = log10(mass), y = log10(head.body.length)),
                 method = "lm", color = "slateblue4")
     ggtitle(i) +
     scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
-    scale_y_log10(name = expression(log[10]~Total~Length~(mm))) + 
+    scale_y_log10(name = expression(log[10]~Head~Body~Length~(mm))) + 
   ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
 }
 
 
-data.adult.10$infer.type <- rep("", nrow(data.adult.10))
-for(i in 1:nrow(data.adult.10)){
-  if(isTRUE(data.adult.10$total.length.units.inferred[i] ==" TRUE" | data.adult.10$total.length.units.inferred[i] == "True" | data.adult.10$total.length.units.inferred[i] == "CONVERTED" & data.adult.10$mass.units.inferred[i] == "TRUE" | data.adult.10$mass.units.inferred[i] == "True" | data.adult.10$mass.units.inferred[i] == "CONVERTED")){
-    data.adult.10$infer.type[i] <- "both"
-  }
-  else if(isTRUE(data.adult.10$total.length.units.inferred[i] ==" TRUE" | data.adult.10$total.length.units.inferred[i] == "True" | data.adult.10$total.length.units.inferred[i] == "CONVERTED")){
-    data.adult.10$infer.type[i] <- "length"
-  }
-  else if(isTRUE(data.adult.10$mass.units.inferred[i] == "TRUE" | data.adult.10$mass.units.inferred[i] == "True" | data.adult.10$mass.units.inferred[i] == "CONVERTED")){
-    data.adult.10$infer.type[i] <- "mass"
-  }
-  else{
-    data.adult.10$infer.type[i] <- "none"
-  }
-}
-
-ggplot(data = subset(data.adult.10, scientificName  == "Artibeus jamaicensis")) + 
-    geom_point(aes(x = log10(mass), y = log10(total.length), color = infer.type)) +
-    geom_smooth(aes(x = log10(mass), y = log10(total.length)),
-                method = "lm", color = "slateblue4")+
-    scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
-    scale_y_log10(name = expression(log[10]~Total~Length~(mm)))
+# data.adult.10$infer.type <- rep("", nrow(data.adult.10))
+# for(i in 1:nrow(data.adult.10)){
+#   if(isTRUE(data.adult.10$total.length.units.inferred[i] ==" TRUE" | data.adult.10$total.length.units.inferred[i] == "True" | data.adult.10$total.length.units.inferred[i] == "CONVERTED" & data.adult.10$mass.units.inferred[i] == "TRUE" | data.adult.10$mass.units.inferred[i] == "True" | data.adult.10$mass.units.inferred[i] == "CONVERTED")){
+#     data.adult.10$infer.type[i] <- "both"
+#   }
+#   else if(isTRUE(data.adult.10$total.length.units.inferred[i] ==" TRUE" | data.adult.10$total.length.units.inferred[i] == "True" | data.adult.10$total.length.units.inferred[i] == "CONVERTED")){
+#     data.adult.10$infer.type[i] <- "length"
+#   }
+#   else if(isTRUE(data.adult.10$mass.units.inferred[i] == "TRUE" | data.adult.10$mass.units.inferred[i] == "True" | data.adult.10$mass.units.inferred[i] == "CONVERTED")){
+#     data.adult.10$infer.type[i] <- "mass"
+#   }
+#   else{
+#     data.adult.10$infer.type[i] <- "none"
+#   }
+# }
+# 
+# ggplot(data = subset(data.adult.10, scientificName  == "Artibeus jamaicensis")) + 
+#     geom_point(aes(x = log10(mass), y = log10(total.length), color = infer.type)) +
+#     geom_smooth(aes(x = log10(mass), y = log10(total.length)),
+#                 method = "lm", color = "slateblue4")+
+#     scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
+#     scale_y_log10(name = expression(log[10]~Total~Length~(mm)))
 
 #WEIRD ONES: 
 #Akodon mimus
@@ -148,59 +174,113 @@ ggplot(data = subset(data.adult.10, scientificName  == "Artibeus jamaicensis")) 
 #how do confidence in these to compare?
 #how many individuals or spp do you need for it to be sensible
 
-sp.pan <- unique(data.adult.trim.cleaner$scientificName) #73 spp
-pan.models <- pan[pan$MSW05_Binomial %in% sp.pan,] #68 spp
-pan.models <- pan.models[,1:5]
+na.taxon <- pan.data.adult.10[is.na(pan.data.adult.10$MSW05_Order),]
+unique(na.taxon$MSW05_Binomial)
+#"Akodon tucumanensis"        "Artibeus planirostris"      "Clethrionomys gapperi"     
+#"Geomys lutescens"           "Handleyomys melanotis"      "Heteromys catopterius"     
+#"Ictidomys tridecemlineatus" "Lutra canadensis"           "Martes caurina"            
+#"Mustela vison"              "Myotis aurascens"           "Oryzomys mexicanus"        
+#"Oryzomys oryzomys"          "Peromyscus nudipes"         "Plecotus townsendii"       
+#"Sorex (Otisorex)"           "Sturnira sturnira"          "Urocitellus elegans"       
+#"Urocitellus parryii"       
 
-taxon.data.adult.trim.cleaner <- merge(data.adult.trim.cleaner, pan.models, by.x = "scientificName", by.y = "MSW05_Binomial", all.x = TRUE, all.y = FALSE)
-na.taxon <- taxon.data.adult.trim.cleaner[is.na(taxon.data.adult.trim.cleaner$MSW05_Order),]
-#"Clethrionomys gapperi" "Lutra canadensis"      "Myotis aurascens"     "Peromyscus sp." "Urocitellus parryii"  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Akodon tucumanensis"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Akodon tucumanensis"] <- "Cricetidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Akodon tucumanensis"] <- "Akodon"
 
-taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Clethrionomys gapperi"] <- "Rodentia"
-taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Clethrionomys gapperi"] <- "Cricetidae"
-taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Clethrionomys gapperi"] <- "Clethrionomys"
-
-taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Lutra canadensis"] <- "Carnivora"
-taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Lutra canadensis"] <- "Mustelidae"
-taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Lutra canadensis"] <- "Lutra"
-
-taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Myotis aurascens"] <- "Chiroptera"
-taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Myotis aurascens"] <- "Vespertilionidae"
-taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Myotis aurascens"] <- "Myotis"
-
-taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Peromyscus sp."] <- "Rodentia"
-taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Peromyscus sp."] <- "Cricetidae"
-taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Peromyscus sp."] <- "Peromyscus"
-
-taxon.data.adult.trim.cleaner$MSW05_Order[taxon.data.adult.trim.cleaner$scientificName == "Urocitellus parryii"] <- "Rodentia"
-taxon.data.adult.trim.cleaner$MSW05_Family[taxon.data.adult.trim.cleaner$scientificName == "Urocitellus parryii"] <- "Sciuridae"
-taxon.data.adult.trim.cleaner$MSW05_Genus[taxon.data.adult.trim.cleaner$scientificName == "Urocitellus parryii"] <- "Urocitellus"
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Artibeus planirostris"] <- "Chiroptera"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Artibeus planirostris"] <- "Phyllostomidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Artibeus planirostris"] <- "Artibeus"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Clethrionomys gapperi"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Clethrionomys gapperi"] <- "Cricetidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Clethrionomys gapperi"] <- "Myodes"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Geomys lutescens"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Geomys lutescens"] <- "Geomyidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Geomys lutescens"] <- "Geomys"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Handleyomys melanotis"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Handleyomys melanotis"] <- "Cricetidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Handleyomys melanotis"] <- "Handleyomys"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Heteromys catopterius"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Heteromys catopterius"] <- "Heteromyidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Heteromys catopterius"] <- "Heteromys"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Ictidomys tridecemlineatus"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Ictidomys tridecemlineatus"] <- "Sciuridae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Ictidomys tridecemlineatus"] <- "Ictidomys"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Lutra canadensis"] <- "Carnivora"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Lutra canadensis"] <- "Mustelidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Lutra canadensis"] <- "Lontra"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Martes caurina"] <- "Carnivora"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Martes caurina"] <- "Mustelidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Martes caurina"] <- "Martes"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Mustela vison"] <- "Carnivora"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Mustela vison"] <- "Mustelidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Mustela vison"] <- "Neovison"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Myotis aurascens"] <- "Chiroptera"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Myotis aurascens"] <- "Vespertilionidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Myotis aurascens"] <- "Myotis"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Oryzomys mexicanus"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Oryzomys mexicanus"] <- "Cricetidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Oryzomys mexicanus"] <- "Oryzomys"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Oryzomys oryzomys"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Oryzomys oryzomys"] <- "Cricetidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Oryzomys oryzomys"] <- "Oryzomys"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Peromyscus nudipes"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Peromyscus nudipes"] <- "Cricetidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Peromyscus nudipes"] <- "Peromyscus"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Plecotus townsendii"] <- "Chiroptera"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Plecotus townsendii"] <- "Vespertilionidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Plecotus townsendii"] <- "Corynorhinus"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Sturnira sturnira"] <- "Chiroptera"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Sturnira sturnira"] <- "Phyllostomidae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Sturnira sturnira"] <- "Sturnira"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Urocitellus elegans"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Urocitellus elegans"] <- "Sciuridae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Urocitellus elegans"] <- "Urocitellus"
+  
+pan.data.adult.10$MSW05_Order[pan.data.adult.10$MSW05_Binomial == "Urocitellus parryii"] <- "Rodentia"
+pan.data.adult.10$MSW05_Family[pan.data.adult.10$MSW05_Binomial == "Urocitellus parryii"] <- "Sciuridae"
+pan.data.adult.10$MSW05_Genus[pan.data.adult.10$MSW05_Binomial == "Urocitellus parryii"] <- "Urocitellus"
 
 #recount for sample size to 10 for genus, family, and order
 #genus
-data.genus_stats <- taxon.data.adult.trim.cleaner %>%
+data.genus_stats <-pan.data.adult.10 %>%
   group_by(MSW05_Genus) %>%
   dplyr::summarise(counts = n())
 #49 genera
 
 keep.genus <- data.genus_stats$MSW05_Genus[data.genus_stats$counts >= 10] #29 genera
-data.genus.10 <- taxon.data.adult.trim.cleaner[taxon.data.adult.trim.cleaner$MSW05_Genus %in% keep.genus,]
+data.genus.10 <- pan.data.adult.10[pan.data.adult.10$MSW05_Genus %in% keep.genus,]
 
 #family
-data.family_stats <- taxon.data.adult.trim.cleaner %>%
+data.family_stats <- pan.data.adult.10 %>%
   group_by(MSW05_Family) %>%
   dplyr::summarise(counts = n()) #19 families
 
 keep.family <- data.family_stats$MSW05_Family[data.family_stats$counts >= 10] #12 families
-data.family.10 <- taxon.data.adult.trim.cleaner[taxon.data.adult.trim.cleaner$MSW05_Family %in% keep.family,]
+data.family.10 <- pan.data.adult.10[pan.data.adult.10$MSW05_Family %in% keep.family,]
 
 #order
-data.order_stats <- taxon.data.adult.trim.cleaner %>%
+data.order_stats <- pan.data.adult.10 %>%
   group_by(MSW05_Order) %>%
   dplyr::summarise(counts = n()) #7 orders
 
 keep.order <- data.order_stats$MSW05_Order[data.order_stats$counts >= 10] #4 orders
-data.order.10 <- taxon.data.adult.trim.cleaner[taxon.data.adult.trim.cleaner$MSW05_Order %in% keep.order,]
+data.order.10 <- pan.data.adult.10[pan.data.adult.10$MSW05_Order %in% keep.order,]
 
 #genus
 gn.models <- unique(data.genus.10$MSW05_Genus)
@@ -209,7 +289,7 @@ for(i in 1:length(gn.models)){
   sub.data <- as.data.frame(data.genus.10[data.genus.10$MSW05_Genus == gn.models[i],])
   model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
   sum.model <- summary(model)
-  sub <- data.frame(binomial = sub.data$scientificName[1],
+  sub <- data.frame(binomial = sub.data$MSW05_Binomial[1],
                     intercept = model$coefficients[[1]],
                     slope = model$coefficients[[2]],
                     resid.std.err = sum.model$sigma,
@@ -230,7 +310,7 @@ for(i in 1:length(fm.models)){
   sub.data <- as.data.frame(data.family.10[data.family.10$MSW05_Family == fm.models[i],])
   model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
   sum.model <- summary(model)
-  sub <- data.frame(binomial = sub.data$scientificName[1],
+  sub <- data.frame(binomial = sub.data$MSW05_Binomial[1],
                     intercept = model$coefficients[[1]],
                     slope = model$coefficients[[2]],
                     resid.std.err = sum.model$sigma,
@@ -251,7 +331,7 @@ for(i in 1:length(or.models)){
   sub.data <- as.data.frame(data.order.10[data.order.10$MSW05_Order == or.models[i],])
   model <- lm(log10(sub.data$mass) ~ log10(sub.data$total.length), na.action=na.exclude)
   sum.model <- summary(model)
-  sub <- data.frame(binomial = sub.data$scientificName[1],
+  sub <- data.frame(binomial = sub.data$MSW05_Binomial[1],
                     intercept = model$coefficients[[1]],
                     slope = model$coefficients[[2]],
                     resid.std.err = sum.model$sigma,
@@ -265,18 +345,6 @@ for(i in 1:length(or.models)){
 
 #write.csv(model.results.order, "model.results.order.csv")
 
-#everything #2383 obs
-model <- lm(log10(data.adult.trim.cleaner$mass) ~ log10(data.adult.trim.cleaner$total.length), na.action=na.exclude)
-sum.model <- summary(model)
-everything.model.results <- data.frame(binomial = sub.data$scientificName[1],
-                                       intercept = model$coefficients[[1]],slope = model$coefficients[[2]],
-                                       resid.std.err = sum.model$sigma,
-                                       df = max(sum.model$df),
-                                       std.err.slope =  sum.model$coefficients[4],
-                                       std.err.intercept = sum.model$coefficients[3],
-                                       r.squared = sum.model$r.squared,
-                                       sample.size = length(sub.data$mass))
-#write.csv(everything.model.results, "everything.model.results.csv")
 
 #show skeletal v vertnet
 
@@ -284,6 +352,7 @@ everything.model.results <- data.frame(binomial = sub.data$scientificName[1],
 
 #plots!
 #1. show confidence in line as function of sample size
+con.species.sample <- lm(model.results.species$std.err.slope ~ model.results.species$sample.size)
 con.genus.sample <- lm(model.results.genus$std.err.slope ~ model.results.genus$sample.size)
 con.family.sample <- lm(model.results.family$std.err.slope ~ model.results.family$sample.size)
 con.order.sample <- lm(model.results.order$std.err.slope ~ model.results.order$sample.size)
@@ -297,7 +366,7 @@ model.names <- c("model.results.species", "model.results.genus", "model.results.
 
 con.sample.results <- data.frame()
 for(i in 1:length(model.names)){
-  model <- lm(con.samples.models[[i]][6] ~ con.samples.models$sample.size[[i]][9])
+  model <- lm(con.samples.models$slope[[i]][6] ~ con.samples.models$sample.size[[i]][9])
   sum.model <- summary(model)
   sub <- data.frame(binomial = model.names[i],
                                    intercept = model$coefficients[[1]],
@@ -314,32 +383,33 @@ for(i in 1:length(model.names)){
 
 plot(model.results$std.err.slope ~ model.results$df) #make nicer
 
+##Q2a. Drivers of allometry----
+pan.models <- merge(pan, model.results.species, by.x = "MSW05_Binomial", by.y = "binomial", all.x = FALSE, all.y = TRUE)
+pan.models$cent.lat <- pan.models$X26.2_GR_MaxLat_dd - pan.models$X26.3_GR_MinLat_dd
+reg.results <- lm(pan.models$slope ~ pan.models$X5.1_AdultBodyMass_g + pan.models$X26.1_GR_Area_km2 + pan.models$X12.2_Terrestriality + pan.models$cent.lat)
+summary(reg.results)
 
-##Q2a. Phylogenetic signal----
-require(ape)
-tree <- read.tree("mamtree.txt")
-plot(tree)
+#Q2b. Phylogenetic signal----
+plot(mamm.tree)
 
 #filter species that don't match
-tree$tip.label #give indices for each mamm
+mamm.tree$tip.label #give indices for each mamm
 #use tip labels to filter the results
-results$binomial <- gsub(" ", "_", results$binomial)
-results_sub <- subset(results, binomial %in% tree$tip.label) #265
+model.results.species$binomial <- gsub(" ", "_", model.results.species$binomial)
+sp.results_sub <- subset(model.results.species, binomial %in% mamm.tree$tip.label) #214
 
 #creates list of species and value
-slope <- setNames(results_sub$slope, results_sub$binomial)
-std.err <- setNames(results_sub$std.err.slope, results_sub$binomial)
+slope <- setNames(sp.results_sub$slope, sp.results_sub$binomial)
+std.err <- setNames(sp.results_sub$std.err.slope, sp.results_sub$binomial)
+r.squared <- setNames(sp.results_sub$r.squared, sp.results_sub$binomial)
 #Blomberg's K
-phylosig(tree, slope, method="lambda", test = TRUE, nsim = 1000, se = NULL, start = NULL, control = list())
-phylosig(tree, slope, method="K", test = TRUE, nsim = 1000, se = NULL, start = NULL, control = list())
-phylosig(tree, slope, method="lambda", test = TRUE, nsim = 1000, se = std.err, start = NULL, control = list())
-phylosig(tree, slope, method="K", test = TRUE, nsim = 1000, se = std.err, start = NULL, control = list())
+phylosig(mamm.tree, slope, method="lambda", test = TRUE, nsim = 1000, se = NULL, start = NULL, control = list()) #39.2275 
+phylosig(mamm.tree, slope, method="K", test = TRUE, nsim = 1000, se = NULL, start = NULL, control = list()) #0.0883418
 
 #merge panthera summary stats
 #examine non-phylo model (slope~avg.mass)
 #avg bs phylo controlled, but not a predictor of slope
-mass <- setNames(combo$avg.mass, binomial)
-phylosig(mass, )
+
 #mass and slope highly constrained, but slope and mass are not correlated
 #get centroid lat of sp; trop v polar and how these relationships change; geogr range
 #use pan for those metrics; non-phylo controlled models

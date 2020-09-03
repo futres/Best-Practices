@@ -14,6 +14,8 @@ require(OutlierDetection)
 
 ##Load data----
 
+options(stringsAsFactors = FALSE)
+
 #kitty_deer <- read.csv("EAP Florida Modern Deer Measurements_FORFUTRES_1_23_2020.csv", header = TRUE, stringsAsFactors = FALSE)
 #blois_ground.squirrel <- read.csv("J.Biogeo.2008.AllData.Final.csv", header = TRUE, stringsAsFactors = FALSE)
 #amelia_impala <- read.csv("Extant Aepyceros database_updated 11_2016.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -26,37 +28,51 @@ futres <- read.csv("https://de.cyverse.org/dl/d/42CF8FC4-13FC-4D57-A73B-90668E2A
 #currently aligned manually; fixed Amelia's weight data to be g, deleted lone mass that did not have units
 #6 species
 
-## VertNet data
-bat_mass <- read.csv("https://de.cyverse.org/dl/d/2A542CDF-BDED-4486-AB15-445B53F80F08/vertnet_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
+## Vertnet data round 2
+
+#bats
+bats <- read.csv("https://de.cyverse.org/dl/d/8BE15938-0A21-4712-9FD9-D22B3DF31101/bats_2020-08-11b.csv", header = TRUE)
+length(unique(bats$binomial)) #1074
+length(unique(bats$occurrenceid)) #74678
+nrow(bats) #74678
+
+#mamm
+mamm <- read.csv("https://de.cyverse.org/dl/d/C46CED4D-B974-47CD-8BCF-5A04D6DD642B/no_bats_2020-08-12b.csv", header = TRUE)
+length(unique(mamm$binomial)) #4007
+length(unique(mamm$occurrenceid)) #584865
+nrow(mamm) #584865
+
+## VertNet data - OLD
+#bat_mass <- read.csv("https://de.cyverse.org/dl/d/2A542CDF-BDED-4486-AB15-445B53F80F08/vertnet_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
 #706 spp; 18530 rows; 10350 occurrenceids
 
 #get rid of dups
-bat_mass.clean <- bat_mass[!(duplicated(bat_mass$occurrenceid)),]
+#bat_mass.clean <- bat_mass[!(duplicated(bat_mass$occurrenceid)),]
 #706 spp; 10350 rows; 10350 occurrenceids
 #8000 diff
 
-bat_length <- read.csv("https://de.cyverse.org/dl/d/896A54B4-1E52-4976-95AB-71449384B3A4/vertnet_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
+#bat_length <- read.csv("https://de.cyverse.org/dl/d/896A54B4-1E52-4976-95AB-71449384B3A4/vertnet_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
 #696 spp; 16313 rows; 9460 occurrence ids
 
 #get rid of dups
-bat_length.clean <- bat_length[!(duplicated(bat_length$occurrenceid)),]
+#bat_length.clean <- bat_length[!(duplicated(bat_length$occurrenceid)),]
 #696 spp; 9460 rows; 9460 occurrence ids
 #6853 diff
 
 #mamm has no bats
-mamm_mass <- read.csv("https://de.cyverse.org/dl/d/EF537422-2246-4B25-A9BC-D8259C78BFA2/vertnet_no_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
+#mamm_mass <- read.csv("https://de.cyverse.org/dl/d/EF537422-2246-4B25-A9BC-D8259C78BFA2/vertnet_no_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
 #2439 spp; 225237 rows; 89588 occurrenceids
 
 #get rid of dups
-mamm_mass.clean <- mamm_mass[!(duplicated(mamm_mass$occurrenceid)),]
+#mamm_mass.clean <- mamm_mass[!(duplicated(mamm_mass$occurrenceid)),]
 #2439 spp; 89588 rows; 89588 occurrenceids
 #135649 diff
 
-mamm_length <- read.csv("https://de.cyverse.org/dl/d/DA7E36EF-0008-4DED-A49C-C7DCCC71E98C/vertnet_no_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
+#mamm_length <- read.csv("https://de.cyverse.org/dl/d/DA7E36EF-0008-4DED-A49C-C7DCCC71E98C/vertnet_no_bats_total_len_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
 #2728 spp; 245647 rows; 97225 occurrenceids
 
 #get rid of dups
-mamm_length.clean <- mamm_length[!(duplicated(mamm_length$occurrenceid)),]
+#mamm_length.clean <- mamm_length[!(duplicated(mamm_length$occurrenceid)),]
 #2728 spp; 97225 rows; 97225 occurrenceids
 #148422 diff
 
@@ -71,21 +87,26 @@ mamm_length.clean <- mamm_length[!(duplicated(mamm_length$occurrenceid)),]
 
 ## combine mass & length
 #bat data
-bat_length.sub <- subset(bat_length.clean, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
-bat_mass.sub <- dplyr::select(bat_mass.clean, -c('total_length_1.value', 'total_length_1.units'))
-bats <- full_join(bat_mass.sub, bat_length.sub, by = c("occurrenceid", "scientificname"))
-length(unique(bats$scientificname)) #724; added 28 spp
+#bat_length.sub <- subset(bat_length.clean, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
+#bat_mass.sub <- dplyr::select(bat_mass.clean, -c('total_length_1.value', 'total_length_1.units'))
+#bats <- full_join(bat_mass.sub, bat_length.sub, by = c("occurrenceid", "scientificname"))
+#length(unique(bats$scientificname)) #724; added 28 spp
 #10634 occurrenceids; 48657 rows; added 284 occ. ids
 #why are there dupes???
 
 #mammal data
-mamm_length.sub <- subset(mamm_length.clean, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
-mamm_mass.sub <- dplyr::select(mamm_mass.clean, -c('total_length_1.value', 'total_length_1.units'))
-mamm <- full_join(mamm_mass.sub, mamm_length.sub, by = c("occurrenceid", "scientificname"))
-length(unique(mamm$scientificname)) #2766; added 38 spp
+#mamm_length.sub <- subset(mamm_length.clean, select = c(scientificname, total_length_1.value, total_length_1.units, occurrenceid))
+#mamm_mass.sub <- dplyr::select(mamm_mass.clean, -c('total_length_1.value', 'total_length_1.units'))
+#mamm <- full_join(mamm_mass.sub, mamm_length.sub, by = c("occurrenceid", "scientificname"))
+#length(unique(mamm$scientificname)) #2766; added 38 spp
 #795495 rows; 101440 occ ids; added 11852 occ. ids
 
 ##combine
+#different number of columns
+#300 col in bats, 368 in mamm
+bat.col <- colnames(bats)
+mamm.col <- colnames(mamm)
+diff.col <- !(mamm.col %in% bat.col)
 vertnet <- rbind(bats, mamm) #sum = bats rows + mamm rows
 
 ##FUTRES CLEANING----
@@ -682,7 +703,6 @@ outlier_stats <- data.outlier %>%
 
 data.labeled <- data.outlier
 #write.csv(data.labeled, "labeled.clean.data.csv")
-
 
 ##Case studies----
 ##test out juvenile and adult distributions to narrow down an actual adult distribution
