@@ -361,6 +361,7 @@ data <- read.csv("https://de.cyverse.org/dl/d/21B3BBBC-8CCE-4A88-90CB-1AE3F21855
 #Subsetting data
 data.adult.trim.clean <- futres[!is.na(futres$Total.Fresh.Weight..g.),]
 data.adult.trim.foot <- data.adult.trim.clean[!is.na(data.adult.trim.clean$HF..mm...Hind.Foot.Length.),]
+
 data.adult.trim.ankle <- futres[!is.na(futres$Astragalus.Length),]
 
 #Code for plotting Spermophilus beecheyi
@@ -449,7 +450,66 @@ p = ggplot(data = test2) +
   
   model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub3)  
   
+  
+#mass versus total length
+  #I need to fix the numbering system
+  
+  test2$TL..mm...Total.Length.[test2$TL..mm...Total.Length.=="]"]<-NA
+  test2$TL..mm...Total.Length. <- as.numeric(test2$TL..mm...Total.Length.)  
+  
+  model2 <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$TL..mm...Total.Length.), na.action=na.exclude)
+  sum.model2 <- summary(model2)
+  sub2 <- data.frame(binomial = test2$scientificName[1],
+                     comparison = ("Mass/Total length"),
+                     intercept = model2$coefficients[[1]],
+                     slope = model2$coefficients[[2]],
+                     resid.std.err = sum.model2$sigma,
+                     df = max(sum.model2$df),
+                     std.err.slope =  sum.model2$coefficients[4],
+                     std.err.intercept = sum.model2$coefficients[3],
+                     r.squared = sum.model2$r.squared,
+                     sample.size = length(test2$Total.Fresh.Weight..g.))
+  
+  p = ggplot(data = test2) + 
+    geom_point(aes(x = log10(TL..mm...Total.Length.), y = log10(Total.Fresh.Weight..g.))) +
+    geom_smooth(aes(x = log10(TL..mm...Total.Length.), y = log10(Total.Fresh.Weight..g.)),
+                method = "lm", color = "slateblue4")+
+    ggtitle("Spermophilus beecheyi") +
+    theme(plot.title = element_text(face = "italic"))+
+    ylab(expression(log[10]~Body~Mass~(g))) +
+    xlab(expression(log[10]~Total~Length~(mm)))
+  
+  ggsave(p, file=paste0("plot_Spermophilus beecheyi_totallength.png"), width = 14, height = 10, units = "cm")
+  
+#toothrow versus total length
+  model3 <- lm(log10(test2$TL..mm...Total.Length.) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
+  sum.model3 <- summary(model3)
+  sub3 <- data.frame(binomial = test2$scientificName[1],
+                     comparison = ("Total length/toothrow length"),
+                     intercept = model3$coefficients[[1]],
+                     slope = model3$coefficients[[2]],
+                     resid.std.err = sum.model3$sigma,
+                     df = max(sum.model3$df),
+                     std.err.slope =  sum.model3$coefficients[4],
+                     std.err.intercept = sum.model3$coefficients[3],
+                     r.squared = sum.model3$r.squared,
+                     sample.size = length(test2$TL..mm...Total.Length.))
+  
+  p = ggplot(data = test2) + 
+    geom_point(aes(x = log10(c.toothrow.1.mm), y = log10(TL..mm...Total.Length.))) +
+    geom_smooth(aes(x = log10(c.toothrow.1.mm), y = log10(TL..mm...Total.Length.)),
+                method = "lm", color = "slateblue4")+
+    ggtitle("Spermophilus beecheyi") +
+    theme(plot.title = element_text(face = "italic"))+
+    xlab(expression(log[10]~Toothrow~Length~(mm))) +
+    ylab(expression(log[10]~Total~Length~(mm))) 
+  ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_totallength.png"), width = 14, height = 10, units = "cm")
+  
+  model.Spermophilus.beecheyi <- rbind(sub1, sub2)  
   #write.csv(model.Spermophilus.beecheyi, file= "model.results.Spermophilus.beecheyi.csv")
+  
+  
+  
 
 #Strangely Futres does not have the hindfoot data for Odocoileus virginianus so for now I am going to pull it from a different dataset?
   
