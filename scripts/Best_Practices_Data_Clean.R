@@ -35,12 +35,66 @@ bats <- read.csv("https://de.cyverse.org/dl/d/8BE15938-0A21-4712-9FD9-D22B3DF311
 length(unique(bats$binomial)) #1074
 length(unique(bats$occurrenceid)) #74678
 nrow(bats) #74678
+ncol(bats) #300
 
 #mamm
 mamm <- read.csv("https://de.cyverse.org/dl/d/C46CED4D-B974-47CD-8BCF-5A04D6DD642B/no_bats_2020-08-12b.csv", header = TRUE)
 length(unique(mamm$binomial)) #4007
 length(unique(mamm$occurrenceid)) #584865
 nrow(mamm) #584865
+ncol(mamm) #368
+
+## Combine VertNet Bat & Mammals data----
+
+setdiff(colnames(mamm), colnames(bats)) #85 different
+setdiff(colnames(bats), colnames(mamm)) #17 different
+
+#important column names
+imp.cols <- c("binomial", "scientificname", "occurrenceid", "institutioncode", "collectioncode", "catalognumber", "eventdate", 
+          "sex", "lifestage_cor", "reproductivecondition", 
+          "locality", "highergeography", "continent", "country", "county",
+          "decimallatitude", "decimallongitude", "verbatimelevation",
+          "waterbody", "island", "islandgroup")
+
+# select out rows that have .1 only, don't need the other values for now
+col.pattern <- "1"
+V.cols.mamm <- grep(col.pattern, colnames(mamm), value = TRUE)
+V.cols.bats <- grep(col.pattern, colnames(bats), value = TRUE)
+
+cols.mamm <- c(imp.cols, V.cols.mamm)
+cols.bats <- c(imp.cols, V.cols.bats)
+
+mamm.1 <- mamm[, colnames(mamm) %in% cols.mamm]
+bats.1 <- bats[, colnames(bats) %in% cols.bats]
+
+#we don't care about these values related to the measurement/specimen for now
+remove.pattern <- "\bhigh|low|ambiguous"
+#create pattern
+remove.mamm <- grep(remove.pattern, colnames(mamm.1), value = TRUE)
+remove.bats <- grep(remove.pattern, colnames(bats.1), value = TRUE)
+
+mamm.2 <- mamm.1[, !(colnames(mamm.1) %in% remove.mamm)]
+bats.2 <- bats.1[, !(colnames(bats.1) %in% remove.bats)]
+
+setdiff(colnames(mamm.2), colnames(bats.2))
+setdiff(colnames(bats.2), colnames(mamm.2))
+
+mamm.2$forearm_length.1.estimated_value <- NA
+mamm.2$tragus_length.1.estimated_value <- NA
+
+extra.cols <- c("placental_scar_count.2.side1", "placental_scar_count.3.side1")
+mamm.3 <- mamm.2[, !(colnames(mamm.2) %in% extra.cols)]
+
+bats.2$nipple_count.1.notation <- NA
+bats.2$placental_scar_count.1.side1 <- NA
+bats.2$placental_scar_count.1.side2 <- NA
+
+setdiff(colnames(mamm.3), colnames(bats.2))
+setdiff(colnames(bats.2), colnames(mamm.3))
+
+vertnet <- rbind(mamm.3, bats.2)
+
+#write.csv(x = vertnet, file = "vertnet.combined.first.meas.csv")
 
 ## VertNet data - OLD
 #bat_mass <- read.csv("https://de.cyverse.org/dl/d/2A542CDF-BDED-4486-AB15-445B53F80F08/vertnet_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -104,10 +158,10 @@ nrow(mamm) #584865
 ##combine
 #different number of columns
 #300 col in bats, 368 in mamm
-bat.col <- colnames(bats)
-mamm.col <- colnames(mamm)
-diff.col <- !(mamm.col %in% bat.col)
-vertnet <- rbind(bats, mamm) #sum = bats rows + mamm rows
+#bat.col <- colnames(bats)
+#mamm.col <- colnames(mamm)
+#diff.col <- !(mamm.col %in% bat.col)
+#vertnet <- rbind(bats, mamm) #sum = bats rows + mamm rows
 
 ##FUTRES CLEANING----
 
@@ -126,34 +180,40 @@ futres$Weight.field.dressed[futres$scientificName == "Puma concolor"] <- futres$
 ##Combine Data----
 
 ##select out columns
-order <- c("occurrenceID", "scientificName", "lifeStage", "sex",
-           "catalogNumber", "materialSampleID", "locality", "stateProvince",
+
+col.order <- c("occurrenceID", "scientificName", "lifeStage", "sex", "reproductiveCondition",
+           "catalogNumber", "materialSampleID", "institutionCode", "collectionCode", "eventDate",
+           "locality", "higherGeography", "continent", "country", "county",
+           "waterBody", "island", "islandGroup",
            "decimalLatitude", "decimalLongitude", "elevation",
-           "mass", "mass.units", "mass.units.inferred", 
+           "mass", "mass.units", "mass.units.inferred", "mass.estimated.value",
            "gutted", "gutted.units", "gutted.units.inferred",
            "skinned", "skinned.units", "skinned.units.inferred",
-           "total.length", "total.length.units", "total.length.units.inferred",
-           "hindfoot.length", "hindfoot.length.units", "hindfoot.length.units.inferred",
-           "ear.length", "ear.length.units", "ear.length.units.inferred",
-           "tail.length", "tail.length.units", "tail.length.units.inferred",
-           "astragalus.length", "astragalus.length.units", "astragalus.length.units.inferred",
-           "astragalus.width", "astragalus.width.units", "astragalus.width.units.inferred",
-           "calcaneus.GB", "calcaneus.GB.units", "calcaneus.GB.units.inferred",
-           "calcaneus.GL", "calcaneus.GL.units", "calcaneus.GL.units.inferred",
-           "femur.length", "femur.length.units", "femur.length.units.inferred",
-           "humerus.length", "humerus.length.units", "humerus.length.units.inferred",
-           "forearm.length", "forearm.length.units", "forearm.length.units.inferred",
-           "tooth.row", "tooth.row.units", "tooth.row.units.inferred")
+           "total.length", "total.length.units", "total.length.units.inferred", "total.length.estimated.value",
+           "hindfoot.length", "hindfoot.length.units", "hindfoot.length.units.inferred", "hindfoot.length.estimated.value",
+           "ear.length", "ear.length.units", "ear.length.units.inferred", "ear.length.estimated.value",
+           "tail.length", "tail.length.units", "tail.length.units.inferred", "tail.length.estimated.value",
+           "astragalus.length", "astragalus.length.units", "astragalus.length.units.inferred", "astragalus.length.estimated.value",
+           "astragalus.width", "astragalus.width.units", "astragalus.width.units.inferred", "astragalus.width.estimated.value",
+           "calcaneus.GB", "calcaneus.GB.units", "calcaneus.GB.units.inferred", "calcaneus.GB.estimated.value",
+           "calcaneus.GL", "calcaneus.GL.units", "calcaneus.GL.units.inferred", "calcaneus.GL.estimated.value",
+           "femur.length", "femur.length.units", "femur.length.units.inferred", "femur.length.estimated.value",
+           "humerus.length", "humerus.length.units", "humerus.length.units.inferred", "humerus.length.estimated.value",
+           "forearm.length", "forearm.length.units", "forearm.length.units.inferred", "forearm.length.estimated.value",
+           "tooth.row", "tooth.row.units", "tooth.row.units.inferred", "tooth.row.estimated.value")
 
 ##futres
 futres.sub <- futres %>%
   select(scientificName, 
          lifeStage, 
          sex,
+         reproductiveCondition,
          catalogNumber,
          materialSampleID,
+         eventDate,
          locality,
-         stateProvince,
+         country, 
+         county,
          decimalLatitude,
          decimalLongitude,
          elevation,
@@ -163,17 +223,38 @@ futres.sub <- futres %>%
          hindfoot.length = HF..mm...Hind.Foot.Length.,
          ear.length = En..mm...Ear.Notch...Ear.Length.,
          calcaneus.GL = Calcaneus.GL...greatest.length..von.den.Driesch..1976...mm,
-         calcaneus.GB = Calcaneus.GB...greatest.breadth..von.den.Driesch.1976...mm,
+         calcaneus.GB =Calcaneus.GB...greatest.breadth..von.den.Driesch.1976...mm,
          tooth.row = c.toothrow.1.mm,
          gutted = Weight.field.dressed,
          skinned = Weight.Skinned,
          astragalus.length = Astragalus.Length,
          astragalus.width = Astragalus.Width,
          humerus.length = Humerus.Length,
-         femur.length = Femur.Length)
+         femur.length = Femur.Length) %>%
+  mutate_at(c("elevation", "mass", 
+               "total.length", "tail.length", "hindfoot.length", "ear.length",
+               "calcaneus.GB", "calcaneus.GL", "tooth.row",
+               "gutted", "skinned", "astragalus.length", "astragalus.width",
+               "humerus.length", "femur.length"), as.numeric)
 
 ##add in missing columns
-futres.sub$occurrenceID <- c(1:length(futres.sub$scientificName))
+emptyvector <- c("institutionCode", "collectionCode", "higherGeography",
+                "waterBody", "island", "islandGroup", "continent", 
+                "forearm.length", "forearm.length.units", "forearm.length.units.inferred",
+                "forearm.length.estimated.value", "tooth.row.estimated.value",
+                "humerus.length.estimated.value")
+futres.sub[ , emptyvector] <- ""
+
+futres.sub <- futres.sub %>% mutate_at(c("forearm.length"), as.numeric)
+
+falsevector <- c("mass.estimated.value", "total.length.estimated.value", "hindfoot.length.estimated.value",
+                 "calcaneus.GB.estimated.value", "calcaneus.GL.estimated.value",
+                 "tail.length.estimated.value", "ear.length.estimated.value",
+                 "astragalus.length.estimated.value", "astragalus.width.estimated.value",
+                 "femur.length.estimated.value", "tooth.row.estimated.value")
+futres.sub[ , falsevector] <- "FALSE"
+
+futres.sub$occurrenceID <- as.character(c(1:length(futres.sub$scientificName)))
 futres.sub$mass.units[!is.na(futres.sub$mass)] <- "g"
 futres.sub$mass.units.inferred[!is.na(futres.sub$mass.units)] <- "FALSE"
 futres.sub$total.length.units[!is.na(futres.sub$total.length)] <- "mm"
@@ -200,9 +281,6 @@ futres.sub$femur.length.units[!is.na(futres.sub$femur.length)] <- "mm"
 futres.sub$femur.length.units.inferred[!is.na(futres.sub$femur.length.units)] <- "FALSE"
 futres.sub$humerus.length.units[!is.na(futres.sub$humerus.length)] <- "mm"
 futres.sub$humerus.length.units.inferred[!is.na(futres.sub$humerus.length.units)] <- "FALSE"
-futres.sub$forearm.length <- NA
-futres.sub$forearm.length.units <- NA
-futres.sub$forearm.length.units.inferred <- NA
 futres.sub$tooth.row.units[!is.na(futres.sub$tooth.row)] <- "mm"
 futres.sub$tooth.row.units.inferred[!is.na(futres.sub$tooth.row.units)] <- "FALSE"
 
@@ -213,71 +291,84 @@ vertnet.sub <- vertnet %>%
          lifeStage = lifestage_cor, 
          sex,
          locality,
+         elevation = verbatimelevation,
          catalogNumber = catalognumber,
+         reproductiveCondition = reproductivecondition,
          decimalLatitude = decimallatitude,
          decimalLongitude = decimallongitude,
-         mass = body_mass_1.value,
-         mass.units = body_mass_1.units,
-         mass.units.inferred = body_mass_1.units_inferred,
-         total.length = total_length_1.value, 
-         total.length.units = total_length_1.units,
-         total.length.units.inferred = total_length_1.units_inferred,
-         hindfoot.length = hind_foot_length_1.value,
-         hindfoot.length.units = hind_foot_length_1.units,
-         hindfoot.length.units.inferred = hind_foot_length_1.units_inferred,
-         ear.length = ear_length_1.value,
-         ear.length.units = ear_length_1.units,
-         ear.length.units.inferred = ear_length_1.units_inferred,
-         tail.length = tail_length_1.value,
-         tail.length.units = tail_length_1.units,
-         tail.length.units.inferred = tail_length_1.units_inferred,
-         forearm.length = forearm_length_1.value,
-         forearm.length.units = forearm_length_1.units,
-         forearm.length.units.inferred = forearm_length_1.units_inferred)
+         continent,
+         country,
+         county,
+         eventDate = eventdate,
+         institutionCode = institutioncode,
+         collectionCode = collectioncode,
+         higherGeography = highergeography,
+         waterBody = waterbody,
+         island,
+         islandGroup = islandgroup,
+         mass = body_mass.1.value,
+         mass.units = body_mass.1.units,
+         mass.units.inferred = body_mass.1.units_inferred,
+         mass.estimated.value = body_mass.1.estimated_value,
+         total.length = total_length.1.value, 
+         total.length.units = total_length.1.units,
+         total.length.units.inferred = total_length.1.units_inferred,
+         total.length.estimated.value = total_length.1.estimated_value,
+         hindfoot.length = hind_foot_length.1.value,
+         hindfoot.length.units = hind_foot_length.1.units,
+         hindfoot.length.units.inferred = hind_foot_length.1.units_inferred,
+         hindfoot.length.estimated.value = hind_foot_length.1.estimated_value,
+         ear.length = ear_length.1.value,
+         ear.length.units = ear_length.1.units,
+         ear.length.units.inferred = ear_length.1.units_inferred,
+         ear.length.estimated.value = ear_length.1.estimated_value,
+         tail.length = tail_length.1.value,
+         tail.length.units = tail_length.1.units,
+         tail.length.units.inferred = tail_length.1.units_inferred,
+         tail.length.estimated.value = tail_length.1.estimated_value,
+         forearm.length = forearm_length.1.value,
+         forearm.length.units = forearm_length.1.units,
+         forearm.length.units.inferred = forearm_length.1.units_inferred,
+         forearm.length.estimated.value = forearm_length.1.estimated_value) %>%
+  mutate_at(c("elevation", "mass", "total.length", "hindfoot.length", "ear.length",
+              "tail.length", "forearm.length"), as.numeric)
+
+empty.vector <- c("calcaneus.GL", "calcaneus.GL.units", "calcaneus.GL.units.inferred", "calcaneus.GL.estimated.value",
+                "calcaneus.GB", "calcaneus.GB.units", "calcaneus.GB.units.inferred", "calcaneus.GB.estimated.value",
+                "tooth.row", "tooth.row.units", "tooth.row.units.inferred", "tooth.row.estimated.value",
+                "astragalus.length", "astragalus.length.units", "astragalus.length.units.inferred", "astragalus.length.estimated.value",
+                "astragalus.width", "astragalus.width.units", "astragalus.width.units.inferred", "astragalus.width.estimated.value",
+                "gutted", "gutted.units", "gutted.units.inferred",
+                "skinned", "skinned.units", "skinned.units.inferred",
+                "femur.length", "femur.length.units", "femur.length.units.inferred", "femur.length.estimated.value",
+                "humerus.length", "humerus.length.units", "humerus.length.units.inferred", "humerus.length.estimated.value")
+vertnet.sub[ , empty.vector] <- ""
+
+vertnet.sub <- vertnet.sub %>% mutate_at(c("calcaneus.GL", "calcaneus.GB", "tooth.row", 
+                          "astragalus.length", "astragalus.width",
+                          "gutted", "skinned", "femur.length", "humerus.length"),
+                          as.numeric)
 
 vertnet.sub$materialSampleID <- vertnet.sub$occurrenceID
-vertnet.sub$elevation <- NA
-vertnet.sub$stateProvince <- NA
-vertnet.sub$calcaneus.GL <- NA
-vertnet.sub$calcaneus.GL.units <- NA
-vertnet.sub$calcaneus.GL.units.inferred <- NA
-vertnet.sub$calcaneus.GB <- NA
-vertnet.sub$calcaneus.GB.units <- NA
-vertnet.sub$calcaneus.GB.units.inferred <- NA
-vertnet.sub$tooth.row <- NA
-vertnet.sub$tooth.row.units <- NA
-vertnet.sub$tooth.row.units.inferred <- NA
-vertnet.sub$astragalus.length <- NA
-vertnet.sub$astragalus.length.units <- NA
-vertnet.sub$astragalus.length.units.inferred <- NA
-vertnet.sub$astragalus.width <- NA
-vertnet.sub$astragalus.width.units <- NA
-vertnet.sub$astragalus.width.units.inferred <- NA
-vertnet.sub$gutted <- NA
-vertnet.sub$gutted.units <- NA
-vertnet.sub$gutted.units.inferred <- NA
-vertnet.sub$skinned <- NA
-vertnet.sub$skinned.units <- NA
-vertnet.sub$skinned.units.inferred <- NA
-vertnet.sub$femur.length <- NA
-vertnet.sub$femur.length.units <- NA
-vertnet.sub$femur.length.units.inferred <- NA
-vertnet.sub$humerus.length <- NA
-vertnet.sub$humerus.length.units <- NA
-vertnet.sub$humerus.length.units.inferred <- NA
 
-#reorder columns
-futres.sub <- futres.sub[,order]
-vertnet.sub <- vertnet.sub[,order]
+#check that columns are the same
+setdiff(colnames(futres.sub), colnames(vertnet.sub))
+setdiff(colnames(vertnet.sub), colnames(futres.sub))
+setdiff(col.order, colnames(vertnet.sub))
+setdiff(col.order, colnames(futres.sub))
 
 ##comnbine datasets
-data <- rbind(vertnet.sub, futres.sub)
-length(unique(data$scientificName)) #3491 spp
+futres.order <- futres.sub[, col.order]
+vertnet.order <- vertnet.sub[, col.order]
+
+data <- dplyr::bind_rows(futres.order, vertnet.order)
+data <- rbind(futres.order, vertnet.order)
+length(unique(data$scientificName)) #4677 spp
 
 ##create binomials----
 data$scientificName <- word(data$scientificName, 1,2, sep = " ") 
-data.binom<- data[!grepl('sp.',data$scientificName),]
-length(unique(data.binom$scientificName)) #1630
+data.binom<- data[!grepl('sp.', data$scientificName),]
+length(unique(data.binom$scientificName)) #4348
 # in mamm: 2766 spp; and now 1738 because got rid of trinomials
 #some weird spp. names: e.g.,: (new SW
 #will deal with later
@@ -379,7 +470,7 @@ outlier.function <- function(data, threshold, column, vector, trait, units, unit
   return(data)
 }
 
-sp <- unique(data$scientificName)
+sp <- unique(data.10$scientificName)
 values <- c("False", "FALSE")
 df.mass <- outlier.function(data = data.10, threshold = 0.95, column = "scientificName", vector = sp, 
                             trait = "mass", units = "mass.units", unit = "g", unit.infer = "mass.units.inferred", values = values, status = "mass.status")
