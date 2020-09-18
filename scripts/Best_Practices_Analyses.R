@@ -436,7 +436,7 @@ p = ggplot(data = test2) +
                      std.err.slope =  sum.model3$coefficients[4],
                      std.err.intercept = sum.model3$coefficients[3],
                      r.squared = sum.model3$r.squared,
-                     sample.size = length(test2$Total.Fresh.Weight..g.))
+                     sample.size = length(test2$HF..mm...Hind.Foot.Length))
   
   p = ggplot(data = test2) + 
     geom_point(aes(x = log10(c.toothrow.1.mm), y = log10(HF..mm...Hind.Foot.Length.))) +
@@ -481,6 +481,8 @@ p = ggplot(data = test2) +
   
   ggsave(p, file=paste0("plot_Spermophilus beecheyi_totallength.png"), width = 14, height = 10, units = "cm")
   
+  model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub2)   
+  
 #toothrow versus total length
   model3 <- lm(log10(test2$TL..mm...Total.Length.) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
   sum.model3 <- summary(model3)
@@ -505,8 +507,9 @@ p = ggplot(data = test2) +
     ylab(expression(log[10]~Total~Length~(mm))) 
   ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_totallength.png"), width = 14, height = 10, units = "cm")
   
-  model.Spermophilus.beecheyi <- rbind(sub1, sub2)  
-  #write.csv(model.Spermophilus.beecheyi, file= "model.results.Spermophilus.beecheyi.csv")
+  model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub3)  
+  
+#write.csv(model.Spermophilus.beecheyi, file= "model.results.Spermophilus.beecheyi.csv")
   
   
   
