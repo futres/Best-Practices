@@ -511,8 +511,62 @@ p = ggplot(data = test2) +
   
 #write.csv(model.Spermophilus.beecheyi, file= "model.results.Spermophilus.beecheyi.csv")
   
+#Now we want to see if translating between the models is fruitful. The first step is to predict total length from tooth row length
+  #predict function works better if the naming scheme inside the lm model is simple. It will automatically log the values.
+  y <- test2$TL..mm...Total.Length.
+  x <- test2$c.toothrow.1.mm
+  model3 <- lm(log10(y) ~ log10(x), na.action=na.exclude)
   
+  #testing
+  newdata=data.frame(x=12)
+  predict(model3, newdata, interval="predict")
   
+  toothpredict <- data.frame(x = test2$c.toothrow.1.mm)
+  p1 <- data.frame(predict(model3, toothpredict, interval="predict"))
+  toothpredict$fit1 <- p1$fit
+  toothpredict$lwr1 <- p1$lwr
+  toothpredict$upr1 <- p1$upr
+
+  #now predicting the predictions. I am already in log 10 space with the predictions.
+  y <- log10(test2$Total.Fresh.Weight..g.)
+  x <- log10(test2$TL..mm...Total.Length.)
+  model2 <- lm(y ~ x, na.action=na.exclude)
+   newdata<- data.frame(x = toothpredict$fit1)
+  p2 <- data.frame(predict(model2, newdata, interval="predict"))
+  toothpredict$fit2 <- p2$fit
+  #the below values might need to somehow be added to something else. I need to figure out how to propogate the uncertainty from the last plot. 
+  newdata<- data.frame(x = toothpredict$lwr1)
+  p2 <- data.frame(predict(model2, newdata, interval="predict"))
+  toothpredict$lwr1fit <- p2$fit
+  toothpredict$lwr1lwr <- p2$lwr
+  toothpredict$lwr1upr <- p2$upr
+  
+  newdata<- data.frame(x = toothpredict$upr1)
+  p2 <- data.frame(predict(model2, newdata, interval="predict"))
+  toothpredict$upr1fit <- p2$fit
+  toothpredict$upr1lwr <- p2$lwr
+  toothpredict$upr1upr <- p2$upr
+  
+  toothpredict$TL..mm...Total.Length. <- test2$TL..mm...Total.Length.
+  toothpredict$Total.Fresh.Weight..g. <- test2$Total.Fresh.Weight..g.
+  
+  p = ggplot(data = toothpredict) + 
+    geom_point(aes(x = log10(TL..mm...Total.Length.), y = log10(Total.Fresh.Weight..g.))) +
+    geom_smooth(aes(x = log10(TL..mm...Total.Length.), y = log10(Total.Fresh.Weight..g.)),
+                method = "lm", color = "slateblue4")+
+    ggtitle("Spermophilus beecheyi") +
+    theme(plot.title = element_text(face = "italic"))+
+    ylab(expression(log[10]~Body~Mass~(g))) +
+    xlab(expression(log[10]~Total~Length~(mm))) +
+    geom_point(aes(x = fit1, y = fit2), color= "green")+
+    geom_point(aes(x = lwr1, y = lwr1fit), color= "orange")+
+    geom_point(aes(x = upr1, y = upr1fit), color= "orange")+
+    geom_line(aes(x = lwr1, y = lwr1lwr), linetype = "dashed", color = "red")+
+    geom_line(aes(x = lwr1, y = lwr1upr), linetype = "dashed", color = "red")+
+    geom_line(aes(x = upr1, y = upr1lwr), linetype = "dashed", color = "red")+
+    geom_line(aes(x = upr1, y = upr1upr), linetype = "dashed", color = "red")
+  
+  ggsave(p, file=paste0("plot_Spermophilus beecheyi_totallength.png"), width = 14, height = 10, units = "cm")
 
 #Strangely Futres does not have the hindfoot data for Odocoileus virginianus so for now I am going to pull it from a different dataset?
   
