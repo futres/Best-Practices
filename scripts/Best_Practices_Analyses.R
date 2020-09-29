@@ -20,11 +20,11 @@ data <- read.csv("https://de.cyverse.org/dl/d/9A1CB483-4ABF-49F2-9F4C-1201EFA774
 mamm.tree <- read.tree("https://de.cyverse.org/dl/d/DD53DD75-07A0-4609-A321-F3819E72AE5D/Mammal2.tre")
 
 ##combine with pantheria----
-sp.data <- unique(data$scientificName) #605 spp
-length(pan[pan$MSW05_Binomial %in% sp.data,]) #538 spp
+sp.data <- unique(data$scientificName) #1762 spp
+nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #1448 spp
 
 pan.data <- merge(pan, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
-length(unique(pan.data$MSW05_Binomial))
+length(unique(pan.data$MSW05_Binomial)) #1762
 
 ###head-body-length----
 pan.data$head.body.length <- pan.data$total.length - pan.data$tail.length
@@ -50,12 +50,15 @@ for(i in 1:nrow(pan.data)){
 #write.csv(pan.data, "data.taxonomy.csv")
 
 ##Q1 compare to pantheria----
-pan.clean <- pan[!is.na(pan$X5.1_AdultBodyMass_g),] #474 sp
+pan.clean <- pan.data[!is.na(pan.data$X5.1_AdultBodyMass_g),] #1296 sp
 
-pan.data.clean <- pan.data[!is.na(pan.data.adult$mass) & pan.data.adult$mass.status != "outlier",] #489 sp
-length(unique(pan.data.adult.clean$MSW05_Binomial)) #344
+pan.cleaner <- pan.clean[!is.na(pan.clean$mass) & pan.clean$mass.status != "outlier",]
+length(unique(pan.cleaner$MSW05_Binomial)) #983
 
-pan.data.adult_stats <- pan.data.adult.clean %>%
+pan.adult <- pan.cleaner[pan.cleaner$lifeStage == "Adult",]
+length(unique(pan.adult$MSW05_Binomial)) #465
+
+pan.adult_stats <- pan.adult %>%
   group_by(MSW05_Binomial) %>%
   dplyr::summarise(sample.size = n(), 
                    min.mass = min(mass, na.rm = TRUE),
@@ -64,26 +67,25 @@ pan.data.adult_stats <- pan.data.adult.clean %>%
                    sd.err.mass = sd(mass, na.rm = TRUE)/sqrt(sample.size),
                    pan.mass = X5.1_AdultBodyMass_g[1],
                    mass.diff = abs((pan.mass - avg.mass) / sd.err.mass))
-pan.data.adult_stats.10 <- pan.data.adult_stats %>%
-  filter(sample.size >= 10) #298 spp
-#write.csv(pan.data.adult_stats.10, "pan.results.csv")
+pan.adult_stats.10 <- pan.adult_stats %>%
+  filter(sample.size >= 10) #222 spp
+#write.csv(pan.adult_stats.10, "pan.results.csv")
 
-length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff <= 2]) #67
-length(pan.data.adult_stats.10$MSW05_Binomial[pan.data.adult_stats.10$mass.diff > 2]) #231
-#22.5% are ok; 77.5% are not
+length(pan.adult_stats.10$MSW05_Binomial[pan.adult_stats.10$mass.diff <= 2]) #69 31%
+length(pan.adult_stats.10$MSW05_Binomial[pan.adult_stats.10$mass.diff > 2]) #153 69%
 
 ##FIGURE: body mass distributions w/ line from PanTHERIA----
 
-pan.data.adult.clean.10 <- pan.data.adult.clean[pan.data.adult.clean$MSW05_Binomial %in% pan.data.adult_stats.10$MSW05_Binomial,]
+pan.adult.clean.10 <- pan.adult[pan.adult$MSW05_Binomial %in% pan.adult_stats.10$MSW05_Binomial,] #222
 
-uniq_species <- unique(pan.data.adult.clean.10$MSW05_Binomial)
+uniq_species <- unique(pan.adult.clean.10$MSW05_Binomial)
 for (i in uniq_species) {
-  p = ggplot(data = subset(pan.data.adult.clean.10, MSW05_Binomial == i)) + 
+  p = ggplot(data = subset(pan.adult.clean.10, MSW05_Binomial == i)) + 
     geom_density(aes(log10(mass)), fill = "darkslateblue") +
     ggtitle(i) +
     scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
     scale_y_continuous(name = 'Probability') + 
-    geom_vline(xintercept = log10(pan.data.adult.clean.10$X5.1_AdultBodyMass_g[pan.data.adult.clean.10$MSW05_Binomial == i][1]))
+    geom_vline(xintercept = log10(pan.adult.clean.10$X5.1_AdultBodyMass_g[pan.adult.clean.10$MSW05_Binomial == i][1]))
   ggsave(p, file=paste0("dist_", i,".png"), width = 14, height = 10, units = "cm")
 }
 

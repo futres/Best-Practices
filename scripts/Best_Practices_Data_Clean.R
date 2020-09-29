@@ -92,11 +92,11 @@ bats.2$placental_scar_count.1.side2 <- NA
 setdiff(colnames(mamm.3), colnames(bats.2))
 setdiff(colnames(bats.2), colnames(mamm.3))
 
-vertnet <- rbind(mamm.3, bats.2)
+vertnet <- rbind(mamm.3, bats.2) #5075
 
 #write.csv(x = vertnet, file = "vertnet.combined.first.meas.csv")
 
-## VertNet data - OLD
+## VertNet data - OLD----
 #bat_mass <- read.csv("https://de.cyverse.org/dl/d/2A542CDF-BDED-4486-AB15-445B53F80F08/vertnet_bats_body_mass_2020-04-16a_juvAd.csv", header = TRUE, stringsAsFactors = FALSE)
 #706 spp; 18530 rows; 10350 occurrenceids
 
@@ -137,7 +137,7 @@ vertnet <- rbind(mamm.3, bats.2)
 #bernor_equid$binomial <- paste(bernor_equid$GENUS, bernor_equid$SPECIES)
 #deal with this once mapped
 
-##VERTNET CLEANING----
+##VERTNET CLEANING - OLD----
 
 ## combine mass & length
 #bat data
@@ -361,9 +361,8 @@ setdiff(col.order, colnames(futres.sub))
 futres.order <- futres.sub[, col.order]
 vertnet.order <- vertnet.sub[, col.order]
 
-data <- dplyr::bind_rows(futres.order, vertnet.order)
 data <- rbind(futres.order, vertnet.order)
-length(unique(data$scientificName)) #4677 spp
+length(unique(data$scientificName)) #10329 spp; must be a lot of trinomials...
 
 ##create binomials----
 data$scientificName <- word(data$scientificName, 1,2, sep = " ") 
@@ -404,7 +403,7 @@ data.hindfoot.length <- correct.units(data = data.forearm.length, column.unit = 
 
 ##more data cleaning----
 #make measurementValue numeric
-data <- data.forearm.length
+data <- data.hindfoot.length
 cols <- c("mass", "skinned", "total.length", "hindfoot.length", "ear.length", "tail.length", "calcaneus.GB", "calcaneus.GL")
 data[,cols] <- sapply(data[,cols], as.numeric)
 
@@ -453,7 +452,7 @@ outlier.function <- function(data, threshold, column, vector, trait, units, unit
   for(i in 1:length(vector)){
     sub <- subset(data, subset = data[,column] == vector[i] & data[,units] == unit & data[,unit.infer] %in% values, select = trait) %>%
       drop_na()
-    if(isTRUE(nrow(sub) >= 3)){
+    if(isTRUE(nrow(sub) >= 10)){
       outlier <- maha(sub, cutoff = threshold, rnames = FALSE)
       index <- names(outlier[[2]])
       if(isTRUE(length(index) != 0)){
@@ -476,8 +475,8 @@ df.mass <- outlier.function(data = data.10, threshold = 0.95, column = "scientif
                             trait = "mass", units = "mass.units", unit = "g", unit.infer = "mass.units.inferred", values = values, status = "mass.status")
 df.total.length <- outlier.function(data = df.mass, threshold = 0.95, column = "scientificName", vector = sp, 
                             trait = "total.length", units = "total.length.units", unit = "mm", unit.infer = "total.length.units.inferred", values = values, status = "total.length.status")
-#df.hindfoot.length <- outlier.function(data = df.total.length, threshold = 0.95, column = "scientificName", vector = sp, 
-#                            trait = "hindfoot.length", units = "hindfoot.length.units", unit = "mm", unit.infer = "hindfoot.length.units.inferred", values = values, status = "hindfoot.length.status")
+df.hindfoot.length <- outlier.function(data = df.total.length, threshold = 0.95, column = "scientificName", vector = sp, 
+                            trait = "hindfoot.length", units = "hindfoot.length.units", unit = "mm", unit.infer = "hindfoot.length.units.inferred", values = values, status = "hindfoot.length.status")
 #hindfoot not working, moving on... 
 #NOTE: only doing three traits for now
 
@@ -485,9 +484,9 @@ df.total.length <- outlier.function(data = df.mass, threshold = 0.95, column = "
 ##create function to find upper and lower limit for each measurementType based on non-juveniles, non-inferred units, and correct units ("g" or "mm")
 
 ##mean, standard deviation, and upper and lower limit
-data <- df.total.length
+data <- df.hindfoot.length
 noJuv <- data[data$lifeStage != "Juvenile",]
-length(unique(noJuv$scientificName)) #606
+length(unique(noJuv$scientificName)) #1763
 
 ##TO DO
 # limits.specific <- function(data, column, trait, units.infer, values, status, unit, amt){
@@ -524,7 +523,7 @@ data.noJuv.noInfer_stats <- noJuv %>%
                    upper.limit.hindfoot = avg.hindfoot + (3*sigma.hindfoot),
                    lower.limit.hindfoot = avg.hindfoot - (3*sigma.hindfoot)) %>%
   as.data.frame()
-nrow(data.noJuv.noInfer_stats) #606
+nrow(data.noJuv.noInfer_stats) #1763
 
 ##add stats to dataframe
 data.check <- data.frame()
@@ -545,7 +544,7 @@ for(i in 1:nrow(data.noJuv.noInfer_stats)){
   # sub.data$tail.length.lower.limit <- sub.stats$tail.length.lower.limit
   data.check <- rbind(data.check, sub.data)
 }
-length(unique(data.check$scientificName)) #605 - one less species because one species is "NA"
+length(unique(data.check$scientificName)) #1762 - one less species because one species is "NA"
 
 ##label outliers
 #label samples that are outside of limits with outlier, and label those within limits as "g" and inferred = TRUE
@@ -723,53 +722,53 @@ for(i in 1:length(data.outlier$scientificName)){
   }
 }
 
-# for(i in 1:length(data.outlier$scientificName)){
-#   if(isTRUE(data.outlier$tail.length[i] < data.outlier$tail.length.lower.limit[i])){
-#     data.outlier$tail.length.status[i] <- "outlier"
-#   }
-#   else if(isTRUE(data.outlier$tail.length[i] > data.outlier$tail.length.upper.limit[i])){
-#     data.outlier$tail.length.status[i] <- "outlier"
-#   }
-#   else{
-#     next
-#   }
-# }
-# 
-# for(i in 1:length(data.outlier$scientificName)){
-#   if(isTRUE(data.outlier$ear.length[i] < data.outlier$ear.length.lower.limit[i])){
-#     data.outlier$ear.length.status[i] <- "outlier"
-#   }
-#   else if(isTRUE(data.outlier$ear.length[i] > data.outlier$ear.length.upper.limit[i])){
-#     data.outlier$ear.length.status[i] <- "outlier"
-#   }
-#   else{
-#     next
-#   }
-# }
-# 
-# for(i in 1:length(data.outlier$scientificName)){
-#   if(isTRUE(data.outlier$hindfoot.length[i] < data.outlier$hindfoot.length.lower.limit[i])){
-#     data.outlier$hindfoot.length.status[i] <- "outlier"
-#   }
-#   else if(isTRUE(data.outlier$hindfoot.length[i] > data.outlier$hindfoot.length.upper.limit[i])){
-#     data.outlier$hindfoot.length.status[i] <- "outlier"
-#   }
-#   else{
-#     next
-#   }
-# }
-# 
-# for(i in 1:length(data.outlier$scientificName)){
-#   if(isTRUE(data.outlier$forearm.length[i] < data.outlier$forearm.length.lower.limit[i])){
-#     data.outlier$forearm.length.status[i] <- "outlier"
-#   }
-#   else if(isTRUE(data.outlier$forearm.length[i] > data.outlier$forearm.length.upper.limit[i])){
-#     data.outlier$forearm.length.status[i] <- "outlier"
-#   }
-#   else{
-#     next
-#   }
-# }
+for(i in 1:length(data.outlier$scientificName)){
+  if(isTRUE(data.outlier$tail.length[i] < data.outlier$tail.length.lower.limit[i])){
+    data.outlier$tail.length.status[i] <- "outlier"
+  }
+  else if(isTRUE(data.outlier$tail.length[i] > data.outlier$tail.length.upper.limit[i])){
+    data.outlier$tail.length.status[i] <- "outlier"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(data.outlier$scientificName)){
+  if(isTRUE(data.outlier$ear.length[i] < data.outlier$ear.length.lower.limit[i])){
+    data.outlier$ear.length.status[i] <- "outlier"
+  }
+  else if(isTRUE(data.outlier$ear.length[i] > data.outlier$ear.length.upper.limit[i])){
+    data.outlier$ear.length.status[i] <- "outlier"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(data.outlier$scientificName)){
+  if(isTRUE(data.outlier$hindfoot.length[i] < data.outlier$hindfoot.length.lower.limit[i])){
+    data.outlier$hindfoot.length.status[i] <- "outlier"
+  }
+  else if(isTRUE(data.outlier$hindfoot.length[i] > data.outlier$hindfoot.length.upper.limit[i])){
+    data.outlier$hindfoot.length.status[i] <- "outlier"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:length(data.outlier$scientificName)){
+  if(isTRUE(data.outlier$forearm.length[i] < data.outlier$forearm.length.lower.limit[i])){
+    data.outlier$forearm.length.status[i] <- "outlier"
+  }
+  else if(isTRUE(data.outlier$forearm.length[i] > data.outlier$forearm.length.upper.limit[i])){
+    data.outlier$forearm.length.status[i] <- "outlier"
+  }
+  else{
+    next
+  }
+}
 
 ##info about outliers----
 outlier_stats <- data.outlier %>%
