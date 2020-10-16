@@ -351,7 +351,7 @@ model <- lm(log10(clean.length.mass$total.length) ~ log10(clean.length.mass$mass
 
 library(tidyr)
 
-futres <- read.csv("https://de.cyverse.org/dl/d/42CF8FC4-13FC-4D57-A73B-90668E2AFBCC/futres.csv", header = TRUE, stringsAsFactors = FALSE)
+futres <- read.csv("https://de.cyverse.org/dl/d/B296C95F-56A1-4AB6-9EAA-532CD7B1285B/futres.csv", header = TRUE, stringsAsFactors = FALSE)
 futres[futres=="--"]<-NA
 futres[futres==""]<-NA
 futres$Total.Fresh.Weight..g. <- as.numeric(futres$Total.Fresh.Weight..g.)  
@@ -526,6 +526,8 @@ p = ggplot(data = test2) +
   toothpredict$fit1 <- p1$fit
   toothpredict$lwr1 <- p1$lwr
   toothpredict$upr1 <- p1$upr
+  
+  TBLSE <- (sd(toothpredict$fit1)/sqrt(length(toothpredict$fit1)))
 
   #now predicting the predictions. I am already in log 10 space with the predictions.
   y <- log10(test2$Total.Fresh.Weight..g.)
@@ -534,6 +536,9 @@ p = ggplot(data = test2) +
    newdata<- data.frame(x = toothpredict$fit1)
   p2 <- data.frame(predict(model2, newdata, interval="predict"))
   toothpredict$fit2 <- p2$fit
+  
+  TFWSE <- (sd(toothpredict$fit2)/sqrt(length(toothpredict$fit2)))
+  
   #the below values might need to somehow be added to something else. I need to figure out how to propogate the uncertainty from the last plot. 
   newdata<- data.frame(x = toothpredict$lwr1)
   p2 <- data.frame(predict(model2, newdata, interval="predict"))
