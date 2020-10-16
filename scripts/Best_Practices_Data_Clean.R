@@ -493,9 +493,11 @@ data <- rbind(df.ear.length, data.Juv)
 length(unique(data$scientificName)) #4346
 
 df <- subset(data, data$scientificName == "Peromyscus maniculatus" & data$lifeStage != "Juvenile")
-ggplot(data = df) + 
+p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  ggtitle("Peromyscus maniculatus") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("outlier.test",".png"), width = 14, height = 10, units = "cm")
 
 ##TO DO
 # limits.specific <- function(data, column, trait, units.infer, values, status, unit, amt){
@@ -582,9 +584,12 @@ data.forearm.length.check <- check(data = data.tail.length.check, trait = "forea
 data <- rbind(data.forearm.length.check, data.juv)
 
 df <- subset(data, data$scientificName  == "Peromyscus maniculatus" & data$lifeStage != "Juvenile")
-ggplot(data = df) + 
+p <- ggplot(data = df) + 
   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
+  ggtitle("Peromyscus maniculatus") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("second.outlier.test",".png"), width = 14, height = 10, units = "cm")
+
 
 ##unit conversion----
 #convert units that are wrong (i.e., not "g" or "mm") to proper units
@@ -659,9 +664,11 @@ data.convert.forearm <- convert.mm(data = data.convert.tail, trait = "forearm.le
 data.convert <- rbind(data.convert.forearm, data.Juv)
 
 df <- subset(data.convert, data.convert$scientificName  == "Peromyscus maniculatus" & lifeStage != "Juvenile")
-ggplot(data = df) + 
+p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  ggtitle("Peromyscus maniculatus") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("convert.units",".png"), width = 14, height = 10, units = "cm")
 
 ##create new sigma, this time only without juveniles, but allow for inferred units
 
@@ -786,9 +793,11 @@ for(i in 1:length(data.outlier$scientificName)){
 }
 
 df < subset(data.outlier, scientificName == "Peromyscus maniculatus" & lifeStage != "Juvenile")
-ggplot(data = df) + 
+p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  ggtitle("Peromyscus maniculatus") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("third.outlier.test",".png"), width = 14, height = 10, units = "cm")
 
 ##info about outliers----
 outlier_stats <- data.outlier %>%
@@ -796,7 +805,7 @@ outlier_stats <- data.outlier %>%
   dplyr::summarise(sample.outlier.mass = length(mass[mass.status == "outlier" & mass >= 0 & lifeStage != "Juvenile"]),
                    sample.mass = length(mass[mass.status != "outlier" & mass >= 0 & lifeStage != "Juvenile"]),
                    sample.outlier.total.length = length(total.length[total.length.status == "outlier" & total.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.total.length = length(total.length[total.length.status != "outlier" & total.length >= 0] & lifeStage != "Juvenile")
+                   sample.total.length = length(total.length[total.length.status != "outlier" & total.length >= 0 & lifeStage != "Juvenile"]),
                    sample.outlier.forearm.length = length(forearm.length[forearm.length.status == "outlier" & forearm.length >= 0 & lifeStage != "Juvenile"]),
                    sample.forearm.length = length(forearm.length[forearm.length.status != "outlier" & forearm.length >= 0 & lifeStage != "Juvenile"]),
                    sample.outlier.hindfoot.length = length(hindfoot.length[hindfoot.length.status == "outlier" & hindfoot.length >= 0 & lifeStage != "Juvenile"]),
@@ -807,12 +816,12 @@ outlier_stats <- data.outlier %>%
                    sample.tail.length = length(tail.length[tail.length.status != "outlier" & tail.length >= 0 & lifeStage != "Juvenile"])) %>%
   as.data.frame()
 
-#write.csv(outlier_stats, "outliers.csv")
+write.csv(outlier_stats, "outliers.csv")
 
 ##write out clean, labeled data----
 
 data.labeled <- data.outlier
-#write.csv(data.labeled, "labeled.clean.data.csv")
+write.csv(data.labeled, "labeled.clean.data.csv")
 
 ##Juvenile test with PEMA----
 PEMA <- data.labeled[data.labeled$scientificName == "Peromyscus maniculatus",]
@@ -874,12 +883,14 @@ for(i in 1:nrow(data.juv.limit)){
   }
 }
 
-df <- subset(data.juv.limit, lifeStage != "Juvenile" & scientificName  == "Artibeus jamaicensis")
-ggplot(data = df) + 
+df <- subset(data.juv.limit, lifeStage != "Juvenile" & scientificName  == "Peromyscus maniculatus")
+p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  ggtitle("Peromyscus maniculatus")
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("juv.outlier.test",".png"), width = 14, height = 10, units = "cm")
 
-#write.csv(data.juv.limit, "clean.data.csv")
+write.csv(data.juv.limit, "clean.data.csv")
 
 ##Case studies----
 ##test out juvenile and adult distributions to narrow down an actual adult distribution
