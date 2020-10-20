@@ -14,7 +14,7 @@ library(tidyr)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/2C9578F9-994C-44EA-8344-E7DAC00762F9/labeled.clean.data.csv", header = TRUE)
+data <- read.csv("https://de.cyverse.org/dl/d/74880F82-59DF-4558-BBCB-A51EA1631592/labeled.clean.data.csv", header = TRUE)
 
 ##combine with pantheria----
 sp.data <- unique(data$scientificName) #1762 spp
