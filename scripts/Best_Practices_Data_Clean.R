@@ -411,11 +411,21 @@ data[,cols] <- sapply(data[,cols], as.numeric)
 write.csv(data, "less.dirty.data.csv")
 
 ##Figure
-p <- ggplot(data = subset(data, scientificName  == "Peromyscus maniculatus")) + 
+df <- subset(data.hindfoot.length, scientificName == "Artibeus jamaicensis")
+length(df$mass[!is.na(df$mass)]) #1406
+p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.7) +
-  ggtitle("Peromyscus maniculatus") +
+  ggtitle("Artibeus jamaicensis N=1406") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-ggsave(p, file=paste0("orig.dist.lifeStage",".png"), width = 14, height = 10, units = "cm")
+ggsave(p, file=paste0("orig.dist.lifeStage.bat",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.hindfoot.length, scientificName == "Peromyscus maniculatus")
+length(df$mass[!is.na(df$mass)])
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.7) +
+  ggtitle("Peromyscus maniculatus N=31669") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
 
 ##Label OUTLIERS----
 
@@ -464,7 +474,7 @@ outlier.function <- function(data, threshold, column, vector, trait, units, unit
       }
     }
     else{
-      data[i,status] <- "not checked"
+      next
     }
   }
   return(data)
@@ -485,6 +495,18 @@ df.ear.length <- outlier.function(data = df.hindfoot.length, threshold = 0.95, c
 
 #NOTE: tail length not working
 
+mean(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus"], na.rm = TRUE) #102.73
+length(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & !is.na(data.noJuv$mass)]) #30717
+mean(df.ear.length$mass[df.ear.length$scientificName == "Peromyscus maniculatus" & df.ear.length$mass.status != "outlier"], na.rm = TRUE) #26.02
+length(df.ear.length$mass[df.ear.length$scientificName == "Peromyscus maniculatus" & df.ear.length$mass.status != "outlier" & !is.na(df.ear.length$mass)]) #30716
+mean(df.ear.length$mass[df.ear.length$scientificName == "Peromyscus maniculatus" & df.ear.length$mass.status == "outlier"], na.rm = TRUE) #26.02
+length(df.ear.length$mass[df.ear.length$scientificName == "Peromyscus maniculatus" & df.ear.length$mass.status == "outlier" & !is.na(df.ear.length$mass)]) #30716
+
+mean(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis"], na.rm = TRUE) #41.08755
+length(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & !is.na(data.noJuv$mass)]) #1394
+mean(df.ear.length$mass[df.ear.length$scientificName == "Artibeus jamaicensis" & df.ear.length$mass.status != "outlier"], na.rm = TRUE) #40.50593
+length(df.ear.length$mass[df.ear.length$scientificName == "Artibeus jamaicensis" & df.ear.length$mass.status != "outlier" & !is.na(df.ear.length$mass)]) #1324
+
 # Function for upper and lower limits ----
 ##create function to find upper and lower limit for each measurementType based on non-juveniles, non-inferred units, and correct units ("g" or "mm")
 
@@ -492,12 +514,21 @@ df.ear.length <- outlier.function(data = df.hindfoot.length, threshold = 0.95, c
 data <- rbind(df.ear.length, data.Juv)
 length(unique(data$scientificName)) #4346
 
-df <- subset(data, data$scientificName == "Peromyscus maniculatus" & data$lifeStage != "Juvenile")
+df <- subset(data, data$scientificName == "Artibeus jamaicensis" & data$lifeStage != "Juvenile" & !is.na(data$mass))
+length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  ggtitle("Peromyscus maniculatus") +
+  ggtitle("Artibeus jamaicensis N=1394") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-ggsave(p, file=paste0("outlier.test",".png"), width = 14, height = 10, units = "cm")
+ggsave(p, file=paste0("outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data, data$scientificName == "Peromyscus maniculatus" & data$lifeStage != "Juvenile" & !is.na(data$mass))
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  ggtitle("Peromyscus maniculatus N=30717") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
 ##TO DO
 # limits.specific <- function(data, column, trait, units.infer, values, status, unit, amt){
@@ -583,13 +614,36 @@ data.forearm.length.check <- check(data = data.tail.length.check, trait = "forea
 
 data <- rbind(data.forearm.length.check, data.juv)
 
-df <- subset(data, data$scientificName  == "Peromyscus maniculatus" & data$lifeStage != "Juvenile")
+df <- subset(data, data$scientificName  == "Artibeus jamaicensis" & data$lifeStage != "Juvenile" & !is.na(data$mass))
+length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
-  ggtitle("Peromyscus maniculatus") +
+  ggtitle("Artibeus jamaicensis N=1394") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("second.outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data, data$scientificName  == "Peromyscus maniculatus" & data$lifeStage != "Juvenile" & !is.na(data$mass))
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
+  ggtitle("Peromyscus maniculatus N=30717") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("second.outlier.test",".png"), width = 14, height = 10, units = "cm")
 
+
+mean(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier"], na.rm = TRUE) #26.02
+length(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass)])
+mean(data.forearm.length.check$mass[data.forearm.length.check$scientificName == "Peromyscus maniculatus" & data.forearm.length.check$mass.status == "GOOD"], na.rm = TRUE)
+length(data.forearm.length.check$mass[data.forearm.length.check$scientificName == "Peromyscus maniculatus" & data.forearm.length.check$mass.status == "GOOD"])
+mean(data.forearm.length.check$mass[data.forearm.length.check$scientificName == "Peromyscus maniculatus" & data.forearm.length.check$mass.status != "outlier"], na.rm = TRUE)
+length(data.forearm.length.check$mass[data.forearm.length.check$scientificName == "Peromyscus maniculatus" & data.forearm.length.check$mass.status != "outlier"])
+
+mean(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
+length(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass)])
+mean(data.forearm.length.check$mass[data.forearm.length.check$scientificName == "Artibeus jamaicensis" & data.forearm.length.check$mass.status == "GOOD"], na.rm = TRUE)
+length(data.forearm.length.check$mass[data.forearm.length.check$scientificName == "Artibeus jamaicensis" & data.forearm.length.check$mass.status == "GOOD" & !is.na(data.forearm.length$mass)])
+mean(data.forearm.length.check$mass[data.forearm.length.check$scientificName == "Artibeus jamaicensis" & data.forearm.length.check$mass.status != "outlier"], na.rm = TRUE)
+length(data.forearm.length.check$mass[data.forearm.length.check$scientificName == "Artibeus jamaicensis" & data.forearm.length.check$mass.status != "outlier" & !is.na(data.forearm.length$mass)])
 
 ##unit conversion----
 #convert units that are wrong (i.e., not "g" or "mm") to proper units
@@ -663,12 +717,31 @@ data.convert.forearm <- convert.mm(data = data.convert.tail, trait = "forearm.le
 
 data.convert <- rbind(data.convert.forearm, data.Juv)
 
-df <- subset(data.convert, data.convert$scientificName  == "Peromyscus maniculatus" & lifeStage != "Juvenile")
+df <- subset(data.convert, data.convert$scientificName  == "Artibeus jamaicensis" & lifeStage != "Juvenile" & !is.na(data.convert$mass))
+length(df$mass) #1394
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  ggtitle("Artibeus jamaicensis N=1394") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("convert.units.bat",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.convert, data.convert$scientificName  == "Peromyscus maniculatus" & lifeStage != "Juvenile" & !is.na(data.convert$mass))
+length(df$mass) #30717
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
   ggtitle("Peromyscus maniculatus") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-ggsave(p, file=paste0("convert.units",".png"), width = 14, height = 10, units = "cm")
+ggsave(p, file=paste0("convert.units.mouse",".png"), width = 14, height = 10, units = "cm")
+
+mean(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
+length(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass.status)])
+mean(data.convert.forearm$mass[data.convert.forearm$scientificName == "Peromyscus maniculatus" & data.convert.forearm$mass.status != "outlier"], na.rm = TRUE)
+length(data.convert.forearm$mass[data.convert.forearm$scientificName == "Peromyscus maniculatus" & data.convert.forearm$mass.status != "outlier" & !is.na(data.covert.forearm$mass)])
+
+mean(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
+length(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass)])
+mean(data.convert.forearm$mass[data.convert.forearm$scientificName == "Artibeus jamaicensis" & data.convert.forearm$mass.status != "outlier"], na.rm = TRUE)
+length(data.convert.forearm$mass[data.convert.forearm$scientificName == "Artibeus jamaicensis" & data.convert.forearm$mass.status != "outlier" & !is.na(data.convert.forearm$mass)])
 
 ##create new sigma, this time only without juveniles, but allow for inferred units
 
@@ -792,12 +865,31 @@ for(i in 1:length(data.outlier$scientificName)){
   }
 }
 
-df < subset(data.outlier, scientificName == "Peromyscus maniculatus" & lifeStage != "Juvenile")
+df < subset(data.outlier, scientificName == "Artibeus jamaicensis" & lifeStage != "Juvenile" & !is.na(data.outlier$mass))
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  ggtitle("Artibeus jamaicensis") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("third.outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
+
+df < subset(data.outlier, scientificName == "Peromyscus maniculatus" & lifeStage != "Juvenile" & !is.na(data.outlier$mass))
+length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
   ggtitle("Peromyscus maniculatus") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-ggsave(p, file=paste0("third.outlier.test",".png"), width = 14, height = 10, units = "cm")
+ggsave(p, file=paste0("third.outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
+
+mean(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
+length(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass)])
+mean(data.outlier$mass[data.outlier$scientificName == "Peromyscus maniculatus" & data.outlier$mass.status != "outlier"], na.rm = TRUE)
+length(data.outlier$mass[data.outlier$scientificName == "Peromyscus maniculatus" & data.outlier$mass.status != "outlier" & !is.na(data.outlier$mass)])
+
+mean(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
+length(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass)])
+mean(data.outlier$mass[data.outlier$scientificName == "Artibeus jamaicensis" & data.outlier$mass.status != "outlier"], na.rm = TRUE)
+length(data.outlier$mass[data.outlier$scientificName == "Artibeus jamaicensis" & data.outlier$mass.status != "outlier" & !is.na(data.outlier$mass)])
 
 ##info about outliers----
 outlier_stats <- data.outlier %>%
