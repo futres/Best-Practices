@@ -628,7 +628,7 @@ p <- ggplot(data = df) +
   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
   ggtitle("Peromyscus maniculatus N=30717") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-ggsave(p, file=paste0("second.outlier.test",".png"), width = 14, height = 10, units = "cm")
+ggsave(p, file=paste0("second.outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
 
 mean(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier"], na.rm = TRUE) #26.02
