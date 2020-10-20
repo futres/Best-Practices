@@ -17,27 +17,25 @@ pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C
 data <- read.csv("https://de.cyverse.org/dl/d/74880F82-59DF-4558-BBCB-A51EA1631592/labeled.clean.data.csv", header = TRUE)
 
 ##combine with pantheria----
-sp.data <- unique(data$scientificName) #1762 spp
-nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #1448 spp
+sp.data <- unique(data$scientificName) 
+nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #2859 spp
 
 pan.data <- merge(pan, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
-length(unique(pan.data$MSW05_Binomial)) #1762
+length(unique(pan.data$MSW05_Binomial)) #4346
 
 ###head-body-length----
 pan.data$head.body.length <- pan.data$total.length - pan.data$tail.length
 # need to get bunnies and deer
 
+#pan.data$head.body.length[pan.data$MSW05_Family == "Cervidae"] <- pan.data$total.length[pan.data$MSW05_Family == "Cervidae"]
+#pan.data$head.body.length[pan.data$MSW05_Family == "Leporidae"] <- pan.data$total.length[pan.data$MSW05_Family == "Leporidae"]
+#says NA not allowed for subscripts and can't get it working...
+
 for(i in 1:nrow(pan.data)){
   if(is.na(pan.data$head.body.length[pan.data$MSW05_Family == "Cervidae"][i])){
     pan.data$head.body.length[i] <- pan.data$total.length[i]
   }
-  else{
-    next
-  }
-}
-
- for(i in 1:nrow(pan.data)){
-  if(is.na(pan.data$head.body.length[pan.data$MSW05_Family == "Leporidae"][i])){
+  else if(isTRUE(pan.data$total.length[pan.data$MSW05_Family == "Cervidae"][i] >= 0)){
     pan.data$head.body.length[i] <- pan.data$total.length[i]
   }
   else{
@@ -45,10 +43,27 @@ for(i in 1:nrow(pan.data)){
   }
 }
 
-#write.csv(pan.data, "data.taxonomy.csv")
+for(i in 1:nrow(pan.data)){
+  if(is.na(pan.data$head.body.length[pan.data$MSW05_Family == "Leporidae"][i])){
+    pan.data$head.body.length[i] <- pan.data$total.length[i]
+  }
+  else(isTRUE(pan.data$total.length[pan.data$MSW05_Family == "Leporidae"][i] >= 0)){
+    pan.data$head.body.length[i] <- pan.data$total.length[i]
+  }
+  else{
+    next
+  }
+}
+
+write.csv(pan.data, "data.taxonomy.csv")
+
+##data cleaned for mass----
+#pan.data <- read.csv("", header = TRUE)
+
+pan.data.mass <- pan.data[pan.data$mass.status != "outlier" & pan.data$lifeStage != "Juvenile" & pan.data$sample.size >= 10]
 
 ##Q1 compare to pantheria----
-pan.clean <- pan.data[!is.na(pan.data$X5.1_AdultBodyMass_g),] #1296 sp
+pan.clean <- pan.data.mass[!is.na(pan.data.mass$X5.1_AdultBodyMass_g),] #1296 sp
 pan.clean2 <- pan.clean[pan.clean$mass != 0,] #1179
 
 pan.cleaner <- pan.clean2[!is.na(pan.clean2$mass) & pan.clean2$mass.status != "outlier",]
