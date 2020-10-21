@@ -356,8 +356,6 @@ futres[futres=="--"]<-NA
 futres[futres==""]<-NA
 futres$Total.Fresh.Weight..g. <- as.numeric(futres$Total.Fresh.Weight..g.)  
 
-data <- read.csv("https://de.cyverse.org/dl/d/21B3BBBC-8CCE-4A88-90CB-1AE3F21855F2/labeled.clean.data.csv", header = TRUE, stringsAsFactors = FALSE)
-
 #Subsetting data
 data.adult.trim.clean <- futres[!is.na(futres$Total.Fresh.Weight..g.),]
 data.adult.trim.foot <- data.adult.trim.clean[!is.na(data.adult.trim.clean$HF..mm...Hind.Foot.Length.),]
@@ -511,35 +509,55 @@ p = ggplot(data = test2) +
   
 #write.csv(model.Spermophilus.beecheyi, file= "model.results.Spermophilus.beecheyi.csv")
   
+#translating between models-------------
 #Now we want to see if translating between the models is fruitful. The first step is to predict total length from tooth row length
   #predict function works better if the naming scheme inside the lm model is simple. It will automatically log the values.
+  #toothrow versus total length
   y <- test2$TL..mm...Total.Length.
   x <- test2$c.toothrow.1.mm
-  model3 <- lm(log10(y) ~ log10(x), na.action=na.exclude)
-  
-  #testing
-  newdata=data.frame(x=12)
-  predict(model3, newdata, interval="predict")
+  model1 <- lm(log10(y) ~ log10(x), na.action=na.exclude)
   
   toothpredict <- data.frame(x = test2$c.toothrow.1.mm)
-  p1 <- data.frame(predict(model3, toothpredict, interval="predict"))
+  p1 <- data.frame(predict(model1, toothpredict, interval="predict"))
   toothpredict$fit1 <- p1$fit
   toothpredict$lwr1 <- p1$lwr
   toothpredict$upr1 <- p1$upr
+  toothpredict$se <- (toothpredict$fit1-toothpredict$lwr1)
   
-  TBLSE <- (sd(toothpredict$fit1)/sqrt(length(toothpredict$fit1)))
-
-  #now predicting the predictions. I am already in log 10 space with the predictions.
+  #Now to push the toothrow points through the second regression. I am already in log 10 space with the predictions. The below data is not correct because we need the vert net data as well to make a regression that has 100s of points.
   y <- log10(test2$Total.Fresh.Weight..g.)
   x <- log10(test2$TL..mm...Total.Length.)
   model2 <- lm(y ~ x, na.action=na.exclude)
+  sum.model2 <- summary(model2)
+  std.err.slope <-  sum.model2$coefficients[4]
+  std.err.intercept <-  sum.model2$coefficients[3]
+  
    newdata<- data.frame(x = toothpredict$fit1)
   p2 <- data.frame(predict(model2, newdata, interval="predict"))
   toothpredict$fit2 <- p2$fit
+  toothpredict$lwr2 <- p2$lwr
+  toothpredict$se2 <- (toothpredict$fit2-toothpredict$lwr2)
   
-  TFWSE <- (sd(toothpredict$fit2)/sqrt(length(toothpredict$fit2)))
+  #this is where the gaussian error propogation would go. I really don't know if this is right.
+  toothpredict$GauTRL <- sqrt((toothpredict$se)^2 + (std.err.slope)^2 + (std.err.intercept)^2)
   
-  #the below values might need to somehow be added to something else. I need to figure out how to propogate the uncertainty from the last plot. 
+  #summing together the error from the gaussian propogation and the error from pushing the points through
+  toothpredict$sumerror <- sqrt((toothpredict$GauTRL)^2 + (toothpredict$se2 )^2)
+  
+  #compare to the error in the relationship between tooth row and mass
+  model3 <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
+  sum.model3 <- summary(model3)
+  toothpredict2 <- data.frame(x = test2$c.toothrow.1.mm)
+  p3 <- data.frame(predict(model3, toothpredict2, interval="predict"))
+  toothpredict$fit3 <- p3$fit
+  toothpredict$lwr3 <- p3$lwr
+  toothpredict$se3 <- (toothpredict$fit3-toothpredict$lwr3)
+  
+  #some questions: is it ok to be working in log log space this whole time? DO we want to transform them at the end of the analysis.
+  
+  
+  
+  #the below code predicts the predictions and makes the statistically bankrupt plot. WE can delete
   newdata<- data.frame(x = toothpredict$lwr1)
   p2 <- data.frame(predict(model2, newdata, interval="predict"))
   toothpredict$lwr1fit <- p2$fit
