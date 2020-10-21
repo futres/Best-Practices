@@ -518,11 +518,11 @@ p = ggplot(data = test2) +
   model1 <- lm(log10(y) ~ log10(x), na.action=na.exclude)
   
   toothpredict <- data.frame(x = test2$c.toothrow.1.mm)
-  p1 <- data.frame(predict(model1, toothpredict, interval="predict"))
+  p1 <- data.frame(predict(model1, toothpredict, se.fit = TRUE))
   toothpredict$fit1 <- p1$fit
-  toothpredict$lwr1 <- p1$lwr
-  toothpredict$upr1 <- p1$upr
-  toothpredict$se <- (toothpredict$fit1-toothpredict$lwr1)
+  toothpredict$se <- p1$se.fit
+  #toothpredict$upr1 <- p1$upr
+  #toothpredict$se <- (toothpredict$fit1-toothpredict$lwr1)
   
   #Now to push the toothrow points through the second regression. I am already in log 10 space with the predictions. The below data is not correct because we need the vert net data as well to make a regression that has 100s of points.
   y <- log10(test2$Total.Fresh.Weight..g.)
@@ -533,13 +533,14 @@ p = ggplot(data = test2) +
   std.err.intercept <-  sum.model2$coefficients[3]
   
    newdata<- data.frame(x = toothpredict$fit1)
-  p2 <- data.frame(predict(model2, newdata, interval="predict"))
+  p2 <- data.frame(predict(model2, newdata, se.fit = TRUE))
   toothpredict$fit2 <- p2$fit
-  toothpredict$lwr2 <- p2$lwr
-  toothpredict$se2 <- (toothpredict$fit2-toothpredict$lwr2)
+  toothpredict$se2 <- p2$se.fit
+  #toothpredict$se2 <- (toothpredict$fit2-toothpredict$lwr2)
   
-  #this is where the gaussian error propogation would go. I really don't know if this is right.
-  toothpredict$GauTRL <- sqrt((toothpredict$se)^2 + (std.err.slope)^2 + (std.err.intercept)^2)
+  #this is where the gaussian error propogation would go. I really don't know if this is right.need to replace with a call for the slope.
+  toothpredict$GauTRL <- sqrt((2.396801335
+ * toothpredict$se)^2)
   
   #summing together the error from the gaussian propogation and the error from pushing the points through
   toothpredict$sumerror <- sqrt((toothpredict$GauTRL)^2 + (toothpredict$se2 )^2)
@@ -548,10 +549,10 @@ p = ggplot(data = test2) +
   model3 <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
   sum.model3 <- summary(model3)
   toothpredict2 <- data.frame(x = test2$c.toothrow.1.mm)
-  p3 <- data.frame(predict(model3, toothpredict2, interval="predict"))
+  p3 <- data.frame(predict(model3, toothpredict2, se.fit = TRUE))
   toothpredict$fit3 <- p3$fit
-  toothpredict$lwr3 <- p3$lwr
-  toothpredict$se3 <- (toothpredict$fit3-toothpredict$lwr3)
+  toothpredict$se3 <- p3$se.fit
+  #toothpredict$se3 <- (toothpredict$fit3-toothpredict$lwr3)
   
   #some questions: is it ok to be working in log log space this whole time? DO we want to transform them at the end of the analysis.
   
