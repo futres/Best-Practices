@@ -358,21 +358,55 @@ length(unique(data.meas$scientificName)) #1747
 write.csv(data.meas, "less.dirty.data.csv")
 
 ##Figure
-df <- subset(data.meas, scientificName == "Artibeus jamaicensis" & mass.units == "g")
-length(df$mass[!is.na(df$mass)]) 
+length(data.meas$mass[data.meas$scientificName == "Artibeus jamaicensis" & !is.na(data.meas$mass)]) #1394
+length(data.meas$mass[data.meas$scientificName == "Peromyscus maniculatus" & !is.na(data.meas$mass)]) #30717
+length(data.meas$mass[data.meas$scientificName == "Spermophilus beecheyi" & !is.na(data.meas$mass)]) #222
+length(data.meas$mass[data.meas$scientificName == "Odocoileus virginianus" & !is.na(data.meas$mass)]) #930
+
+ccStage <- c("slateblue4", "mediumslateblue", "mediumpurple1")
+data.meas$lifeStage[data.meas$lifeStage == "--"] <- ""
+data.meas$lifeStage <- as.factor(data.meas$lifeStage)
+data.meas$lifeStage = relevel(data.meas$lifeStage, "Adult")
+data.meas$lifeStage <- factor(data.meas$lifeStage,levels = c("Adult","","NS"))
+df <- subset(data.meas, data.meas$scientificName == "Artibeus jamaicensis" & mass.units == "g" & !is.na(data.meas$mass))
+length(df$mass) 
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.7) +
+  scale_fill_manual(values = ccStage, 
+                    name="Life Stage") +
   ggtitle("Artibeus jamaicensis N=1235") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("orig.dist.lifeStage.bat",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.meas, scientificName == "Peromyscus maniculatus" & mass.units == "g")
-length(df$mass[!is.na(df$mass)])
+df <- subset(data.meas, data.meas$scientificName == "Peromyscus maniculatus" & mass.units == "g" & !is.na(data.meas$mass))
+length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.7) +
+  scale_fill_manual(values = ccStage, 
+                    name="Life Stage") +
   ggtitle("Peromyscus maniculatus N=24650") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.meas, scientificName == "Spermophilus beecheyi" & mass.units == "g" & !is.na(data.meas$mass))
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.7) +
+  scale_fill_manual(values = ccStage, 
+                    name="Life Stage") +
+  ggtitle("Spermophilus beecheyi N=161") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("orig.dist.lifeStage.squirrel",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.meas, scientificName == "Odocoileus virginianus" & mass.units == "g" & !is.na(data.meas$mass))
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.7) +
+  scale_fill_manual(values = ccStage, 
+                    name="Life Stage") +
+  ggtitle("Odocoileus virginianus N=66") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("orig.dist.lifeStage.deer",".png"), width = 14, height = 10, units = "cm")
 
 ##Label OUTLIERS----
 
@@ -385,6 +419,7 @@ data.meas$total.length.status <- rep("", nrow(data.meas))
 data.meas$tail.length.status <- rep("", nrow(data.meas))
 data.meas$hindfoot.length.status <- rep("", nrow(data.meas))
 data.meas$ear.length.status <- rep("", nrow(data.meas))
+#data.meas$forearm.length.status <- rep("", nrow(data.meas))
 
 #need to select out trait
 #remove NAs from trait
@@ -435,32 +470,59 @@ df.ear.length <- outlier.function(data = df.hindfoot.length, threshold = 0.95, c
                                   trait = "ear.length", units = "ear.length.units", unit = "mm", unit.infer = "ear.length.units.inferred", values = values, status = "ear.length.status")
 #df.ear.length[is.nan(df.ear.length$tail.length)] <- NA
 #df.tail.length <- outlier.function(data = df.ear.length, threshold = 0.95, column = "scientificName", vector = sp,
-#                                   trait = "tail.length", units = "tail.length.units", unit = "mm", unit.infer = "tail.length.units.inferred", values = values, status = "tail.length.status")
+  #                                 trait = "tail.length", units = "tail.length.units", unit = "mm", unit.infer = "tail.length.units.inferred", values = values, status = "tail.length.status")
 
 #NOTE: tail length not working
 
-# Function for upper and lower limits ----
-##create function to find upper and lower limit for each measurementType based on non-juveniles, non-inferred units, and correct units ("g" or "mm")
-
-##mean, standard deviation, and upper and lower limit
+##write out outlier test data----
 data.mh <- df.ear.length
 length(unique(data.mh$scientificName)) #1747
+write.csv(data.mh, "mh.outlier.checked.data.csv")
 
-df <- subset(data.mh, data.mh$scientificName == "Artibeus jamaicensis" & !is.na(data.mh$mass))
+ccStatus <- c("darkslateblue", "lightslateblue")
+data.mh2 <- data.mh
+data.mh2$mass.status <- as.factor(data.mh2$mass.status)
+data.mh2$mass.status = relevel(data.mh2$mass.status, "")
+data.mh2$mass.status <- factor(data.mh2$mass.status,levels = c("","outlier"))
+df <- subset(data.mh2, data.mh2$scientificName == "Artibeus jamaicensis" & !is.na(data.mh2$mass) & data.mh2$mass.units == "g")
 length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  ggtitle("Artibeus jamaicensis N=1394") +
+  ggtitle("Artibeus jamaicensis N=1235") +
+  scale_fill_manual(values = ccStatus,
+                   name="Mass Status") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.mh, data.mh$scientificName == "Peromyscus maniculatus" & !is.na(data.mh$mass))
+df <- subset(data.mh2, data.mh2$scientificName == "Peromyscus maniculatus" & !is.na(data.mh2$mass) & data.mh2$mass.units == "g")
 length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  ggtitle("Peromyscus maniculatus N=30717") +
+  ggtitle("Peromyscus maniculatus N=24650") +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.mh2, data.mh2$scientificName == "Spermophilus beecheyi" & !is.na(data.mh2$mass) & data.mh2$mass.units == "g")
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Spermophilus beecheyi N=161") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.mh2, data.mh2$scientificName == "Odocoileus virginianus" & !is.na(data.mh2$mass) & data.mh2$mass.units == "g")
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Odocoileus virginianus N=66") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
 ##TO DO
 # limits.specific <- function(data, column, trait, units.infer, values, status, unit, amt){
@@ -480,31 +542,47 @@ ggsave(p, file=paste0("outlier.test.mouse",".png"), width = 14, height = 10, uni
 #                                                   values = values, status = mass.status, unit = "g",
 #                                                   amt = 3)
 
+# Function for upper and lower limits ----
+##create function to find upper and lower limit for each measurementType based on non-juveniles, non-inferred units, and correct units ("g" or "mm")
+
+##mean, standard deviation, and upper and lower limit
+
 values <- c("FALSE", "False")
 data.noInfer_stats <- data.mh %>%
   dplyr::group_by(scientificName) %>%
-  dplyr::summarise(avg.mass = mean(mass[mass.units.inferred %in% values & mass.status != "outlier" & mass.units == "g" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.mass = sd(mass[mass.units.inferred %in% values & mass.status != "outlier" & mass.units == "g" & lifeStage != "Juvenile"], na.rm = TRUE),
+  dplyr::summarise(sample.size.mass = length(mass[mass.units.inferred %in% values & mass.status != "outlier" & mass.units == "g" & !is.na(mass)]),
+                   avg.mass = mean(mass[mass.units.inferred %in% values & mass.status != "outlier" & mass.units == "g"], na.rm = TRUE),
+                   sigma.mass = sd(mass[mass.units.inferred %in% values & mass.status != "outlier" & mass.units == "g"], na.rm = TRUE),
                    upper.limit.mass = avg.mass + (3*sigma.mass),
                    lower.limit.mass = avg.mass - (3*sigma.mass),
-                   avg.length = mean(total.length[total.length.units.inferred %in% values & total.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.length = sd(total.length[total.length.units.inferred %in% values & total.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   
+                   sample.size.length = length(total.length[total.length.units.inferred %in% values & total.length.units == "mm" & !is.na(total.length)]),
+                   avg.length = mean(total.length[total.length.units.inferred %in% values & total.length.units == "mm"], na.rm = TRUE),
+                   sigma.length = sd(total.length[total.length.units.inferred %in% values & total.length.units == "mm"], na.rm = TRUE),
                    upper.limit.length = avg.length + (3*sigma.length),
                    lower.limit.length = avg.length - (3*sigma.length),
-                   avg.hindfoot = mean(hindfoot.length[hindfoot.length.units.inferred %in% values & hindfoot.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.hindfoot = sd(hindfoot.length[hindfoot.length.units.inferred %in% values & hindfoot.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   
+                   sample.size.hindfoot = length(hindfoot.length[hindfoot.length.units.inferred %in% values & hindfoot.length.units == "mm" & !is.na(hindfoot.length)]),
+                   avg.hindfoot = mean(hindfoot.length[hindfoot.length.units.inferred %in% values & hindfoot.length.units == "mm"], na.rm = TRUE),
+                   sigma.hindfoot = sd(hindfoot.length[hindfoot.length.units.inferred %in% values & hindfoot.length.units == "mm"], na.rm = TRUE),
                    upper.limit.hindfoot = avg.hindfoot + (3*sigma.hindfoot),
                    lower.limit.hindfoot = avg.hindfoot - (3*sigma.hindfoot),
-                   avg.ear.length = mean(ear.length[ear.length.units.inferred %in% values & ear.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.ear = sd(ear.length[ear.length.units.inferred %in% values & ear.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   
+                   sample.size.ear = length(ear.length[ear.length.units.inferred %in% values & ear.length.units == "mm" & !is.na(ear.length)]),
+                   avg.ear.length = mean(ear.length[ear.length.units.inferred %in% values & ear.length.units == "mm"], na.rm = TRUE),
+                   sigma.ear = sd(ear.length[ear.length.units.inferred %in% values & ear.length.units == "mm"], na.rm = TRUE),
                    upper.limit.ear = avg.ear.length + (3*sigma.ear),
                    lower.limit.ear = avg.ear.length - (3*sigma.ear),
-                   avg.forearm.length = mean(forearm.length[forearm.length.units.inferred %in% values & forearm.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.forearm = sd(forearm.length[forearm.length.units.inferred %in% values & forearm.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.forearm = avg.forearm.length + (3*sigma.forearm),
-                   lower.limit.forearm = avg.forearm.length - (3*sigma.forearm),
-                   avg.tail.length = mean(tail.length[tail.length.units.inferred %in% values & tail.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.tail = sd(tail.length[tail.length.units.inferred %in% values & tail.length.units == "mm" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   
+                   #sample.size.forearm = length(forearm.length[forearm.length.units.inferred %in% values & forearm.length.units == "mm" & !is.na(forearm.length)])
+                   #avg.forearm.length = mean(forearm.length[forearm.length.units.inferred %in% values & forearm.length.units == "mm"], na.rm = TRUE),
+                   #sigma.forearm = sd(forearm.length[forearm.length.units.inferred %in% values & forearm.length.units == "mm"], na.rm = TRUE),
+                   #upper.limit.forearm = avg.forearm.length + (3*sigma.forearm),
+                   #lower.limit.forearm = avg.forearm.length - (3*sigma.forearm),
+                   
+                   sample.size.tail = length(tail.length[tail.length.units.inferred %in% values & tail.length.units == "mm" & !is.na(tail.length)]),
+                   avg.tail.length = mean(tail.length[tail.length.units.inferred %in% values & tail.length.units == "mm"], na.rm = TRUE),
+                   sigma.tail = sd(tail.length[tail.length.units.inferred %in% values & tail.length.units == "mm"], na.rm = TRUE),
                    upper.limit.tail = avg.tail.length + (3*sigma.tail),
                    lower.limit.tail = avg.tail.length - (3*sigma.tail)) %>%
   as.data.frame()
@@ -516,48 +594,134 @@ length(unique(data.limit$scientificName)) #1747
 
 ##label outliers
 #label samples that are outside of limits with outlier, and label those within limits as "g" and inferred = TRUE
-check <- function(data, trait, units, units.infer, status, upper, lower, unit){
+# check <- function(data, trait, units, units.infer, status, upper, lower, unit){
+#   for(i in 1:nrow(data)){
+#     if(isTRUE(data[i,trait][units != unit] >= data[i,lower] & data[i,trait][units != unit] <= data[i,upper])){
+#       data[i,units.infer] <- "TRUE"
+#       data[i,units] <- unit
+#       data[i,status] <- "GOOD"
+#     }
+#     else if(isTRUE(data[i,trait][units == unit] >= data[i,lower] & data[i,trait][units == unit] <= data[i,upper])){
+#       data[i,status] <- "GOOD"
+#     }
+#     else{
+#       data[i,status] <- "outlier"
+#     }
+#   }
+#   return(data)
+# }
+
+check.1 <- function(data, trait, status, upper, lower, sample.size){
   for(i in 1:nrow(data)){
-    if(isTRUE(data[i,trait][units != unit] >= data[i,lower] & data[i,trait][units != unit] <= data[i,upper])){
-      data[i,units.infer] <- "TRUE"
-      data[i,units] <- unit
-      data[i,status] <- "GOOD"
+    if(isTRUE(data[i,sample.size] < 10)){
+      data[i,status] <- "too few records"
     }
-    else if(isTRUE(data[i,trait][units == unit] >= data[i,lower] & data[i,trait][units == unit] <= data[i,upper])){
-      data[i,status] <- "GOOD"
+    else if(isTRUE(data[i,trait] <= data[i,lower])){
+      data[i,status] <- "outlier"
+    }
+    else if(isTRUE(data[i,trait] >= data[i,upper])){
+      data[i,status] <- "outlier"
     }
     else{
-      data[i,status] <- "outlier"
+      data[i,status] <- "GOOD"
     }
   }
   return(data)
 }
 
-data.check <- data.limit
-data.mass.check <- check(data = data.check, trait = "mass", units = "mass.units", units.infer = "mass.units.inferred", status = "mass.status", upper = "mass.upper.limit", lower = "mass.lower.limit", unit = "g")
-data.total.length.check <- check(data = data.mass.check, trait = "total.length", units = "total.length.units", units.infer = "total.length.units.inferred", status = "total.length.status", upper = "total.length.upper.limit", lower = "total.length.lower.limit", unit = "mm")
-data.hindfoot.length.check <- check(data  = data.total.length.check, trait = "hindfoot.length", units = "hindfoot.length.units", units.infer = "hindfoot.length.units.inferred", status = "hindfoot.length.status", upper = "hindfoot.upper.limit", lower = "hindfoot.lower.limit", unit = "mm")
-data.ear.length.check <- check(data = data.hindfoot.length.check, trait = "ear.length", units = "ear.length.units", units.infer = "ear.length.units.inferred", status = "ear.length.status", upper = "ear.length.upper.limit", lower = "ear.length.lower.limit", unit = "mm")
-#data.tail.length.check <- check(data = data.ear.length.check, trait = "tail.length", units = "tail.length.units", units.infer = "tail.length.units.inferred", status = "tail.length.status", upper = "tail.length.upper.limit", lower = "tail.length.lower.limit", unit = "mm")
+check.2 <- function(data, units, units.infer, status, unit){
+  for(i in 1:nrow(data)){
+    if(isTRUE(data[i,status][units != unit] == "GOOD")){
+      data[i,units.infer] <- "TRUE"
+      data[i,units] <- unit
+    }
+    else{
+      next
+    }
+  }
+  return(data)
+}
+
+#test
+#which(data.limit$sample.size.mass < 10)
+#data.limit$scientificName[6977]
+#df <- subset(data.limit, data.limit$scientificName == "Ametrida centurio")
+#df2 <- subset(df, select = c("mass", "mass.status", "upper.limit.mass", "lower.limit.mass", "sample.size.mass", "mass.units", "mass.units.inferred"))
+#df3 <- check.1(data = df2, trait = "mass", status = "mass.status", upper = "upper.limit.mass", lower = "lower.limit.mass", sample.size = "sample.size.mass")
+#df3$mass.status
+
+data.mass.check1 <- check.1(data = data.limit, trait = "mass", status = "mass.status", upper = "upper.limit.mass", lower = "lower.limit.mass", sample.size = "sample.size.mass")
+data.mass.check2 <- check.2(data = data.mass.check1, status = "mass.status", units = "mass.units", units.infer = "mass.units.inferred", unit = "g")
+
+data.length.check1 <- check.1(data = data.mass.check2, trait = "total.length", status = "total.length.status", upper = "upper.limit.length", lower = "lower.limit.length", sample.size = "sample.size.length")
+data.length.check2 <- check.2(data = data.length.check1, status = "total.length.status", units = "total.length.units", units.infer = "total.length.units.inferred", unit = "mm")
+
+data.ear.check1 <- check.1(data = data.length.check2, trait = "ear.length", status = "ear.length.status", upper = "upper.limit.ear", lower = "lower.limit.ear", sample.size = "sample.size.ear")
+data.ear.check2 <- check.2(data = data.ear.check1, status = "ear.length.status", units = "ear.length.units", units.infer = "ear.length.units.inferred", unit = "mm")
+
+data.hindfoot.check1 <- check.1(data = data.ear.check2, trait = "hindfoot.length", status = "hindfoot.length.status", upper = "upper.limit.hindfoot", lower = "lower.limit.hindfoot", sample.size = "sample.size.hindfoot")
+data.hindfoot.check2 <- check.2(data = data.hindfoot.check1, status = "hindfoot.length.status", units = "hindfoot.length.units", units.infer = "hindfoot.length.units.inferred", unit = "mm")
+
+data.tail.check1 <- check.1(data = data.hindfoot.check2, trait = "tail.length", status = "tail.length.status", upper = "upper.limit.tail", lower = "lower.limit.tail", sample.size = "sample.size.hindfoot")
+data.tail.check2 <- check.2(data = data.tail.check1, status = "tail.length.status", units = "tail.length.units", units.infer = "tail.length.units.inferred", unit = "mm")
+
+
+# data.mass.check <- check(data = data.check, trait = "mass", units = "mass.units", units.infer = "mass.units.inferred", status = "mass.status", upper = "upper.limit.mass", lower = "lower.limit.mass", unit = "g")
+# data.total.length.check <- check(data = data.mass.check, trait = "total.length", units = "total.length.units", units.infer = "total.length.units.inferred", status = "total.length.status", upper = "upper.limit.length", lower = "lower.limit.length", unit = "mm")
+# data.hindfoot.length.check <- check(data = data.total.length.check, trait = "hindfoot.length", units = "hindfoot.length.units", units.infer = "hindfoot.length.units.inferred", status = "hindfoot.length.status", upper = "upper.limit.hindfoot", lower = "lower.limit.hindfoot", unit = "mm")
+# data.ear.length.check <- check(data = data.hindfoot.length.check, trait = "ear.length", units = "ear.length.units", units.infer = "ear.length.units.inferred", status = "ear.length.status", upper = "upper.limit.ear", lower = "lower.limit.ear", unit = "mm")
+#data.tail.length.check <- check(data = data.ear.length.check, trait = "tail.length", units = "tail.length.units", units.infer = "tail.length.units.inferred", status = "tail.length.status", upper = "upper.limit.tail", lower = "lower.limit.tail", unit = "mm")
 #data.forearm.length.check <- check(data = data.tail.length.check, trait = "forearm.length", units = "forearm.length.units", units.infer = "forearm.length.units.inferred", status = "forearm.length.status", upper = "forearm.length.upper.limit", lower = "forearm.length.lower.limit", unit = "mm")
 
-data.check1 <- data.ear.length.check
+##write out first round of upper and lower limits checking----
+data.check <- data.tail.check2
+write.csv(data.check, "data.check1.csv")
 
-df <- subset(data.check1, data.check1$scientificName  == "Artibeus jamaicensis" & !is.na(data.check1$mass))
+
+data.check2 <- data.check
+data.check2$mass.status <- as.factor(data.check2$mass.status)
+data.check2$mass.status = relevel(data.check2$mass.status, "GOOD")
+data.check2$mass.status <- factor(data.check2$mass.status,levels = c("GOOD","outlier"))
+
+df <- subset(data.check2, data.check2$scientificName  == "Artibeus jamaicensis" & !is.na(data.check2$mass) & data.check2$mass.units == "g")
 length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
-  ggtitle("Artibeus jamaicensis N=1394") +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Artibeus jamaicensis N=1364") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("second.outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.check1, data.check1$scientificName  == "Peromyscus maniculatus" & !is.na(data.check1$mass))
+df <- subset(data.check2, data.check2$scientificName == "Peromyscus maniculatus" & !is.na(data.check2$mass) & data.check2$mass.units == "g")
 length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
-  ggtitle("Peromyscus maniculatus N=30717") +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Peromyscus maniculatus N=30713") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("second.outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.check2, data.check2$scientificName == "Spermophilus beecheyi" & !is.na(data.check2$mass) & data.check2$mass.units == "g")
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Spermophilus beecheyi N=215") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("second.outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.check2, data.check2$scientificName == "Odocoileus virginianus" & !is.na(data.check2$mass) & data.check2$mass.units == "g")
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Odocoileus virginianus N=915") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("second.outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
 ##unit conversion----
 #convert units that are wrong (i.e., not "g" or "mm") to proper units
@@ -616,69 +780,97 @@ convert.mm <- function(data, trait, units, units.infer){
   return(data)
 }
 
-data.check <- data.noJuv
 data.convert.mass <- convert.g(data = data.check, trait = "mass", units = "mass.units", units.infer = "mass.units.inferred")
 data.convert.length <- convert.mm(data = data.convert.mass, trait = "total.length", units = "total.length.units", units.infer = "total.length.units.inferred")
 data.convert.hindfoot <- convert.mm(data = data.convert.length, trait = "hindfoot.length", units = "hindfoot.length.units", units.infer = "hindfoot.length.units.inferred")
 data.convert.ear <- convert.mm(data = data.convert.hindfoot, trait = "ear.length", units = "ear.length.units", units.infer = "ear.length.units.inferred")
 data.convert.tail <- convert.mm(data = data.convert.ear, trait = "tail.length", units = "tail.length.units", units.infer = "tail.length.units.inferred")
-data.convert.forearm <- convert.mm(data = data.convert.tail, trait = "forearm.length", units = "forearm.length.units",units.infer = "forearm.length.units.inferred")
+#data.convert.forearm <- convert.mm(data = data.convert.tail, trait = "forearm.length", units = "forearm.length.units",units.infer = "forearm.length.units.inferred")
 
-##recalculate upper and lower limits----
+##write out data with converted units----
+data.convert <- data.convert.tail
+write.csv(data.convert, "data.convert.csv")
 
-data.convert <- rbind(data.convert.forearm, data.Juv)
+data.convert2 <- data.convert
+data.convert2$mass.status <- as.factor(data.convert2$mass.status)
+data.convert2$mass.status = relevel(data.convert2$mass.status, "GOOD")
+data.convert2$mass.status <- factor(data.convert2$mass.status,levels = c("GOOD","outlier"))
 
-df <- subset(data.convert, data.convert$scientificName  == "Artibeus jamaicensis" & lifeStage != "Juvenile" & !is.na(data.convert$mass))
+df <- subset(data.convert2, data.convert2$scientificName  == "Artibeus jamaicensis" & !is.na(data.convert2$mass) & data.convert2$mass.units == "g")
 length(df$mass) #1394
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  ggtitle("Artibeus jamaicensis N=1394") +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") + 
+  ggtitle("Artibeus jamaicensis N=1364") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("convert.units.bat",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.convert, data.convert$scientificName  == "Peromyscus maniculatus" & lifeStage != "Juvenile" & !is.na(data.convert$mass))
+df <- subset(data.convert2, data.convert2$scientificName  == "Peromyscus maniculatus" & !is.na(data.convert2$mass) & data.convert2$mass.units == "g")
 length(df$mass) #30717
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  ggtitle("Peromyscus maniculatus") +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") + 
+  ggtitle("Peromyscus maniculatus N=30714") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("convert.units.mouse",".png"), width = 14, height = 10, units = "cm")
 
-mean(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
-length(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass.status)])
-mean(data.convert.forearm$mass[data.convert.forearm$scientificName == "Peromyscus maniculatus" & data.convert.forearm$mass.status != "outlier"], na.rm = TRUE)
-length(data.convert.forearm$mass[data.convert.forearm$scientificName == "Peromyscus maniculatus" & data.convert.forearm$mass.status != "outlier" & !is.na(data.covert.forearm$mass)])
+df <- subset(data.convert2, data.convert2$scientificName  == "Spermophilus beecheyi" & !is.na(data.convert2$mass) & data.convert2$mass.units == "g")
+length(df$mass) 
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") + 
+  ggtitle("Spermophilus beecheyi N=215") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("convert.units.squirrel",".png"), width = 14, height = 10, units = "cm")
 
-mean(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
-length(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass)])
-mean(data.convert.forearm$mass[data.convert.forearm$scientificName == "Artibeus jamaicensis" & data.convert.forearm$mass.status != "outlier"], na.rm = TRUE)
-length(data.convert.forearm$mass[data.convert.forearm$scientificName == "Artibeus jamaicensis" & data.convert.forearm$mass.status != "outlier" & !is.na(data.convert.forearm$mass)])
+df <- subset(data.convert2, data.convert2$scientificName  == "Odocoileus virginianus" & !is.na(data.convert2$mass) & data.convert2$mass.units == "g")
+length(df$mass) 
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") + 
+  ggtitle("Odocoileus virginianus N=918") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("convert.units.deer",".png"), width = 14, height = 10, units = "cm")
+
+##recalculate upper and lower limits----
 
 ##create new sigma, this time only without juveniles, but allow for inferred units
 
 data.stats <- data.convert %>%
   group_by(scientificName) %>%
-  dplyr::summarise(sample.size = n(),
-                   avg.mass = mean(mass[mass.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.mass = sd(mass[mass.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   mass.upper.limit = avg.mass + (3*sigma.mass),
-                   mass.lower.limit = avg.mass - (3*sigma.mass),
-                   avg.length = mean(total.length[total.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.length = sd(total.length[total.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   total.length.upper.limit = avg.length + (2.5*sigma.length),
-                   total.length.lower.limit = avg.length - (2.5*sigma.length),
-                   avg.ear.length = mean(ear.length[ear.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.ear = sd(ear.length[ear.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.ear = avg.ear.length + (2.5*sigma.ear),
-                   lower.limit.ear = avg.ear.length - (2.5*sigma.ear),
-                   avg.hindfoot = mean(hindfoot.length[hindfoot.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.hindfoot = sd(hindfoot.length[hindfoot.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.hindfoot = avg.hindfoot + (2.5*sigma.length),
-                   lower.limit.hindfoot = avg.hindfoot - (2.5*sigma.length),
-                   avg.tail = mean(tail.length[tail.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.tail = sd(tail.length[tail.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.tail = avg.length + (2.5*sigma.length),
-                   lower.limit.tail = avg.length - (2.5*sigma.length)) %>%
+  dplyr::summarise(sample.size.mass.2 = length(mass[mass.status != "outlier" & lifeStage != "Juvenile" & !is.na(mass)]),
+                   avg.mass.2 = mean(mass[mass.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   sigma.mass.2 = sd(mass[mass.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   upper.limit.mass.2 = avg.mass.2 + (3*sigma.mass.2),
+                   lower.limit.mass.2 = avg.mass.2 - (3*sigma.mass.2),
+                   
+                   sample.size.length.2 = length(total.length[total.length.status != "outlier" & lifeStage != "Juvenile" & !is.na(total.length)]),
+                   avg.length.2 = mean(total.length[total.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   sigma.length.2 = sd(total.length[total.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   upper.limit.length.2 = avg.length.2 + (2.5*sigma.length.2),
+                   lower.limit.length.2 = avg.length.2 - (2.5*sigma.length.2),
+                   
+                   sample.size.ear.2 = length(ear.length[ear.length.status != "outlier" & lifeStage != "Juvenile" & !is.na(ear.length)]),
+                   avg.ear.length.2 = mean(ear.length[ear.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   sigma.ear.2 = sd(ear.length[ear.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   upper.limit.ear.2 = avg.ear.length.2 + (2.5*sigma.ear.2),
+                   lower.limit.ear.2 = avg.ear.length.2 - (2.5*sigma.ear.2),
+                   
+                   sample.size.hindfoot.2 = length(hindfoot.length[hindfoot.length.status != "outlier" & lifeStage != "Juvenile" & !is.na(hindfoot.length)]),
+                   avg.hindfoot.2 = mean(hindfoot.length[hindfoot.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   sigma.hindfoot.2 = sd(hindfoot.length[hindfoot.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   upper.limit.hindfoot.2 = avg.hindfoot.2 + (2.5*sigma.length.2),
+                   lower.limit.hindfoot.2 = avg.hindfoot.2 - (2.5*sigma.length.2),
+                   
+                   sample.size.tail.2 = length(tail.length[tail.length.status != "outlier" & lifeStage != "Juvenile" & !is.na(tail.length)]),
+                   avg.tail.2 = mean(tail.length[tail.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   sigma.tail.2 = sd(tail.length[tail.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
+                   upper.limit.tail.2 = avg.length.2 + (2.5*sigma.length.2),
+                   lower.limit.tail.2 = avg.length.2 - (2.5*sigma.length.2)) %>%
   as.data.frame()
 
 #add stats to dataframe
@@ -687,7 +879,6 @@ data.recheck <- merge(data.convert, data.stats, by = "scientificName", all.x = T
 ##RE-label outliers----
 
 #ask if is true that mass and length fall in-between upper and lower limit
-data.outlier <- data.recheck
 
 # outlier.check <- function(data, trait, lower, upper, status){
 #   for(i in nrow(data)){
@@ -704,127 +895,160 @@ data.outlier <- data.recheck
 # }
 
 
-for(i in 1:length(data.outlier$scientificName)){
-  if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$mass[i] < data.outlier$mass.lower.limit[i])){
-    data.outlier$mass.status[i] <- "outlier"
+for(i in 1:nrow(data.recheck)){
+  if(isTRUE(data.recheck$sample.size.mass.2[i] < 10)){
+    data.recheck$mass.status[i] <- "too few records"
   }
-  else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$mass[i] > data.outlier$mass.upper.limit[i])){
-    data.outlier$mass.status[i] <- "outlier"
+  else if(isTRUE(data.recheck$mass[i] < data.recheck$lower.limit.2[i])){
+    data.recheck$mass.status[i] <- "outlier"
   }
-  else{
-    next
-  }
-}
-
-for(i in 1:length(data.outlier$scientificName)){
-  if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$total.length[i] < data.outlier$length.lower.limit[i])){
-    data.outlier$length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$total.length[i] > data.outlier$length.upper.limit[i])){
-    data.outlier$length.status[i] <- "outlier"
+  else if(isTRUE(data.recheck$mass[i] > data.recheck$upper.limit.2[i])){
+    data.recheck$mass.status[i] <- "outlier"
   }
   else{
     next
   }
 }
 
-for(i in 1:length(data.outlier$scientificName)){
-  if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$tail.length[i] < data.outlier$tail.length.lower.limit[i])){
-    data.outlier$tail.length.status[i] <- "outlier"
+for(i in 1:nrow(data.recheck)){
+  if(isTRUE(data.recheck$sample.size.length.2[i] < 10)){
+    data.recheck$total.length.status[i] <- "too few samples"
   }
-  else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$tail.length[i] > data.outlier$tail.length.upper.limit[i])){
-    data.outlier$tail.length.status[i] <- "outlier"
+  else if(isTRUE(data.recheck$total.length[i] < data.recheck$lower.limit.length.2[i])){
+    data.recheck$total.length.status[i] <- "outlier"
   }
-  else{
-    next
-  }
-}
-
-for(i in 1:length(data.outlier$scientificName)){
-  if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$ear.length[i] < data.outlier$ear.length.lower.limit[i])){
-    data.outlier$ear.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$ear.length[i] > data.outlier$ear.length.upper.limit[i])){
-    data.outlier$ear.length.status[i] <- "outlier"
+  else if(isTRUE(data.recheck$total.length[i] > data.recheck$upper.limit.length.2[i])){
+    data.recheck$total.length.status[i] <- "outlier"
   }
   else{
     next
   }
 }
 
-for(i in 1:length(data.outlier$scientificName)){
-  if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$hindfoot.length[i] < data.outlier$hindfoot.length.lower.limit[i])){
-    data.outlier$hindfoot.length.status[i] <- "outlier"
+for(i in 1:nrow(data.recheck)){
+  if(isTRUE(data.recheck$sample.size.tail.2[i] < 10)){
+    data.recheck$tail.length.status[i] <- "too few records"
   }
-  else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$hindfoot.length[i] > data.outlier$hindfoot.length.upper.limit[i])){
-    data.outlier$hindfoot.length.status[i] <- "outlier"
+  else if(isTRUE(data.recheck$tail.length[i] < data.recheck$lower.limit.tail.2[i])){
+    data.recheck$tail.length.status[i] <- "outlier"
   }
-  else{
-    next
-  }
-}
-
-for(i in 1:length(data.outlier$scientificName)){
-  if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$forearm.length[i] < data.outlier$forearm.length.lower.limit[i])){
-    data.outlier$forearm.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$forearm.length[i] > data.outlier$forearm.length.upper.limit[i])){
-    data.outlier$forearm.length.status[i] <- "outlier"
+  else if(isTRUE(data.recheck$tail.length[i] > data.recheck$upper.limit.tail.2[i])){
+    data.recheck$tail.length.status[i] <- "outlier"
   }
   else{
     next
   }
 }
 
-df < subset(data.outlier, scientificName == "Artibeus jamaicensis" & lifeStage != "Juvenile" & !is.na(data.outlier$mass))
+for(i in 1:nrow(data.recheck)){
+  if(isTRUE(data.recheck$sample.size.ear.2[i] < 10)){
+    data.recheck$ear.length.status[i] <- "too few records"
+  }
+  else if(isTRUE(data.recheck$ear.length[i] < data.recheck$lower.limit.ear.2[i])){
+    data.recheck$ear.length.status[i] <- "outlier"
+  }
+  else if(isTRUE(data.recheck$ear.length[i] > data.recheck$upper.limit.ear.2[i])){
+    data.recheck$ear.length.status[i] <- "outlier"
+  }
+  else{
+    next
+  }
+}
+
+for(i in 1:nrow(data.recheck)){
+  if(isTRUE(data.recheck$sample.size.hindfoot.2[i] < 10)){
+    data.recheck$hindfoot.length.status[i] <- "too few records"
+  }
+  else if(isTRUE(data.recheck$hindfoot.length[i] < data.recheck$lower.limit.hindfoot.2[i])){
+    data.recheck$hindfoot.length.status[i] <- "outlier"
+  }
+  else if(isTRUE(data.recheck$hindfoot.length[i] > data.recheck$upper.limit.hindfoot.2[i])){
+    data.recheck$hindfoot.length.status[i] <- "outlier"
+  }
+  else{
+    next
+  }
+}
+
+# for(i in 1:length(data.outlier$scientificName)){
+#   if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$forearm.length[i] < data.outlier$forearm.length.lower.limit[i])){
+#     data.outlier$forearm.length.status[i] <- "outlier"
+#   }
+#   else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$forearm.length[i] > data.outlier$forearm.length.upper.limit[i])){
+#     data.outlier$forearm.length.status[i] <- "outlier"
+#   }
+#   else{
+#     next
+#   }
+# }
+
+##write out clean, labeled data----
+data.outlier <- data.recheck
+write.csv(data.outlier, "labeled.clean.data.csv")
+
+data.outlier2 <- data.outlier
+data.outlier2$mass.status <- as.factor(data.outlier2$mass.status)
+data.outlier2$mass.status = relevel(data.outlier2$mass.status, "GOOD")
+data.outlier2$mass.status <- factor(data.outlier2$mass.status,levels = c("GOOD","outlier"))
+
+df <- subset(data.outlier2, data.outlier2$scientificName == "Artibeus jamaicensis" & !is.na(data.outlier2$mass) & data.outlier2$mass.units == "g")
 length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  ggtitle("Artibeus jamaicensis") +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Artibeus jamaicensis N=1364") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("third.outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
 
-df < subset(data.outlier, scientificName == "Peromyscus maniculatus" & lifeStage != "Juvenile" & !is.na(data.outlier$mass))
+df <- subset(data.outlier2, data.outlier2$scientificName == "Peromyscus maniculatus" & !is.na(data.outlier2$mass) & data.outlier2$mass.units == "g")
 length(df$mass)
 p <- ggplot(data = df) + 
   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  ggtitle("Peromyscus maniculatus") +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Peromyscus maniculatus N=30714") +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
 ggsave(p, file=paste0("third.outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
-mean(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
-length(data.noJuv$mass[data.noJuv$scientificName == "Peromyscus maniculatus" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass)])
-mean(data.outlier$mass[data.outlier$scientificName == "Peromyscus maniculatus" & data.outlier$mass.status != "outlier"], na.rm = TRUE)
-length(data.outlier$mass[data.outlier$scientificName == "Peromyscus maniculatus" & data.outlier$mass.status != "outlier" & !is.na(data.outlier$mass)])
+df <- subset(data.outlier2, data.outlier2$scientificName == "Spermophilus beecheyi" & !is.na(data.outlier2$mass) & data.outlier2$mass.units == "g")
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Spermophilus beecheyi N=215") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("third.outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
 
-mean(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier"], na.rm = TRUE)
-length(data.noJuv$mass[data.noJuv$scientificName == "Artibeus jamaicensis" & data.noJuv$mass.status != "outlier" & !is.na(data.noJuv$mass)])
-mean(data.outlier$mass[data.outlier$scientificName == "Artibeus jamaicensis" & data.outlier$mass.status != "outlier"], na.rm = TRUE)
-length(data.outlier$mass[data.outlier$scientificName == "Artibeus jamaicensis" & data.outlier$mass.status != "outlier" & !is.na(data.outlier$mass)])
+df <- subset(data.outlier2, data.outlier2$scientificName == "Odocoileus virginianus" & !is.na(data.outlier2$mass) & data.outlier2$mass.units == "g")
+length(df$mass)
+p <- ggplot(data = df) + 
+  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
+  scale_fill_manual(values = ccStatus,
+                    name="Mass Status") +
+  ggtitle("Odocoileus virginianus N=918") +
+  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
+ggsave(p, file=paste0("third.outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
 ##info about outliers----
 outlier_stats <- data.outlier %>%
   group_by(scientificName) %>%
-  dplyr::summarise(sample.outlier.mass = length(mass[mass.status == "outlier" & mass >= 0 & lifeStage != "Juvenile"]),
-                   sample.mass = length(mass[mass.status != "outlier" & mass >= 0 & lifeStage != "Juvenile"]),
-                   sample.outlier.total.length = length(total.length[total.length.status == "outlier" & total.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.total.length = length(total.length[total.length.status != "outlier" & total.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.outlier.forearm.length = length(forearm.length[forearm.length.status == "outlier" & forearm.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.forearm.length = length(forearm.length[forearm.length.status != "outlier" & forearm.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.outlier.hindfoot.length = length(hindfoot.length[hindfoot.length.status == "outlier" & hindfoot.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.hindfoot.length = length(hindfoot.length[hindfoot.length.status != "outlier" & hindfoot.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.outlier.ear.length = length(ear.length[ear.length.status == "outlier" & ear.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.ear.length = length(ear.length[ear.length.status != "outlier" & ear.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.outlier.tail.length = length(tail.length[tail.length.status == "outlier" & tail.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.tail.length = length(tail.length[tail.length.status != "outlier" & tail.length >= 0 & lifeStage != "Juvenile"])) %>%
+  dplyr::summarise(sample.outlier.mass = length(mass[mass.status == "outlier" & mass >= 0]),
+                   sample.mass = length(mass[mass.status != "outlier" & mass >= 0]),
+                   sample.outlier.total.length = length(total.length[total.length.status == "outlier" & total.length >= 0]),
+                   sample.total.length = length(total.length[total.length.status != "outlier" & total.length >= 0]),
+                   #sample.outlier.forearm.length = length(forearm.length[forearm.length.status == "outlier" & forearm.length >= 0 & lifeStage != "Juvenile"]),
+                   #sample.forearm.length = length(forearm.length[forearm.length.status != "outlier" & forearm.length >= 0 & lifeStage != "Juvenile"]),
+                   sample.outlier.hindfoot.length = length(hindfoot.length[hindfoot.length.status == "outlier" & hindfoot.length >= 0]),
+                   sample.hindfoot.length = length(hindfoot.length[hindfoot.length.status != "outlier" & hindfoot.length >= 0]),
+                   sample.outlier.ear.length = length(ear.length[ear.length.status == "outlier" & ear.length >= 0]),
+                   sample.ear.length = length(ear.length[ear.length.status != "outlier" & ear.length >= 0]),
+                   sample.outlier.tail.length = length(tail.length[tail.length.status == "outlier" & tail.length >= 0]),
+                   sample.tail.length = length(tail.length[tail.length.status != "outlier" & tail.length >= 0])) %>%
   as.data.frame()
 
 write.csv(outlier_stats, "outliers.csv")
-
-##write out clean, labeled data----
-
-data.labeled <- data.outlier
-write.csv(data.labeled, "labeled.clean.data.csv")
 
 ##Juvenile test with PEMA----
 PEMA <- data.labeled[data.labeled$scientificName == "Peromyscus maniculatus",]
