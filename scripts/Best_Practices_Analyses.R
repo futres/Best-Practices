@@ -15,94 +15,102 @@ library(tidyr)
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
 data <- read.csv("https://de.cyverse.org/dl/d/74880F82-59DF-4558-BBCB-A51EA1631592/labeled.clean.data.csv", header = TRUE)
-
-##combine with pantheria----
-sp.data <- unique(data$scientificName) 
-nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #2859 spp
-
-pan.data <- merge(pan, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
-length(unique(pan.data$MSW05_Binomial)) #4346
+#data <- data.outlier
+data <- data[data$mass.status == "GOOD" & data$mass.units == "g" & !is.na(data$mass),]
+length(unique(data$scientificName)) #869
 
 ###head-body-length----
-pan.data$head.body.length <- pan.data$total.length - pan.data$tail.length
+data$head.body.length <- data$total.length - data$tail.length
 # need to get bunnies and deer
 
 #pan.data$head.body.length[pan.data$MSW05_Family == "Cervidae"] <- pan.data$total.length[pan.data$MSW05_Family == "Cervidae"]
 #pan.data$head.body.length[pan.data$MSW05_Family == "Leporidae"] <- pan.data$total.length[pan.data$MSW05_Family == "Leporidae"]
 #says NA not allowed for subscripts and can't get it working...
 
-for(i in 1:nrow(pan.data)){
-  if(is.na(pan.data$head.body.length[pan.data$MSW05_Family == "Cervidae"][i])){
-    pan.data$head.body.length[i] <- pan.data$total.length[i]
+for(i in 1:nrow(data)){
+  if(is.na(data$head.body.length[data$MSW05_Family == "Cervidae"][i])){
+    data$head.body.length[i] <- data$total.length[i]
   }
-  else if(isTRUE(pan.data$total.length[pan.data$MSW05_Family == "Cervidae"][i] >= 0)){
-    pan.data$head.body.length[i] <- pan.data$total.length[i]
-  }
-  else{
-    next
-  }
-}
-
-for(i in 1:nrow(pan.data)){
-  if(is.na(pan.data$head.body.length[pan.data$MSW05_Family == "Leporidae"][i])){
-    pan.data$head.body.length[i] <- pan.data$total.length[i]
-  }
-  else(isTRUE(pan.data$total.length[pan.data$MSW05_Family == "Leporidae"][i] >= 0)){
-    pan.data$head.body.length[i] <- pan.data$total.length[i]
+  else if(isTRUE(data$total.length[data$MSW05_Family == "Cervidae"][i] >= 0)){
+    data$head.body.length[i] <- data$total.length[i]
   }
   else{
     next
   }
 }
 
-write.csv(pan.data, "data.taxonomy.csv")
+for(i in 1:nrow(data)){
+  if(is.na(data$head.body.length[data$MSW05_Family == "Leporidae"][i])){
+    data$head.body.length[i] <- data$total.length[i]
+  }
+  else if(isTRUE(data$total.length[data$MSW05_Family == "Leporidae"][i] >= 0)){
+    data$head.body.length[i] <- data$total.length[i]
+  }
+  else{
+    next
+  }
+}
+
+##combine with pantheria----
+sp.data <- unique(data$scientificName) 
+nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #751 spp
+
+pan.data <- merge(pan, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
+length(unique(pan.data$MSW05_Binomial)) #751
+
+write.csv(pan.data, "pan.data.csv")
 
 ##data cleaned for mass----
 #pan.data <- read.csv("", header = TRUE)
 
-pan.data.mass <- pan.data[pan.data$mass.status != "outlier" & pan.data$lifeStage != "Juvenile" & pan.data$sample.size >= 10]
+pan.data.mass.sample <- pan.data %>%
+  dplyr::group_by(MSW05_Binomial) %>%
+  dplyr::summarise(sample.size.mass.pan = length(mass[!is.na(mass)])) %>%
+  as.data.frame()
+
+pan.keep <- pan.data.mass.sample$MSW05_Binomial[pan.data.mass.sample$sample.size.mass.pan >= 10]
+pan.data.10 <- pan.data[pan.data$MSW05_Binomial %in% pan.keep,]
+pan.data.mass <- pan.data.10[!is.na(pan.data.10$X5.1_AdultBodyMass_g) & pan.data.10$X5.1_AdultBodyMass_g > 0 & pan.data.10$mass > 0,]
 
 ##Q1 compare to pantheria----
-pan.clean <- pan.data.mass[!is.na(pan.data.mass$X5.1_AdultBodyMass_g),] #1296 sp
-pan.clean2 <- pan.clean[pan.clean$mass != 0,] #1179
+length(unique(pan.data.mass$MSW05_Binomial)) #654
 
-pan.cleaner <- pan.clean2[!is.na(pan.clean2$mass) & pan.clean2$mass.status != "outlier",]
-length(unique(pan.cleaner$MSW05_Binomial)) #982
-
-pan.adult <- pan.cleaner[pan.cleaner$lifeStage == "Adult",]
-length(unique(pan.adult$MSW05_Binomial)) #465
-
-pan.adult_stats <- pan.adult %>%
-  group_by(MSW05_Binomial) %>%
-  dplyr::summarise(sample.size = n(), 
+pan.adult_stats <- pan.data.mass %>%
+  dplyr::group_by(MSW05_Binomial) %>%
+  dplyr::summarise(sample.size = length(mass), 
                    min.mass = min(mass, na.rm = TRUE),
                    max.mass  = max(mass, na.rm = TRUE),
                    avg.mass = mean(mass, na.rm = TRUE),
                    sd.err.mass = sd(mass, na.rm = TRUE)/sqrt(sample.size),
                    pan.mass = X5.1_AdultBodyMass_g[1],
                    mass.diff = (pan.mass - avg.mass) / sd.err.mass,
-                   abs.mass.diff = abs((pan.mass - avg.mass) / sd.err.mass))
-pan.adult_stats.10 <- pan.adult_stats %>%
-  filter(sample.size >= 10) #222 spp
-#write.csv(pan.adult_stats.10, "pan.results.csv")
+                   abs.mass.diff = abs((pan.mass - avg.mass) / sd.err.mass)) %>%
+  as.data.frame()
+write.csv(pan.adult_stats, "pan.results.csv")
 
-length(pan.adult_stats.10$MSW05_Binomial[pan.adult_stats.10$abs.mass.diff <= 2]) #69 31%
-length(pan.adult_stats.10$MSW05_Binomial[pan.adult_stats.10$abs.mass.diff > 2]) #153 69%
+pan.adult_stats2 <- pan.adult_stats[pan.adult_stats$MSW05_Binomial != "Hylobates lar" &	pan.adult_stats$MSW05_Binomial != "Stenella longirostris",]
 
-p <- ggplot(data = pan.adult_stats.10) +
-  geom_density(aes(mass.diff)) +
-  geome_rug(color = "slateblue4") +
+nrow(pan.adult_stats2) #652
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff <= 2]) #126 19.3%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 2]) #526 80.7%
+
+##FIGURE: mass difference
+p <- ggplot(data = pan.adult_stats2, aes(x = mass.diff)) +
+  geom_density(col = "slateblue4") +
+  geom_rug(sides = "b", col = "slateblue4") +
   ggtitle("Difference in Mean Mass (PanTHERIA) to Mean Mass (this paper)") + 
-  scale_x_continuous(name = 'Mass Difference') + 
+  scale_x_continuous(name = 'Standard Deviations from Mean') + 
   scale_y_continuous(name = 'Probability') + 
-  geom_vline(xintercept=c(-2,2), linetype="dotted", col = "gray62")
+  geom_vline(xintercept = c(-2, 2), linetype = "dashed", col = "darkgray") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ggsave(p, file=paste0("diff.mass", ".png"), width = 14, height = 10, units = "cm")
 
 ##FIGURE: body mass distributions w/ line from PanTHERIA----
 
-pan.adult.clean.10 <- pan.adult[pan.adult$MSW05_Binomial %in% pan.adult_stats.10$MSW05_Binomial,] #222
+pan.data.stats <- pan.data.mass[pan.data.mass$MSW05_Binomial %in% pan.adult_stats2$MSW05_Binomial,] #222
 
-uniq_species <- unique(pan.adult.clean.10$MSW05_Binomial)
+uniq_species <- unique(pan.data.stats$MSW05_Binomial)
 for (i in uniq_species) {
   p = ggplot(data = subset(pan.adult.clean.10, MSW05_Binomial == i)) + 
     geom_density(aes(log10(mass)), fill = "slateblue4") +
@@ -115,6 +123,17 @@ for (i in uniq_species) {
 
 ##Q2: length v. mass----
 #clean data
+pan.data.mass.sample <- pan.data %>%
+  dplyr::group_by(MSW05_Binomial) %>%
+  dplyr::summarise(sample.size.mass.pan = length(mass[!is.na(mass)])) %>%
+  as.data.frame()
+
+pan.keep <- pan.data.mass.sample$MSW05_Binomial[pan.data.mass.sample$sample.size.mass.pan >= 10]
+pan.data.10 <- pan.data[pan.data$MSW05_Binomial %in% pan.keep,]
+pan.data.mass <- pan.data.10[!is.na(pan.data.10$X5.1_AdultBodyMass_g) & pan.data.10$X5.1_AdultBodyMass_g > 0 & pan.data.10$mass > 0,]
+
+
+
 pan.data.mass <- pan.data[!is.na(pan.data$mass) & pan.data$mass.status != "outlier",]
 pan.data.mass.length <- pan.data.mass[!is.na(pan.data.mass$total.length) & pan.data.mass$total.length.status != "outlier",]
 pan.data.adult <- pan.data.mass.length[pan.data.mass.length$lifeStage != "Juvenile",]
@@ -513,10 +532,10 @@ model <- lm(log10(clean.length.mass$total.length) ~ log10(clean.length.mass$mass
 
 ##Spermophilus beecheyi----
 
-Sbeecheyi <- pan.data[pan.data$MSW05_Binomial == "Spermophilus beecheyi",]
+Sbeecheyi <- data[data$scientificName == "Spermophilus beecheyi",]
 
-Sbeecheyi.clean <- Sbeecheyi[Sbeecheyi$lifeStage != "Juvenile" & Sbeecheyi$mass.status != "outlier" & Sbeecheyi$total.length.status != "outlier",]
-Sbeecheyi.cleaner <- Sbeecheyi.clean[Sbeecheyi.clean$mass > 0 & Sbeecheyi.clean$head.body.length > 0 & Sbeecheyi.clean$tooth.row > 0 & Sbeecheyi$hindfoot.length > 0,]
+Sbeecheyi.clean <- Sbeecheyi[Sbeecheyi$mass.status == "GOOD" & Sbeecheyi$total.length.status == "GOOD" & Sbeecheyi$mass.units == "g" & Sbeecheyi$total.length.units == "mm",
+                             select = c("scientificName","mass", "head.body.length", "tooth.row", "hindfoot.length")]
 Sbeecheyi <- Sbeecheyi.cleaner
 
 #mass vs toothrow length
