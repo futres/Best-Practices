@@ -53,12 +53,13 @@ for(i in 1:nrow(data)){
 
 ##combine with pantheria----
 sp.data <- unique(data$scientificName) 
-nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #751 spp
+nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #883 spp
 
 pan.data <- merge(pan, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
-length(unique(pan.data$MSW05_Binomial)) #751
+length(unique(pan.data$MSW05_Binomial)) #1020
 
 write.csv(pan.data, "pan.data.csv")
+write.csv(pan.data, "data.for.analyses.csv")
 
 ##data cleaned for mass----
 #pan.data <- read.csv("", header = TRUE)
@@ -73,7 +74,7 @@ pan.data.10 <- pan.data[pan.data$MSW05_Binomial %in% pan.keep,]
 pan.data.mass <- pan.data.10[!is.na(pan.data.10$X5.1_AdultBodyMass_g) & pan.data.10$X5.1_AdultBodyMass_g > 0 & pan.data.10$mass > 0,]
 
 ##Q1 compare to pantheria----
-length(unique(pan.data.mass$MSW05_Binomial)) #654
+length(unique(pan.data.mass$MSW05_Binomial)) #690
 
 pan.adult_stats <- pan.data.mass %>%
   dplyr::group_by(MSW05_Binomial) %>%
@@ -88,11 +89,59 @@ pan.adult_stats <- pan.data.mass %>%
   as.data.frame()
 write.csv(pan.adult_stats, "pan.results.csv")
 
+plot(x = log10(pan.adult_stats$avg.mass), y = log10(pan.adult_stats$sd.err.mass),
+     xlab = "Log10 Average Mass (g)",
+     ylab = "Log10 Standard Error of Mass",
+     title(main = "Relationship between standard error and average mass",
+           sub = "slope = 1.16, p<0.001"))
+model <- lm(log10(pan.adult_stats$sd.err.mass) ~ log10(pan.adult_stats$avg.mass))
+summary(model)
+
+plot(x = pan.adult_stats$sample.size, y = pan.adult_stats$abs.mass.diff,
+     xlab = "Sample Size",
+     ylab = "Absolute Difference between Pan Mass and Avg. Mass",
+     title(main = "Relationship between Sample Size on Mass differences",
+           sub = "slope = 0, p=0.9"))
+model3 <- lm(pan.adult_stats$abs.mass.diff ~ pan.adult_stats$sample.size + pan.adult_stats$avg.mass)
+summary(model3)
+model4 <- lm(pan.adult_stats$abs.mass.diff ~ pan.adult_stats$sample.size + pan.adult_stats$sd.err.mass)
+summary(model4)
+
+plot(x = log10(pan.adult_stats$avg.mass), y = log10(pan.adult_stats$mass.diff),
+     xlab = "Log10 Average Mass (g)",
+     ylab = "Log10 Mass Difference",
+     title(main = "Relationship between animal size and degree of difference between masses",
+           sub = "slope = 0.003, p=0.925"))
+model2 <- lm(log10(pan.adult_stats$mass.diff) ~ log10(pan.adult_stats$avg.mass))
+summary(model2)
+
 pan.adult_stats2 <- pan.adult_stats[pan.adult_stats$MSW05_Binomial != "Hylobates lar" &	pan.adult_stats$MSW05_Binomial != "Stenella longirostris",]
 
+
+##STOPPED HERE----
 nrow(pan.adult_stats2) #652
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff <= 2]) #126 19.3%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 2]) #526 80.7%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff <= 3]) #173l 26.5%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3]) #479; 73.5%
+
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100]) #495 (52% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 100]) #308; 62.2%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 100]) #59; 11.9%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 100]) #128; 25.9%
+
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 1000 & pan.adult_stats2$avg.mass > 100]) #104 (16% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #58; 55.8%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #8; 7.7%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #38; 36.5%
+
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #32 (4.9% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) #26; 81.3%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) #1; 3.1%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #5; 15.6%
+
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #16 (2.5% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) #14; 87.5%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) #1; 6.3%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #1; 6.3%
 
 ##FIGURE: mass difference
 p <- ggplot(data = pan.adult_stats2, aes(x = mass.diff)) +
