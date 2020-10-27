@@ -590,6 +590,7 @@ model <- lm(log10(clean.length.mass$total.length) ~ log10(clean.length.mass$mass
 #Odocoileus virginianus: hind foot, mass, ankle measurement
 #Spermophilus beecheyi: mass, toothrow
 
+
 ##Spermophilus beecheyi----
 
 Sbeecheyi <- data[data$scientificName == "Spermophilus beecheyi",]
@@ -732,6 +733,9 @@ model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub5)
 #Strangely Futres does not have the hindfoot data for Odocoileus virginianus so for now I am going to pull it from a different dataset?
 
 ## Odocoileus virginianus----
+## add paleo deer data----
+old.deer <- read.csv(ArchaeoDeerAstragalusCalcaneus.csv, header = TRUE)
+
 Ovirginianus <- pan.data[pan.data$MSW05_Binomial == "Odocoileus virginianus",]
 
 Ovirginianus.clean <- Ovirginianus[Ovirginianus$lifeStage != "Juvenile" & Ovirginianus$mass.status != "outlier" & Ovirginianus$total.length.status != "outlier",]
