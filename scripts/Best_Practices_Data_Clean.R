@@ -16,11 +16,7 @@ require(OutlierDetection)
 
 options(stringsAsFactors = FALSE)
 
-#kitty_deer <- read.csv("EAP Florida Modern Deer Measurements_FORFUTRES_1_23_2020.csv", header = TRUE, stringsAsFactors = FALSE)
-#blois_ground.squirrel <- read.csv("J.Biogeo.2008.AllData.Final.csv", header = TRUE, stringsAsFactors = FALSE)
-#amelia_impala <- read.csv("Extant Aepyceros database_updated 11_2016.csv", header = TRUE, stringsAsFactors = FALSE)
-#bernor_equid <- read.csv("ToFuTRESVER_12_4_16_2020_REV_19.csv", header = TRUE, stringsAsFactors = FALSE)
-#cougar_OR <- read.csv("1987-2019 Cougar Weight-Length Public Request.csv", header = TRUE, stringsAsFactors = FALSE)
+## FuTRES data
 
 futres <- read.csv("https://de.cyverse.org/dl/d/B296C95F-56A1-4AB6-9EAA-532CD7B1285B/futres.csv", header = TRUE, stringsAsFactors = FALSE)
 #about futres data:
@@ -28,7 +24,7 @@ futres <- read.csv("https://de.cyverse.org/dl/d/B296C95F-56A1-4AB6-9EAA-532CD7B1
 #currently aligned manually; fixed Amelia's weight data to be g, deleted lone mass that did not have units
 #6 species
 
-## Vertnet data round 2
+## Vertnet data
 
 #bats
 bats <- read.csv("https://de.cyverse.org/dl/d/8BE15938-0A21-4712-9FD9-D22B3DF31101/bats_2020-08-11b.csv", header = TRUE)
@@ -44,7 +40,7 @@ length(unique(mamm$occurrenceid)) #584865
 nrow(mamm) #584865
 ncol(mamm) #368
 
-## Combine VertNet Bat & Mammals data----
+## Combine VertNet Bat & Mammal data----
 
 setdiff(colnames(mamm), colnames(bats)) #85 different
 setdiff(colnames(bats), colnames(mamm)) #17 different
@@ -96,7 +92,7 @@ vertnet <- rbind(mamm.3, bats.2) #5075
 
 write.csv(x = vertnet, file = "vertnet.combined.first.meas.csv")
 
-##FUTRES CLEANING----
+##clean FuTRES data----
 
 ##group lifeStages
 futres$lifeStage[futres$lifeStage == "young adult" | futres$lifeStage == "Adult" | futres$lifeStage == "Prime Adult" | futres$lifeStage == "adult"] <- "Adult"
@@ -110,7 +106,7 @@ futres$Total.Fresh.Weight..g.[futres$scientificName == "Puma concolor"] <- futre
 futres$Skin.weight..g.[futres$scientificName == "Puma concolor"] <- futres$Skin.weight..g.[futres$scientificName == "Puma concolor"] / .0022
 futres$Weight.field.dressed[futres$scientificName == "Puma concolor"] <- futres$Weight.field.dressed[futres$scientificName == "Puma concolor"] / .0022
 
-##Combine Data----
+##Combine VertNet and FuTRES Data----
 
 ##select out columns
 
@@ -297,7 +293,7 @@ vertnet.order <- vertnet.sub[, col.order]
 data <- rbind(futres.order, vertnet.order)
 length(unique(data$scientificName)) #10329 spp; must be a lot of trinomials...
 
-##create binomials----
+##clean scientificCNames
 data$scientificName <- word(data$scientificName, 1,2, sep = " ") 
 data.binom<- data[!grepl('sp.', data$scientificName),]
 length(unique(data.binom$scientificName)) #4348
@@ -309,7 +305,7 @@ length(unique(data.binom$scientificName)) #4346
 ##write data file with futres and vertnet combined----
 write.csv(data.binom, "dirty.data.csv")
 
-##remove Juv. and less than 10 samples
+##remove Juv. and less than 10 samples---
 data.adult <- data.binom[data.binom$lifeStage != "Juvenile",]
 length(unique(data.adult$scientificName))
 
@@ -320,6 +316,7 @@ data.adult.stats <- data.adult %>%
 keep.10 <- data.adult.stats$scientificName[data.adult.stats$sample.size >= 10]
 data.adult <- data.adult[data.adult$scientificName %in% keep.10,]
 
+##write data file without juveniles and species with less than 10 records
 write.csv(data.adult, "data.adult.noJuv.csv")
 
 ##functions to standardize unit type----
@@ -347,7 +344,6 @@ data.ear.length <- correct.units(data = data.tail.length, column.unit = "ear.len
 data.hindfoot.length <- correct.units(data = data.ear.length, column.unit = "hindfoot.length.units", column.infer = "hindfoot.length.units.inferred", values = millimeters, unit = "mm")
 #data.forearm.length <- correct.units(data = data.hindfoot.length, column.unit = "forearm.length.units", column.infer = "forearm.length.units.inferred", values = millimeters, unit = "mm")
 
-##more data cleaning----
 #make measurementValue numeric
 data.meas <- data.hindfoot.length
 cols <- c("mass", "total.length", "hindfoot.length", "ear.length", "tail.length", "calcaneus.GB", "calcaneus.GL", "astragalus.length", "astragalus.width")
@@ -421,8 +417,7 @@ p <- ggplot(data = df) +
   ylim(0, 40)
 ggsave(p, file=paste0("orig.dist.lifeStage.deer",".png"), width = 14, height = 10, units = "cm")
 
-##Label OUTLIERS----
-
+##Mahalanobis Outlier test----
 #add rownames for indexing
 rownames(data.meas) <- seq(1, nrow(data.meas),1)
 
@@ -487,7 +482,7 @@ df.ear.length <- outlier.function(data = df.hindfoot.length, threshold = 0.95, c
 
 #NOTE: tail length not working
 
-##write out outlier test data----
+##write out Mahalanobis outlier test data----
 data.mh <- df.ear.length
 length(unique(data.mh$scientificName)) #1747
 write.csv(data.mh, "mh.outlier.checked.data.csv")
@@ -562,7 +557,7 @@ p <- ggplot() +
   scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 8)) 
 ggsave(p, file=paste0("outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
-##TO DO
+##TO DO: make into function
 # limits.specific <- function(data, column, trait, units.infer, values, status, unit, amt){
 #   data %>%
 #     dplyr::group_by(column) %>%
@@ -580,7 +575,7 @@ ggsave(p, file=paste0("outlier.test.deer",".png"), width = 14, height = 10, unit
 #                                                   values = values, status = mass.status, unit = "g",
 #                                                   amt = 3)
 
-# Function for upper and lower limits ----
+## Function for upper and lower limits (round 1) ----
 ##create function to find upper and lower limit for each measurementType based on non-juveniles, non-inferred units, and correct units ("g" or "mm")
 
 ##mean, standard deviation, and upper and lower limit
@@ -632,22 +627,6 @@ length(unique(data.limit$scientificName)) #1747
 
 ##label outliers
 #label samples that are outside of limits with outlier, and label those within limits as "g" and inferred = TRUE
-# check <- function(data, trait, units, units.infer, status, upper, lower, unit){
-#   for(i in 1:nrow(data)){
-#     if(isTRUE(data[i,trait][units != unit] >= data[i,lower] & data[i,trait][units != unit] <= data[i,upper])){
-#       data[i,units.infer] <- "TRUE"
-#       data[i,units] <- unit
-#       data[i,status] <- "GOOD"
-#     }
-#     else if(isTRUE(data[i,trait][units == unit] >= data[i,lower] & data[i,trait][units == unit] <= data[i,upper])){
-#       data[i,status] <- "GOOD"
-#     }
-#     else{
-#       data[i,status] <- "outlier"
-#     }
-#   }
-#   return(data)
-# }
 
 check.1 <- function(data, trait, status, upper, lower, sample.size){
   for(i in 1:nrow(data)){
@@ -703,66 +682,10 @@ data.hindfoot.check2 <- check.2(data = data.hindfoot.check1, status = "hindfoot.
 data.tail.check1 <- check.1(data = data.hindfoot.check2, trait = "tail.length", status = "tail.length.status", upper = "upper.limit.tail", lower = "lower.limit.tail", sample.size = "sample.size.hindfoot")
 data.tail.check2 <- check.2(data = data.tail.check1, status = "tail.length.status", units = "tail.length.units", units.infer = "tail.length.units.inferred", unit = "mm")
 
-
-# data.mass.check <- check(data = data.check, trait = "mass", units = "mass.units", units.infer = "mass.units.inferred", status = "mass.status", upper = "upper.limit.mass", lower = "lower.limit.mass", unit = "g")
-# data.total.length.check <- check(data = data.mass.check, trait = "total.length", units = "total.length.units", units.infer = "total.length.units.inferred", status = "total.length.status", upper = "upper.limit.length", lower = "lower.limit.length", unit = "mm")
-# data.hindfoot.length.check <- check(data = data.total.length.check, trait = "hindfoot.length", units = "hindfoot.length.units", units.infer = "hindfoot.length.units.inferred", status = "hindfoot.length.status", upper = "upper.limit.hindfoot", lower = "lower.limit.hindfoot", unit = "mm")
-# data.ear.length.check <- check(data = data.hindfoot.length.check, trait = "ear.length", units = "ear.length.units", units.infer = "ear.length.units.inferred", status = "ear.length.status", upper = "upper.limit.ear", lower = "lower.limit.ear", unit = "mm")
-#data.tail.length.check <- check(data = data.ear.length.check, trait = "tail.length", units = "tail.length.units", units.infer = "tail.length.units.inferred", status = "tail.length.status", upper = "upper.limit.tail", lower = "lower.limit.tail", unit = "mm")
-#data.forearm.length.check <- check(data = data.tail.length.check, trait = "forearm.length", units = "forearm.length.units", units.infer = "forearm.length.units.inferred", status = "forearm.length.status", upper = "forearm.length.upper.limit", lower = "forearm.length.lower.limit", unit = "mm")
-
 ##write out first round of upper and lower limits checking----
 data.check <- data.tail.check2
 write.csv(data.check, "data.check1.csv")
 #data.check <- read.csv("data.check1.csv", header = TRUE)
-
-##Figure 1 panel X: outliers----
-# data.check2 <- data.check
-# data.check2$mass.status <- as.factor(data.check2$mass.status)
-# data.check2$mass.status = relevel(data.check2$mass.status, "GOOD")
-# data.check2$mass.status <- factor(data.check2$mass.status,levels = c("GOOD","outlier"))
-# 
-# df <- subset(data.check2, data.check2$scientificName  == "Artibeus jamaicensis" & !is.na(data.check2$mass) & data.check2$mass.units == "g")
-# length(df$mass)
-# p <- ggplot(data = df) + 
-#   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
-#   scale_fill_manual(values = ccStatus,
-#                     name="Mass Status") +
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-#   ggtitle("Artibeus jamaicensis N=1364") +
-#   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-# ggsave(p, file=paste0("second.outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
-# 
-# df <- subset(data.check2, data.check2$scientificName == "Peromyscus maniculatus" & !is.na(data.check2$mass) & data.check2$mass.units == "g")
-# length(df$mass)
-# p <- ggplot(data = df) + 
-#   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
-#   scale_fill_manual(values = ccStatus,
-#                     name="Mass Status") +
-#   ggtitle("Peromyscus maniculatus N=30713") +
-#   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-# ggsave(p, file=paste0("second.outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
-# 
-# df <- subset(data.check2, data.check2$scientificName == "Spermophilus beecheyi" & !is.na(data.check2$mass) & data.check2$mass.units == "g")
-# length(df$mass)
-# p <- ggplot(data = df) + 
-#   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
-#   scale_fill_manual(values = ccStatus,
-#                     name="Mass Status") +
-#   ggtitle("Spermophilus beecheyi N=215") +
-#   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-# ggsave(p, file=paste0("second.outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
-# 
-# df <- subset(data.check2, data.check2$scientificName == "Odocoileus virginianus" & !is.na(data.check2$mass) & data.check2$mass.units == "g")
-# length(df$mass)
-# p <- ggplot(data = df) + 
-#   geom_density(aes(x = log10(df$mass), fill = df$mass.status), alpha = 0.7) +
-#   scale_fill_manual(values = ccStatus,
-#                     name="Mass Status") +
-#   ggtitle("Odocoileus virginianus N=915") +
-#   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-# ggsave(p, file=paste0("second.outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
 ##unit conversion----
 #convert units that are wrong (i.e., not "g" or "mm") to proper units
@@ -833,71 +756,9 @@ data.convert <- data.convert.tail
 write.csv(data.convert, "data.convert.csv")
 #data.convert <- read.csv("data.convert.csv", header = TRUE)
 
-##Figure 1 panel Y:outlier and convert----
-# data.convert2 <- data.convert
-# data.convert2$mass.status <- as.factor(data.convert2$mass.status)
-# data.convert2$mass.status = relevel(data.convert2$mass.status, "GOOD")
-# data.convert2$mass.status <- factor(data.convert2$mass.status,levels = c("GOOD","outlier"))
-# 
-# df <- subset(data.convert2, data.convert2$scientificName  == "Artibeus jamaicensis" & !is.na(data.convert2$mass) & data.convert2$mass.units == "g")
-# length(df$mass) #1394
-# length(df$mass[df$mass.status == "outlier"])
-# p <- ggplot(data = df) + 
-#   geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-#   geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-#   geom_density(data = filter(df, mass.status == "GOOD"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-#   #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.9) +
-#   #scale_fill_manual(values = ccStatus,
-#   #                  name="Mass Status") + 
-#   ggtitle("Artibeus jamaicensis N = 1364, Noutlier = 62") +
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-#   scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 3)) + 
-#   ylim(0, 40)
-# ggsave(p, file=paste0("convert.units.bat",".png"), width = 14, height = 10, units = "cm")
-# 
-# df <- subset(data.convert2, data.convert2$scientificName  == "Peromyscus maniculatus" & !is.na(data.convert2$mass) & data.convert2$mass.units == "g")
-# length(df$mass) #30717
-# length(df$mass[df$mass.status == "outlier"])
-# p <- ggplot(data = df) + 
-#   geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-#   geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-#   geom_density(data = filter(df, mass.status == "GOOD"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-#   #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-#   #scale_fill_manual(values = ccStatus,
-#   #                  name="Mass Status") + 
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-#   ggtitle("Peromyscus maniculatus N = 30714, Noutlier = 20") +
-#   scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 7)) +
-#   ylim(0, 40)
-# ggsave(p, file=paste0("convert.units.mouse",".png"), width = 14, height = 10, units = "cm")
-# 
-# df <- subset(data.convert2, data.convert2$scientificName  == "Spermophilus beecheyi" & !is.na(data.convert2$mass) & data.convert2$mass.units == "g")
-# length(df$mass) 
-# p <- ggplot(data = df) + 
-#   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-#   scale_fill_manual(values = ccStatus,
-#                     name="Mass Status") + 
-#   ggtitle("Spermophilus beecheyi N=215") +
-#   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-# ggsave(p, file=paste0("convert.units.squirrel",".png"), width = 14, height = 10, units = "cm")
-# 
-# df <- subset(data.convert2, data.convert2$scientificName  == "Odocoileus virginianus" & !is.na(data.convert2$mass) & data.convert2$mass.units == "g")
-# length(df$mass) 
-# p <- ggplot(data = df) + 
-#   geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-#   scale_fill_manual(values = ccStatus,
-#                     name="Mass Status") + 
-#   ggtitle("Odocoileus virginianus N=918") +
-#   scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-# ggsave(p, file=paste0("convert.units.deer",".png"), width = 14, height = 10, units = "cm")
+##recalculate upper and lower limits (round 2)----
 
-##recalculate upper and lower limits----
-
-##create new sigma, this time only without juveniles, but allow for inferred units
-
-#hmm this might not be different from before...except that the number of samples is reduced?
+##create new sigma, this time allow for inferred units
 data.stats <- data.convert %>%
   group_by(scientificName) %>%
   dplyr::summarise(sample.size.mass.2 = length(mass[mass.status != "outlier" & lifeStage != "Juvenile" & !is.na(mass)]),
@@ -935,23 +796,6 @@ data.stats <- data.convert %>%
 data.recheck <- merge(data.convert, data.stats, by = "scientificName", all.x = TRUE, all.y = FALSE)
 
 ##RE-label outliers & check to see if old outliers are still outliers----
-
-#ask if is true that mass and length fall in-between upper and lower limit
-
-# outlier.check <- function(data, trait, lower, upper, status){
-#   for(i in nrow(data)){
-#     if(isTRUE(data[i, trait] < data[i, lower])){
-#       data[i, status] <- "outlier"
-#     }
-#     else if(isTRUE(data[i, trait] > data[i, upper])){
-#       data[i, status] <- "outlier"
-#     }
-#     else{
-#       next
-#     }
-#   }
-# }
-
 
 for(i in 1:nrow(data.recheck)){
   if(isTRUE(data.recheck$sample.size.mass.2[i] < 10)){
@@ -1065,6 +909,12 @@ for(i in 1:nrow(data.recheck)){
 #   else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$forearm.length[i] > data.outlier$forearm.length.upper.limit[i])){
 #     data.outlier$forearm.length.status[i] <- "outlier"
 #   }
+#   else if(isTRUE(data.recheck$forearm.length[i] <= data.recheck$upper.limit.forearm.2[i])){
+#     data.recheck$forearm.length.status[i] <- "GOOD"
+#   }
+#   else if(isTRUE(data.recheck$forearm.length[i] >= data.recheck$lower.limit.forearm.2[i])){
+#     data.recheck$forearm.length.status[i] <- "GOOD"
+#   }
 #   else{
 #     next
 #   }
@@ -1074,7 +924,7 @@ for(i in 1:nrow(data.recheck)){
 data.outlier <- data.recheck
 write.csv(data.outlier, "labeled.clean.data.csv")
 
-##Figure 1, panel 3: final results
+##Figure 1, panel 3: final results----
 data.outlier2 <- data.outlier
 data.outlier2$mass.status <- as.factor(data.outlier2$mass.status)
 data.outlier2$mass.status = relevel(data.outlier2$mass.status, "GOOD")
@@ -1163,117 +1013,5 @@ outlier_stats <- data.outlier %>%
                    sample.tail.length = length(tail.length[tail.length.status != "outlier" & tail.length >= 0])) %>%
   as.data.frame()
 
+##write out csv of outlier stats
 write.csv(outlier_stats, "outliers.csv")
-
-##Juvenile test with PEMA----
-PEMA <- data.labeled[data.labeled$scientificName == "Peromyscus maniculatus",]
-PEMA.clean <- PEMA[PEMA$mass.status != "outlier",]
-
-length(PEMA.clean[PEMA.clean$lifeStage == "Juvenile",]) #91
-min(PEMA.clean$mass[PEMA.clean$lifeStage == "Juvenile"], na.rm = TRUE) #4.02
-max(PEMA.clean$mass[PEMA.clean$lifeStage == "Juvenile"], na.rm = TRUE) #31
-#unclean min & max = 0, 141
-
-min(PEMA.clean$mass[PEMA.clean$lifeStage != "Juvenile"], na.rm = TRUE) #3.9
-max(PEMA.clean$mass[PEMA.clean$lifeStage != "Juvenile"], na.rm = TRUE) #32.6
-#unclean min & max = 0, 2356119
-
-#2sigma for juveniles
-Juv.2sigma <- PEMA.clean %>%
-  dplyr::summarise(sample.size = n(),
-                   avg.mass = mean(mass[lifeStage == "Juvenile"], na.rm = TRUE),
-                   sigma.mass = sd(mass[lifeStage == "Juvenile"], na.rm = TRUE),
-                   upper.limit.mass = avg.mass + (2*sigma.mass),
-                   lower.limit.mass = avg.mass - (2*sigma.mass)) %>%
-  as.data.frame()
-
-PEMA.clean$mass.status.juv.limit <- rep("NA", nrow(PEMA.clean))
-
-for(i in 1:nrow(PEMA.clean)){
-  if(isTRUE(PEMA.clean$mass[i] <= Juv.2sigma$upper.limit.mass)){
-    PEMA.clean$mass.status.juv.limit[i] <- "JUV"
-  }
-  else if(isTRUE(PEMA.clean$mass[i] >= Juv.2sigma$upper.limit.mass)){
-    PEMA.clean$mass.status.juv.limit[i] <- "NOT JUV"
-  }
-}
-
-min(PEMA.clean$mass[PEMA.clean$lifeStage != "Juvenile" & PEMA.clean$mass.status.juv.limit == "NOT JUV"], na.rm = TRUE) #18.77
-#old min = 3.9
-
-## generalize to entire dataset
-#2sigma for juveniles
-Juv.2sigma <- data.labeled %>%
-  dplyr::group_by(scientificName) %>%
-  dplyr::summarise(sample.size = length(lifeStage == "Juvenile"),
-                   avg.mass = mean(mass[lifeStage == "Juvenile" & mass.status != "outlier"], na.rm = TRUE),
-                   sigma.mass = sd(mass[lifeStage == "Juvenile" & mass.status != "outlier"], na.rm = TRUE),
-                   upper.limit.mass = avg.mass + (2*sigma.mass)) %>%
-  as.data.frame()
-
-
-data.labeled$mass.status.juv.limit <- rep("NA", nrow(data.labeled))
-
-data.juv.limit <- merge(data.labeled, Juv.2sigma, by = "scientificName", all.x = TRUE, all.y = FALSE)
-
-for(i in 1:nrow(data.juv.limit)){
-  if(isTRUE(data.juv.limit$mass[i] <= data.juv.limit$juv.mass.upper.limit[i])){
-    data.juv.limit$mass.status.juv.limit[i] <- "JUV"
-  }
-  else if(isTRUE(data.juv.limit$mass[i] >= data.juv.limit$juv.mass.upper.limit[i])){
-    data.juv.limit$mass.status.juv.limit[i] <- "NOT JUV"
-  }
-}
-
-df <- subset(data.juv.limit, lifeStage != "Juvenile" & scientificName  == "Peromyscus maniculatus")
-p <- ggplot(data = df) + 
-  geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  ggtitle("Peromyscus maniculatus")
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)))
-ggsave(p, file=paste0("juv.outlier.test",".png"), width = 14, height = 10, units = "cm")
-
-write.csv(data.juv.limit, "clean.data.csv")
-
-##Case studies----
-##test out juvenile and adult distributions to narrow down an actual adult distribution
-
-PEMA <- subset(data.clean.10, data.clean.10$scientificName == "Peromyscus maniculatus")
-
-PEMA.clean <- PEMA[!is.na(PEMA$mass),]
-PEMA.clean$lifeStage[PEMA.clean$lifeStage != "Juvenile"] <- "Adult"
-PEMA.clean$lifeStage[is.na(PEMA.clean$lifeStage)] <- "Adult"
-
-plot_theme <- theme(panel.grid = element_blank(), 
-                    aspect.ratio = .75, #adjust as needed
-                    axis.text = element_text(size = 21, color = "black"), 
-                    axis.ticks.length=unit(0.2,"cm"),
-                    axis.title = element_text(size = 21),
-                    axis.title.y = element_text(margin = margin(r = 10)),
-                    axis.title.x = element_text(margin = margin(t = 10)),
-                    axis.title.x.top = element_text(margin = margin(b = 5)),
-                    plot.title = element_text(size = 21, face = "plain", hjust = 10),
-                    panel.border = element_rect(colour = "black", fill=NA, size=1),
-                    panel.background = element_blank(),
-                    legend.position = "none",
-                    text = element_text(family = 'Helvetica'))
-col = c("mediumpurple4", "mediumpurple1")
-ggplot() +
-  geom_density(data = PEMA.clean, aes(x = log10(mass), fill = PEMA.clean$lifeStage), alpha = 0.7) +
-  scale_fill_manual(values = col, 
-                    name="Life Stage") +
-  plot_theme + theme(legend.position = c(0.85, 0.82))+
-  scale_x_continuous(name = expression(log[10]~Body~Mass~(g)))+
-  scale_y_continuous(name = 'Probability')
-
-# PEMA.adult <- subset(PEMA.clean, PEMA.clean$lifeStage != "Juvenile")
-# PEMA.juvenile <- subset(PEMA.clean, PEMA.clean$lifeStage == "Juvenile")
-# 
-# ggplot() + geom_density(data = PEMA.juvenile, aes(x = log10(mass), alpha = 0.7))
-# 
-# ggplot() + geom_density(data = PEMA.adult, aes(x = log10(mass), alpha = 0.7))
-
-
-##Lagomorphs - work well
-##Carnivores
-##Chiroptera
-##split up data in other ways? Family (phylo); function but not related; shape; guilds
