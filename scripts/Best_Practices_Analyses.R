@@ -115,33 +115,44 @@ plot(x = log10(pan.adult_stats$avg.mass), y = log10(pan.adult_stats$mass.diff),
 model2 <- lm(log10(pan.adult_stats$mass.diff) ~ log10(pan.adult_stats$avg.mass))
 summary(model2)
 
-pan.adult_stats2 <- pan.adult_stats[pan.adult_stats$MSW05_Binomial != "Hylobates lar" &	pan.adult_stats$MSW05_Binomial != "Stenella longirostris",]
-
+pan.adult_stats2 <- pan.adult_stats[pan.adult_stats$MSW05_Binomial != "Stenella longirostris" &
+                                      pan.adult_stats$MSW05_Binomial != "Catagonus wagneri" &
+                                      pan.adult_stats$MSW05_Binomial != "Alces alces" & 
+                                      pan.adult_stats$MSW05_Binomial != "Hylobates lar" &
+                                      pan.adult_stats$MSW05_Binomial != "Arctocephalus townsendi" &
+                                      pan.adult_stats$MSW05_Binomial != "Lepus arcticus" &
+                                      pan.adult_stats$MSW05_Binomial != "Enhydra lutris",] 
 
 ##STOPPED HERE----
-nrow(pan.adult_stats2) #652
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff <= 3]) #173l 26.5%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3]) #479; 73.5%
+nrow(pan.adult_stats2) #683
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3]) #182 26.6%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3]) #501; 73.4%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3]) #420 61.5%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3]) #81; 11.9%
 
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100]) #495 (52% of total spp)
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 100]) #308; 62.2%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 100]) #59; 11.9%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 100]) #128; 25.9%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100]) #504 (73.8% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 100]) #130; 25.8%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3 & pan.adult_stats2$avg.mass < 100]) #374; 74.2%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 100]) #311; 61.7%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 100]) #63; 12.5%
 
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 1000 & pan.adult_stats2$avg.mass > 100]) #104 (16% of total spp)
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #58; 55.8%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #8; 7.7%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #38; 36.5%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 1000 & pan.adult_stats2$avg.mass > 100]) #108 (15.8% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #40; 37.0%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #68; 63.0%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #60; 55.6%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #8; 7.4%
 
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #32 (4.9% of total spp)
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) #26; 81.3%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) #1; 3.1%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #5; 15.6%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #34 (5.0% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #6; 17.6%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3 & pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #28; 82.4%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) #27; 79.4%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) #1; 2.9%
 
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #16 (2.5% of total spp)
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) #14; 87.5%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) #1; 6.3%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #1; 6.3%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #19 (2.8% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #1; 5.3%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3 & pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #18; 94.7%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) #17; 89.5%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) #1; 5.3%
 
 ##FIGURE: mass difference
 p <- ggplot(data = pan.adult_stats2, aes(x = mass.diff)) +
