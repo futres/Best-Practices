@@ -14,7 +14,7 @@ library(tidyr)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/74880F82-59DF-4558-BBCB-A51EA1631592/labeled.clean.data.csv", header = TRUE)
+data <- read.csv("https://de.cyverse.org/dl/d/1B85CDF3-4852-459E-B8AE-98611D8F0EBA/data.for.analyses.csv", header = TRUE)
 #data <- data.outlier #final dataset from Best_Practices_Data_Clean.R
 data <- data[data$mass.status == "GOOD" & data$mass.units == "g" & !is.na(data$mass),]
 length(unique(data$scientificName)) #869
