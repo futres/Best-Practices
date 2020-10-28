@@ -344,121 +344,86 @@ model <- lm(log10(clean.length.mass$total.length) ~ log10(clean.length.mass$mass
 #   scale_y_continuous(name = "Total Length (cm)")
 
 
-
-#code for regressions of limb data vs bodymass
-#Odocoileus virginianus: hind foot, mass, ankle measurement
-#Spermophilus beecheyi: mass, toothrow
-
+#translating between models-------------
 library(tidyr)
 
-futres <- read.csv("https://de.cyverse.org/dl/d/B296C95F-56A1-4AB6-9EAA-532CD7B1285B/futres.csv", header = TRUE, stringsAsFactors = FALSE)
-futres[futres=="--"]<-NA
-futres[futres==""]<-NA
-futres$Total.Fresh.Weight..g. <- as.numeric(futres$Total.Fresh.Weight..g.)  
+futres <- read.csv("data.for.analyses.csv", header = TRUE, stringsAsFactors = FALSE)
+#futres[futres=="--"]<-NA
+#futres[futres==""]<-NA
+#futres$Total.Fresh.Weight..g. <- as.numeric(futres$Total.Fresh.Weight..g.)  
+#futres$HF..mm...Hind.Foot.Length. <- as.numeric(futres$HF..mm...Hind.Foot.Length.)
+#futres$TL..mm...Total.Length. <- as.numeric(futres$TL..mm...Total.Length.) 
 
 #Subsetting data
-data.adult.trim.clean <- futres[!is.na(futres$Total.Fresh.Weight..g.),]
-data.adult.trim.foot <- data.adult.trim.clean[!is.na(data.adult.trim.clean$HF..mm...Hind.Foot.Length.),]
-
-data.adult.trim.ankle <- futres[!is.na(futres$Astragalus.Length),]
+data.adult.trim.clean <- futres[!is.na(futres$mass),]
+#make sure to only use records for which total.length.status == "GOOD" & total.length.units == "mm" to subset it some more. head-body-length was calculated for all records, regardless of how good the data is for total body length
+data.adult.trim.clean <- subset(data.adult.trim.clean, total.length.status == "GOOD" & total.length.units == "mm")
+data.adult.trim.clean <- data.adult.trim.clean[!is.na(data.adult.trim.clean$head.body.length),]
+data.adult.trim.clean <- subset(data.adult.trim.clean, mass!=0)
 
 #Code for plotting Spermophilus beecheyi
-test2 <- subset(data.adult.trim.clean, scientificName== "Spermophilus beecheyi")
+test2 <- subset(data.adult.trim.clean, MSW05_Genus== "Spermophilus")
+test1 <- subset(test2, MSW05_Species== "beecheyi")
+test1 <- test1[!is.na(test1$tooth.row),]
 #no juveniles so that is good
-unique(test2$lifeStage)
+unique(test1$lifeStage)
 #outliers?
-unique(test2$c.toothrow.1.mm)
-
-#mass vs toothrow length
-model1 <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
-sum.model1 <- summary(model1)
-sub1 <- data.frame(binomial = test2$scientificName[1],
-                   comparison = ("Mass/toothrow"),
-                  intercept = model1$coefficients[[1]],
-                  slope = model1$coefficients[[2]],
-                  resid.std.err = sum.model1$sigma,
-                  df = max(sum.model1$df),
-                  std.err.slope =  sum.model1$coefficients[4],
-                  std.err.intercept = sum.model1$coefficients[3],
-                  r.squared = sum.model1$r.squared,
-                  sample.size = length(test2$Total.Fresh.Weight..g.))
-
-p = ggplot(data = test2) + 
-  geom_point(aes(x = log10(c.toothrow.1.mm), y = log10(Total.Fresh.Weight..g.))) +
-  geom_smooth(aes(x = log10(c.toothrow.1.mm), y = log10(Total.Fresh.Weight..g.)),
-              method = "lm", color = "slateblue4") +
-  ggtitle("Spermophilus beecheyi") +
-  theme(plot.title = element_text(face = "italic"))+
-  ylab(expression(log[10]~Body~Mass~(g))) +
-  xlab(expression(log[10]~Toothrow~Length~(mm)))
-ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow.png"), width = 14, height = 10, units = "cm")
-
-#mass vs hindfoot
-test2$HF..mm...Hind.Foot.Length. <- as.numeric(test2$HF..mm...Hind.Foot.Length.)  
-
-model2 <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$HF..mm...Hind.Foot.Length.), na.action=na.exclude)
-sum.model2 <- summary(model2)
-sub2 <- data.frame(binomial = test2$scientificName[1],
-                   comparison = ("Mass/hinfoot"),
-                  intercept = model2$coefficients[[1]],
-                  slope = model2$coefficients[[2]],
-                  resid.std.err = sum.model2$sigma,
-                  df = max(sum.model2$df),
-                  std.err.slope =  sum.model2$coefficients[4],
-                  std.err.intercept = sum.model2$coefficients[3],
-                  r.squared = sum.model2$r.squared,
-                  sample.size = length(test2$Total.Fresh.Weight..g.))
-
-p = ggplot(data = test2) + 
-  geom_point(aes(x = log10(HF..mm...Hind.Foot.Length.), y = log10(Total.Fresh.Weight..g.))) +
-  geom_smooth(aes(x = log10(HF..mm...Hind.Foot.Length.), y = log10(Total.Fresh.Weight..g.)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Spermophilus beecheyi") +
-  theme(plot.title = element_text(face = "italic"))+
-  ylab(expression(log[10]~Body~Mass~(g))) +
-  xlab(expression(log[10]~Hindfoot~Length~(mm))) 
-  ggsave(p, file=paste0("plot_Spermophilus beecheyi_hingfoot.png"), width = 14, height = 10, units = "cm")
-
-  model.Spermophilus.beecheyi <- rbind(sub1, sub2)  
+unique(test1$tooth.row)
   
-#tooth row vs hindfoot  
+#Now we want to see if translating between the models is fruitful. The first step is to predict total length from tooth row length
+  #predict function works better if the naming scheme inside the lm model is simple. It will automatically log the values.
+  #toothrow versus total length
+  y <- test1$head.body.length
+  x <- test1$tooth.row
+  model1 <- lm(log10(y) ~ log10(x), na.action=na.exclude)
   
-  model3 <- lm(log10(test2$HF..mm...Hind.Foot.Length) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
-  sum.model3 <- summary(model3)
-  sub3 <- data.frame(binomial = test2$scientificName[1],
-                     comparison = ("hindfoot length/toothrow length"),
-                     intercept = model3$coefficients[[1]],
-                     slope = model3$coefficients[[2]],
-                     resid.std.err = sum.model3$sigma,
-                     df = max(sum.model3$df),
-                     std.err.slope =  sum.model3$coefficients[4],
-                     std.err.intercept = sum.model3$coefficients[3],
-                     r.squared = sum.model3$r.squared,
-                     sample.size = length(test2$HF..mm...Hind.Foot.Length))
+  toothpredict <- data.frame(x = test1$tooth.row)
+  p1 <- data.frame(predict(model1, toothpredict, se.fit = TRUE))
+  toothpredict$fit1 <- p1$fit
+  toothpredict$se <- p1$se.fit
   
-  p = ggplot(data = test2) + 
-    geom_point(aes(x = log10(c.toothrow.1.mm), y = log10(HF..mm...Hind.Foot.Length.))) +
-    geom_smooth(aes(x = log10(c.toothrow.1.mm), y = log10(HF..mm...Hind.Foot.Length.)),
-                method = "lm", color = "slateblue4")+
+  #plotting this relationship here
+  sum.model1 <- summary(model1)
+  sub1 <- data.frame(Genus = test1$MSW05_Genus[1],
+                     Species = test1$MSW05_Species[1],
+                     comparison = ("head.body.length/tooth.row"),
+                     intercept = model1$coefficients[[1]],
+                     slope = model1$coefficients[[2]],
+                     resid.std.err = sum.model1$sigma,
+                     df = max(sum.model1$df),
+                     std.err.slope =  sum.model1$coefficients[4],
+                     std.err.intercept = sum.model1$coefficients[3],
+                     r.squared = sum.model1$r.squared,
+                     sample.size = length(test1$mass))
+  
+  p = ggplot(data = test1) + 
+    geom_point(aes(x = log10(tooth.row), y = log10(head.body.length))) +
+    geom_smooth(aes(x = log10(tooth.row), y = log10(head.body.length)),method = "lm", color = "slateblue4")+
     ggtitle("Spermophilus beecheyi") +
     theme(plot.title = element_text(face = "italic"))+
-    xlab(expression(log[10]~Toothrow~Length~(mm))) +
-    ylab(expression(log[10]~Hindfoot~Length~(mm))) 
-  ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_hingfoot.png"), width = 14, height = 10, units = "cm")
+    ylab(expression(log[10]~Head~Body~Length~(mm))) +
+    xlab(expression(log[10]~Toothrow~Length~(mm)))
   
-  model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub3)  
+  ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_Headbodylength.png"), width = 14, height = 10, units = "cm")
   
-  
-#mass versus total length
-  #I need to fix the numbering system
-  
-  test2$TL..mm...Total.Length.[test2$TL..mm...Total.Length.=="]"]<-NA
-  test2$TL..mm...Total.Length. <- as.numeric(test2$TL..mm...Total.Length.)  
-  
-  model2 <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$TL..mm...Total.Length.), na.action=na.exclude)
+  #Now to push the toothrow points through the second regression. I am already in log 10 space with the predictions.
+  #need to sample the whole genus for this data
+  #some masses=0? below regression won't work if anything=0
+  y2 <- log10(test2$mass)
+  x2 <- log10(test2$head.body.length)
+  model2 <- lm(y2 ~ x2, na.action=na.exclude)
   sum.model2 <- summary(model2)
-  sub2 <- data.frame(binomial = test2$scientificName[1],
-                     comparison = ("Mass/Total length"),
+  
+  #remember the variable has to have the same name for the predict function to work so we have to name it x2
+   fit1<- data.frame(x2 = toothpredict$fit1)
+  p2 <- data.frame(predict(model2, newdata=fit1, se.fit = TRUE))
+  toothpredict$fit2 <- p2$fit
+  toothpredict$se2 <- p2$se.fit
+  
+  #plotting this relationship
+  sub2 <- data.frame(Genus = test2$MSW05_Genus[1],
+                     Species = "Whole genus",
+                     comparison = ("mass/head.body.length"),
                      intercept = model2$coefficients[[1]],
                      slope = model2$coefficients[[2]],
                      resid.std.err = sum.model2$sigma,
@@ -466,26 +431,39 @@ p = ggplot(data = test2) +
                      std.err.slope =  sum.model2$coefficients[4],
                      std.err.intercept = sum.model2$coefficients[3],
                      r.squared = sum.model2$r.squared,
-                     sample.size = length(test2$Total.Fresh.Weight..g.))
+                     sample.size = length(test2$mass))
   
   p = ggplot(data = test2) + 
-    geom_point(aes(x = log10(TL..mm...Total.Length.), y = log10(Total.Fresh.Weight..g.))) +
-    geom_smooth(aes(x = log10(TL..mm...Total.Length.), y = log10(Total.Fresh.Weight..g.)),
-                method = "lm", color = "slateblue4")+
+    geom_point(aes(x = log10(head.body.length), y = log10(mass))) +
+    geom_smooth(aes(x = log10(head.body.length), y = log10(mass)),method = "lm", color = "slateblue4")+
     ggtitle("Spermophilus beecheyi") +
     theme(plot.title = element_text(face = "italic"))+
     ylab(expression(log[10]~Body~Mass~(g))) +
-    xlab(expression(log[10]~Total~Length~(mm)))
+    xlab(expression(log[10]~Head~Body~Length~(mm)))
   
-  ggsave(p, file=paste0("plot_Spermophilus beecheyi_totallength.png"), width = 14, height = 10, units = "cm")
+ #seems like there is a outlier on this plot.
+  ggsave(p, file=paste0("plot_Spermophilus beecheyi_Headbodylength_mass.png"), width = 14, height = 10, units = "cm")
   
-  model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub2)   
+  model.Spermophilus.beecheyi <- rbind(sub1, sub2)
   
-#toothrow versus total length
-  model3 <- lm(log10(test2$TL..mm...Total.Length.) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
+  #gaussian error propogation
+  toothpredict$GauTRL <- sqrt((model2$coefficients[[2]] * toothpredict$se)^2)
+  
+  #summing together the error from the gaussian propogation and the error from pushing the points through
+  toothpredict$sumerror <- sqrt((toothpredict$GauTRL)^2 + (toothpredict$se2 )^2)
+  
+  #compare to the error in the relationship between tooth row and mass
+  model3 <- lm(log10(test1$mass) ~ log10(test1$tooth.row), na.action=na.exclude)
   sum.model3 <- summary(model3)
-  sub3 <- data.frame(binomial = test2$scientificName[1],
-                     comparison = ("Total length/toothrow length"),
+  toothpredict2 <- data.frame(tooth.row = test1$tooth.row)
+  p3 <- data.frame(predict(model3, toothpredict2, se.fit = TRUE))
+  toothpredict$fit3 <- p3$fit
+  toothpredict$se3 <- p3$se.fit
+  
+  #plot this relationship
+  sub3 <- data.frame(Genus = test1$MSW05_Genus[1],
+                     Species = test1$MSW05_Species[1],
+                     comparison = ("mass/tooth.row"),
                      intercept = model3$coefficients[[1]],
                      slope = model3$coefficients[[2]],
                      resid.std.err = sum.model3$sigma,
@@ -493,68 +471,69 @@ p = ggplot(data = test2) +
                      std.err.slope =  sum.model3$coefficients[4],
                      std.err.intercept = sum.model3$coefficients[3],
                      r.squared = sum.model3$r.squared,
-                     sample.size = length(test2$TL..mm...Total.Length.))
+                     sample.size = length(test1$mass))
   
-  p = ggplot(data = test2) + 
-    geom_point(aes(x = log10(c.toothrow.1.mm), y = log10(TL..mm...Total.Length.))) +
-    geom_smooth(aes(x = log10(c.toothrow.1.mm), y = log10(TL..mm...Total.Length.)),
-                method = "lm", color = "slateblue4")+
+  p = ggplot(data = test1) + 
+    geom_point(aes(x = log10(tooth.row), y = log10(mass))) +
+    geom_smooth(aes(x = log10(tooth.row), y = log10(mass)),method = "lm", color = "slateblue4")+
     ggtitle("Spermophilus beecheyi") +
     theme(plot.title = element_text(face = "italic"))+
-    xlab(expression(log[10]~Toothrow~Length~(mm))) +
-    ylab(expression(log[10]~Total~Length~(mm))) 
-  ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_totallength.png"), width = 14, height = 10, units = "cm")
+    ylab(expression(log[10]~Body~Mass~(g))) +
+    xlab(expression(log[10]~Toothrow~Length~(mm)))
   
-  model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub3)  
+  #seems like there is a outlier on this plot.
+  ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_mass.png"), width = 14, height = 10, units = "cm")
   
-#write.csv(model.Spermophilus.beecheyi, file= "model.results.Spermophilus.beecheyi.csv")
+  model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub3)
   
-#translating between models-------------
-#Now we want to see if translating between the models is fruitful. The first step is to predict total length from tooth row length
-  #predict function works better if the naming scheme inside the lm model is simple. It will automatically log the values.
-  #toothrow versus total length
-  y <- test2$TL..mm...Total.Length.
-  x <- test2$c.toothrow.1.mm
-  model1 <- lm(log10(y) ~ log10(x), na.action=na.exclude)
+  #write.csv(model.Spermophilus.beecheyi, file= "model.results.whole.genus.Spermophilus.beecheyi.csv")
   
-  toothpredict <- data.frame(x = test2$c.toothrow.1.mm)
-  p1 <- data.frame(predict(model1, toothpredict, se.fit = TRUE))
-  toothpredict$fit1 <- p1$fit
-  toothpredict$se <- p1$se.fit
-  #toothpredict$upr1 <- p1$upr
-  #toothpredict$se <- (toothpredict$fit1-toothpredict$lwr1)
+  #write.csv(toothpredict, file= "error.propogation.Spermophilus.beecheyi.csv")
   
-  #Now to push the toothrow points through the second regression. I am already in log 10 space with the predictions. The below data is not correct because we need the vert net data as well to make a regression that has 100s of points.
-  y <- log10(test2$Total.Fresh.Weight..g.)
-  x <- log10(test2$TL..mm...Total.Length.)
-  model2 <- lm(y ~ x, na.action=na.exclude)
-  sum.model2 <- summary(model2)
-  std.err.slope <-  sum.model2$coefficients[4]
-  std.err.intercept <-  sum.model2$coefficients[3]
+#some questions: is it ok to be working in log log space this whole time? DO we want to transform them at the end of the analysis.
   
-   newdata<- data.frame(x = toothpredict$fit1)
-  p2 <- data.frame(predict(model2, newdata, se.fit = TRUE))
-  toothpredict$fit2 <- p2$fit
-  toothpredict$se2 <- p2$se.fit
-  #toothpredict$se2 <- (toothpredict$fit2-toothpredict$lwr2)
+
+#Now for the deer species------
+  test2 <- subset(data.adult.trim.clean, MSW05_Genus== "Odocoileus")
+  test1 <- subset(test2, MSW05_Species== "virginianus")
+  test1 <- test1[!is.na(test1$astragalus.length),]
+  #no juveniles so that is good
+  unique(test1$lifeStage)
+  #outliers?
+  unique(test1$tooth.row)
   
-  #this is where the gaussian error propogation would go. I really don't know if this is right.need to replace with a call for the slope.
-  toothpredict$GauTRL <- sqrt((2.396801335
- * toothpredict$se)^2)
   
-  #summing together the error from the gaussian propogation and the error from pushing the points through
-  toothpredict$sumerror <- sqrt((toothpredict$GauTRL)^2 + (toothpredict$se2 )^2)
+  test3 <- subset(data.adult.trim.clean, scientificName== "Odocoileus virginianus")
+  #any juneniles? There are some young adults but no juveniles
+  unique(test$lifeStage)
+  #seems to be no foot data?
+  unique(test$HF..mm...Hind.Foot.Length.)
+  #seems to be no astragalus data either
+  unique(test$Astragalus.Length)
   
-  #compare to the error in the relationship between tooth row and mass
-  model3 <- lm(log10(test2$Total.Fresh.Weight..g.) ~ log10(test2$c.toothrow.1.mm), na.action=na.exclude)
-  sum.model3 <- summary(model3)
-  toothpredict2 <- data.frame(x = test2$c.toothrow.1.mm)
-  p3 <- data.frame(predict(model3, toothpredict2, se.fit = TRUE))
-  toothpredict$fit3 <- p3$fit
-  toothpredict$se3 <- p3$se.fit
-  #toothpredict$se3 <- (toothpredict$fit3-toothpredict$lwr3)
+  model <- lm(log10(test$mass) ~ log10(test$HF..mm...Hind.Foot.Length.), na.action=na.exclude)
+  sum.model <- summary(model)
+  sub <- data.frame(binomial = test$scientificName[1],
+                    intercept = model$coefficients[[1]],
+                    slope = model$coefficients[[2]],
+                    resid.std.err = sum.model$sigma,
+                    df = max(sum.model$df),
+                    std.err.slope =  sum.model$coefficients[4],
+                    std.err.intercept = sum.model$coefficients[3],
+                    r.squared = sum.model$r.squared,
+                    sample.size = length(test$mass))
   
-  #some questions: is it ok to be working in log log space this whole time? DO we want to transform them at the end of the analysis.
+  #ggtitle doesn't seem to be doing anything because it is not connected to p. When I do connect it scale_x and scale y takes away the axis tick marks. 
+  p = ggplot(data = test) + 
+    geom_point(aes(x = log10(Total.Fresh.Weight..g.), y = log10(HF..mm...Hind.Foot.Length.))) +
+    geom_smooth(aes(x = log10(Total.Fresh.Weight..g.), y = log10(HF..mm...Hind.Foot.Length.)),
+                method = "lm", color = "slateblue4")
+  ggtitle("Odocoileus virginianus") +
+    theme(plot.title = element_text(face = "italic"))+
+    xlab(expression(log[10]~Body~Mass~(g))) +
+    ylab(expression(log[10]~Hindfoot~Length~(mm))) + 
+    ggsave(p, file=paste0("plot_Odocoileus virginianus_hindfoot2.png"), width = 14, height = 10, units = "cm")
+  
   
   
   
@@ -571,8 +550,8 @@ p = ggplot(data = test2) +
   toothpredict$upr1lwr <- p2$lwr
   toothpredict$upr1upr <- p2$upr
   
-  toothpredict$TL..mm...Total.Length. <- test2$TL..mm...Total.Length.
-  toothpredict$Total.Fresh.Weight..g. <- test2$Total.Fresh.Weight..g.
+  toothpredict$TL..mm...Total.Length. <- test1$TL..mm...Total.Length.
+  toothpredict$Total.Fresh.Weight..g. <- test1$Total.Fresh.Weight..g.
   
   p = ggplot(data = toothpredict) + 
     geom_point(aes(x = log10(TL..mm...Total.Length.), y = log10(Total.Fresh.Weight..g.))) +
@@ -592,39 +571,7 @@ p = ggplot(data = test2) +
   
   ggsave(p, file=paste0("plot_Spermophilus beecheyi_totallength.png"), width = 14, height = 10, units = "cm")
 
-#Strangely Futres does not have the hindfoot data for Odocoileus virginianus so for now I am going to pull it from a different dataset?
-  
-  test <- subset(data.adult.trim.clean, scientificName== "Odocoileus virginianus")
-  #any juneniles? There are some young adults but no juveniles
-  unique(test$lifeStage)
-  #seems to be no foot data?
-  unique(test$HF..mm...Hind.Foot.Length.)
-  #seems to be no astragalus data either
-  unique(test$Astragalus.Length)
-  
-  model <- lm(log10(test$Total.Fresh.Weight..g.) ~ log10(test$HF..mm...Hind.Foot.Length.), na.action=na.exclude)
-  sum.model <- summary(model)
-  sub <- data.frame(binomial = test$scientificName[1],
-                    intercept = model$coefficients[[1]],
-                    slope = model$coefficients[[2]],
-                    resid.std.err = sum.model$sigma,
-                    df = max(sum.model$df),
-                    std.err.slope =  sum.model$coefficients[4],
-                    std.err.intercept = sum.model$coefficients[3],
-                    r.squared = sum.model$r.squared,
-                    sample.size = length(test$Total.Fresh.Weight..g.))
-  
-  #ggtitle doesn't seem to be doing anything because it is not connected to p. When I do connect it scale_x and scale y takes away the axis tick marks. 
-  p = ggplot(data = test) + 
-    geom_point(aes(x = log10(Total.Fresh.Weight..g.), y = log10(HF..mm...Hind.Foot.Length.))) +
-    geom_smooth(aes(x = log10(Total.Fresh.Weight..g.), y = log10(HF..mm...Hind.Foot.Length.)),
-                method = "lm", color = "slateblue4")
-  ggtitle("Odocoileus virginianus") +
-    theme(plot.title = element_text(face = "italic"))+
-    xlab(expression(log[10]~Body~Mass~(g))) +
-    ylab(expression(log[10]~Hindfoot~Length~(mm))) + 
-    ggsave(p, file=paste0("plot_Odocoileus virginianus_hindfoot2.png"), width = 14, height = 10, units = "cm")
-  
+
   
     
 #the below code is for plotting many measurments.
