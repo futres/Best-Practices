@@ -125,9 +125,9 @@ plot(x = pan.adult_stats2$sample.size, y = pan.adult_stats2$abs.mass.diff.se,
      ylab = "Absolute Difference between Pan Mass and Avg. Mass over Standard Error",
      title(main = "Relationship between Sample Size on Mass differences",
            sub = "slope = 0, p=0.9"))
-model3 <- lm(pan.adult_stats2$abs.mass.diff ~ pan.adult_stats2$sample.size + pan.adult_stats2$avg.mass)
+model3 <- lm(pan.adult_stats2$abs.mass.diff.se ~ pan.adult_stats2$sample.size + pan.adult_stats2$avg.mass)
 summary(model3)
-model4 <- lm(pan.adult_stats2$abs.mass.diff ~ pan.adult_stats2$sample.size + pan.adult_stats2$sd.err.mass)
+model4 <- lm(pan.adult_stats2$abs.mass.diff.se ~ pan.adult_stats2$sample.size + pan.adult_stats2$sd.err.mass)
 summary(model4)
 
 plot(x = log10(pan.adult_stats2$avg.mass), y = log10(pan.adult_stats2$mass.diff.se),
@@ -171,10 +171,11 @@ length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_
 length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff < 0 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) 
 
 ##FIGURE: mass difference----
-p <- ggplot(data = pan.adult_stats2, aes(x = mass.diff)) +
+pan.adult_stats3 <- pan.adult_stats2[pan.adult_stats2$mass.diff.se < 500,]
+p <- ggplot(data = pan.adult_stats3, aes(x = mass.diff.se)) +
   geom_density(col = "slateblue4") +
   geom_rug(sides = "b", col = "slateblue4") +
-  ggtitle("Difference in Mean Mass (PanTHERIA) to Mean Mass (this paper)") + 
+  ggtitle("Difference in Mean Mass (PanTHERIA) to Mean Mass (this paper) over Standard Error") + 
   scale_x_continuous(name = 'Standard Deviations from Mean') + 
   scale_y_continuous(name = 'Probability') + 
   geom_vline(xintercept = c(-3, 3), linetype = "dashed", col = "darkgray") +
@@ -408,6 +409,126 @@ Ovirginianus.clean <- subset(Ovirginianus, Ovirginianus$mass.status == "GOOD" & 
                              select = c("scientificName", "mass", "head.body.length", "hindfoot.length", "astragalus.length", "astragalus.width", "calcaneus.GB", "calcaneus.GL"))
 Ovirginianus <- Ovirginianus.clean
 write.csv(Ovirginianus, "Ovirginianus.csv")
+
+#toothrow versus total length
+deer.hbl.astragalus <- lm(log10(Ovirginianus$head.body.length) ~ log10(Ovirginianus$astragalus.length), na.action = na.exclude)
+sum.squirrel.hbl.astragalus <- summary(deer.hbl.astragalus)
+anklepredict <- data.frame(x = Ovirginianus$astragalus.length)
+predict.hbl <- data.frame(predict(deer.hbl.astragalus, anklepredict, se.fit = TRUE))
+anklepredict$fit.hbl <- predict.hbl$fit
+anklepredict$se.fit.hbl <- predict.hbl$se.fit
+
+#plotting this relationship here
+deer.hbl.tooth.stats <- data.frame(Binomial = Ovirginianus$scientificName[1],
+                                   comparison = ("head.body.length/astragalus.length"),
+                                   intercept = deer.hbl.astragalus$coefficients[[1]],
+                                   slope = deer.hbl.astragalus$coefficients[[2]],
+                                   resid.std.err = sum.deer.hbl.astragalus$sigma,
+                                   df = max(sum.deer.hbl.astragalus$df),
+                                   std.err.slope =  sum.deer.hbl.astragalus$coefficients[4],
+                                   std.err.intercept = sum.deer.hbl.astragalus$coefficients[3],
+                                   r.squared = sum.deer.hbl.astragalus$r.squared,
+                                   sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$astragalus.length) & !is.na(Ovirginianus$head.body.length),]))
+
+nrow(Ovirginianus[!is.na(Ovirginianus$astragalus.length) & !is.na(Ovirginianus$head.body.length),])
+p = ggplot(data = Ovirginianus) + 
+  geom_point(aes(x = log10(astragalus.length), y = log10(head.body.length))) +
+  geom_smooth(aes(x = log10(astragalus.length), y = log10(head.body.length)), method = "lm", color = "slateblue4")+
+  ggtitle("Odocoileus virginianus, N = 85") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Head~Body~Length~(mm))) +
+  scale_x_log10(expression(log[10]~Astragalus~Length~(mm)))
+ggsave(p, file=paste0("plot_Odocoileus virginianus_astragalus_hbl.png"), width = 14, height = 10, units = "cm")
+
+#Now to push the toothrow points through the second regression. I am already in log 10 space with the predictions.
+#need to sample the whole genus for this data
+#some masses=0? below regression won't work if anything=0
+deer.hbl.mass <- lm(Ovirginianus$mass ~ Ovirginianus$head.body.length, na.action = na.exclude)
+sum.deer.hbl.mass <- summary(deer.hbl.mass)
+
+#remember the variable has to have the same name for the predict function to work so we have to name it x2
+fit.ankle <- data.frame(x2 = anklepredict$fit.hbl)
+predict.mass <- data.frame(predict(deer.hbl.mass, newdata = fit.tooth, se.fit = TRUE))
+anklepredict$fit.mass <- predict.mass$fit
+anklepredict$se.fit.mass <- predict.mass$se.fit
+
+#plotting this relationship
+deer.hbl.mass.stats <- data.frame(Binomial = Ovirginianus$scientificName[1],
+                                  comparison = ("mass/head.body.length"),
+                                  intercept = deer.hbl.mass$coefficients[[1]],
+                                  slope = deer.hbl.mass$coefficients[[2]],
+                                  resid.std.err = sum.deer.hbl.mass$sigma,
+                                  df = max(sum.deer.hbl.mass$df),
+                                  std.err.slope =  sum.deer.hbl.mass$coefficients[4],
+                                  std.err.intercept = sum.deer.hbl.mass$coefficients[3],
+                                  r.squared = sum.deer.hbl.mass$r.squared,
+                                  sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$head.body.length),]))
+
+nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$head.body.length),])
+p = ggplot(data = Ovirginianus) + 
+  geom_point(aes(x = log10(head.body.length), y = log10(mass))) +
+  geom_smooth(aes(x = log10(head.body.length), y = log10(mass)), method = "lm", color = "slateblue4")+
+  ggtitle("Odocoileus virginianus N = 204") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Body~Mass~(g))) +
+  scale_x_log10(expression(log[10]~Head~Body~Length~(mm)))
+
+#seems like there is a outlier on this plot.
+ggsave(p, file=paste0("plot_Odocoileus virginianus_hbl_mass.png"), width = 14, height = 10, units = "cm")
+
+model.Odocoileus.virginianus <- rbind(deer.hbl.astragalus.stats, deer.hbl.mass.stats)
+
+#gaussian error propogation
+anklepredict$GauTRLp <- sqrt((sum.deer.hbl.mass$coefficients[[2]] * anklepredict$se.fit.hbl)^2)
+
+#summing together the error from the gaussian propogation and the error from pushing the points through
+anklepredict$sumerror <- sqrt((anklepredict$GauTRL)^2 + (anklepredict$se.fit.mass)^2)
+
+#compare to the error in the relationship between tooth row and mass
+deer.astragalus.mass <- lm(log10(Ovirginianus$mass) ~ log10(Ovirginianus$astragalus.length), na.action = na.exclude)
+sum.deer.astragalus.mass <- summary(deer.astragalus.mass)
+predict.mass.ankle <- data.frame(predict(deer.astragalus.mass, anklepredict, se.fit = TRUE))
+anklepredict$fit.mass.astragalus <- predict.mass.ankle$fit
+anklepredict$se.fit.mass.astragalus<- predict.mass.ankle$se.fit
+
+#plot this relationship
+deer.astragalus.mass.stats <- data.frame(Binomial = Ovirginianus$scientificName[1],
+                                         comparison = ("mass/astraglus.length"),
+                                         intercept = deer.astragalus.mass$coefficients[[1]],
+                                         slope = deer.astragalus.mass$coefficients[[2]],
+                                         resid.std.err = sum.deer.astragalus.mass$sigma,
+                                         df = max(sum.deer.astragalus.mass$df),
+                                         std.err.slope =  sum.deer.astragalus.mass$coefficients[4],
+                                         std.err.intercept = sum.deer.astragalus.mass$coefficients[3],
+                                         r.squared = sum.deer.astragalus.mass$r.squared,
+                                         sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$astragalus.length),]))
+
+nrow(Sbeecheyi[!is.na(Sbeecheyi$mass) & !is.na(Sbeecheyi$tooth.row),])nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$astragalus.length),])
+p = ggplot(data = Ovirginianus) + 
+  geom_point(aes(x = log10(astragalus.length), y = log10(mass))) +
+  geom_smooth(aes(x = log10(astragalus.length), y = log10(mass)), method = "lm", color = "slateblue4")+
+  ggtitle("Odocoileus virginianus N = 86") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Body~Mass~(g))) +
+  scale_x_log10(expression(log[10]~Astragalus~Length~(mm)))
+
+#seems like there is a outlier on this plot.
+ggsave(p, file=paste0("plot_Odocoileus virginianus_astragalus_mass.png"), width = 14, height = 10, units = "cm")
+
+model.Odocoileus.virginianus <- rbind(model.Odocoileus.virginianus, deer.astragalus.mass.stats)
+
+write.csv(model.Odocoileus.virginianus, file= "model.results.whole.genus.Odoclileus.virginianus.csv")
+
+write.csv(toothpredict, file= "error.propogation.Odoclileus.virginianus.csv")
+
+
+
+
+
+
 
 deer.mass.astragalus <- lm(log10(Ovirginianus$mass) ~ log10(Ovirginianus$astragalus.length), na.action = na.exclude)
 sum.deer.mass.astragalus <- summary(deer.mass.astragalus)

@@ -373,7 +373,7 @@ p <- ggplot(data = df) +
                     name="Life Stage") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Artibeus jamaicensis N=1235") +
+  ggtitle("Artibeus jamaicensis N = 1235") +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
   scale_y_continuous(name = "Density", limits = c(0, .15))
 ggsave(p, file=paste0("orig.dist.lifeStage.bat",".png"), width = 14, height = 10, units = "cm")
@@ -386,7 +386,7 @@ p <- ggplot(data = df) +
                     name="Life Stage") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Peromyscus maniculatus N=24650") +
+  ggtitle("Peromyscus maniculatus N = 24650") +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
   scale_y_continuous(name = "Density", limits = c(0, .15))
 ggsave(p, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
@@ -399,7 +399,7 @@ p <- ggplot(data = df) +
                     name="Life Stage") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Spermophilus beecheyi N=161") +
+  ggtitle("Spermophilus beecheyi N = 161") +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
   scale_y_continuous(name = "Density", limits = c(0, .005))
 ggsave(p, file=paste0("orig.dist.lifeStage.squirrel",".png"), width = 14, height = 10, units = "cm")
@@ -412,7 +412,7 @@ p <- ggplot(data = df) +
                     name="Life Stage") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Odocoileus virginianus N=66") +
+  ggtitle("Odocoileus virginianus N = 66") +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
   scale_y_continuous(name = "Density", limits = c(0, .001))
 ggsave(p, file=paste0("orig.dist.lifeStage.deer",".png"), width = 14, height = 10, units = "cm")
