@@ -11,6 +11,7 @@ require(reshape2)
 require(plyr)
 require(stringr)
 library(tidyr)
+require(PEIP)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -73,9 +74,19 @@ pan.data.10 <- pan.data[pan.data$MSW05_Binomial %in% pan.keep,]
 pan.data.mass <- pan.data.10[!is.na(pan.data.10$X5.1_AdultBodyMass_g) & pan.data.10$X5.1_AdultBodyMass_g > 0 & pan.data.10$mass > 0,]
 
 ##Q1 compare to pantheria----
+length(unique(pan.data.mass$MSW05_Binomial)) #1020
+pan.data.mass <- pan.data.mass[!is.na(pan.data.mass$X5.1_AdultBodyMass_g),]
+length(unique(pan.data.mass$MSW05_Binomial)) #781
+
+stats <- pan.data.mass %>%
+  group_by(MSW05_Binomial) %>%
+  dplyr::summarise(N = n()) %>%
+  as.data.frame()
+keep <- stats$MSW05_Binomial[stats$N >= 10]
+pan.data.mass <- pan.data.mass[pan.data.mass$MSW05_Binomial %in% keep,]
 length(unique(pan.data.mass$MSW05_Binomial)) #690
 
-pan.adult_stats <- pan.data.mass %>%
+pan.adult_stats2 <- pan.data.mass %>%
   dplyr::group_by(MSW05_Binomial) %>%
   dplyr::summarise(sample.size = length(mass), 
                    min.mass = min(mass, na.rm = TRUE),
@@ -83,78 +94,81 @@ pan.adult_stats <- pan.data.mass %>%
                    avg.mass = mean(mass, na.rm = TRUE),
                    sd.err.mass = sd(mass, na.rm = TRUE)/sqrt(sample.size),
                    pan.mass = X5.1_AdultBodyMass_g[1],
-                   mass.diff = (pan.mass - avg.mass) / sd.err.mass,
-                   abs.mass.diff = abs((pan.mass - avg.mass) / sd.err.mass)) %>%
+                   mass.diff = (pan.mass - avg.mass),
+                   mass.diff.se = mass.diff / sd.err.mass,
+                   abs.mass.diff.se = abs(mass.diff.se),
+                   p.value = t.test(mass, mu = pan.mass, conf.level = 0.95)$p.value,
+                   critical.t = abs(tinv(p = 0.05, nu = (sample.size-1))), #get a different result than from Edward
+                   diff.amt = abs.mass.diff.se-critical.t,
+                   sig = diff.amt > 0, # true means sig diff
+                   #p.value = pt(-abs(critical.t), df = (sample.size-1)) #trying to calculate p-value from critical t...
+                   ) %>%
   as.data.frame()
+
+pan.adult_stats2$corr <- p.adjust(pan.adult_stats2$p.value, method = "BH")
+pan.adult_stats2$sig.corr <- pan.adult_stats2$corr <= 0.05 #TRUE means sig diff
 
 ##write mass difference results----
 write.csv(pan.adult_stats, "pan.results.csv")
+write.csv(pan.adult_stats2, "pan.results.t.test.csv")
 
-plot(x = log10(pan.adult_stats$avg.mass), y = log10(pan.adult_stats$sd.err.mass),
+plot(x = log10(pan.adult_stats2$avg.mass), y = log10(pan.adult_stats2$sd.err.mass),
      xlab = "Log10 Average Mass (g)",
      ylab = "Log10 Standard Error of Mass",
      title(main = "Relationship between standard error and average mass",
            sub = "slope = 1.16, p<0.001"))
-model <- lm(log10(pan.adult_stats$sd.err.mass) ~ log10(pan.adult_stats$avg.mass))
+model <- lm(log10(pan.adult_stats2$sd.err.mass) ~ log10(pan.adult_stats2$avg.mass))
 summary(model)
 
-plot(x = pan.adult_stats$sample.size, y = pan.adult_stats$abs.mass.diff,
+plot(x = pan.adult_stats2$sample.size, y = pan.adult_stats2$abs.mass.diff.se,
      xlab = "Sample Size",
-     ylab = "Absolute Difference between Pan Mass and Avg. Mass",
+     ylab = "Absolute Difference between Pan Mass and Avg. Mass over Standard Error",
      title(main = "Relationship between Sample Size on Mass differences",
            sub = "slope = 0, p=0.9"))
-model3 <- lm(pan.adult_stats$abs.mass.diff ~ pan.adult_stats$sample.size + pan.adult_stats$avg.mass)
+model3 <- lm(pan.adult_stats2$abs.mass.diff ~ pan.adult_stats2$sample.size + pan.adult_stats2$avg.mass)
 summary(model3)
-model4 <- lm(pan.adult_stats$abs.mass.diff ~ pan.adult_stats$sample.size + pan.adult_stats$sd.err.mass)
+model4 <- lm(pan.adult_stats2$abs.mass.diff ~ pan.adult_stats2$sample.size + pan.adult_stats2$sd.err.mass)
 summary(model4)
 
-plot(x = log10(pan.adult_stats$avg.mass), y = log10(pan.adult_stats$mass.diff),
+plot(x = log10(pan.adult_stats2$avg.mass), y = log10(pan.adult_stats2$mass.diff.se),
      xlab = "Log10 Average Mass (g)",
      ylab = "Log10 Mass Difference",
      title(main = "Relationship between animal size and degree of difference between masses",
-           sub = "slope = 0.003, p=0.925"))
-model2 <- lm(log10(pan.adult_stats$mass.diff) ~ log10(pan.adult_stats$avg.mass))
+           sub = "slope = 0.003, p=.92"))
+model2 <- lm(log10(pan.adult_stats2$mass.diff.se) ~ log10(pan.adult_stats2$avg.mass))
 summary(model2)
 
 ##Table 1----
-#some major outliers, let's ignore those for now
-pan.adult_stats2 <- pan.adult_stats[pan.adult_stats$MSW05_Binomial != "Stenella longirostris" &
-                                      pan.adult_stats$MSW05_Binomial != "Catagonus wagneri" &
-                                      pan.adult_stats$MSW05_Binomial != "Alces alces" & 
-                                      pan.adult_stats$MSW05_Binomial != "Hylobates lar" &
-                                      pan.adult_stats$MSW05_Binomial != "Arctocephalus townsendi" &
-                                      pan.adult_stats$MSW05_Binomial != "Lepus arcticus" &
-                                      pan.adult_stats$MSW05_Binomial != "Enhydra lutris",] 
 
-nrow(pan.adult_stats2) #683
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3]) #182 26.6%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3]) #501; 73.4%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3]) #420 61.5%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3]) #81; 11.9%
+nrow(pan.adult_stats2) #690
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == FALSE])  #w/in limits
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == TRUE])  #outside limits
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff > 0])  #above; pan mean is greater than ours
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff < 0])  #below; pan mean is less than ours
 
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100]) #504 (73.8% of total spp)
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 100]) #130; 25.8%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3 & pan.adult_stats2$avg.mass < 100]) #374; 74.2%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 100]) #311; 61.7%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 100]) #63; 12.5%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100]) #(% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == FALSE & pan.adult_stats2$avg.mass < 100]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == TRUE & pan.adult_stats2$avg.mass < 100]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff > 0 & pan.adult_stats2$avg.mass < 100]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff < 0 & pan.adult_stats2$avg.mass < 100])
 
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 1000 & pan.adult_stats2$avg.mass > 100]) #108 (15.8% of total spp)
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #40; 37.0%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #68; 63.0%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #60; 55.6%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) #8; 7.4%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 1000 & pan.adult_stats2$avg.mass > 100]) #(% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == FALSE & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == TRUE & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff > 0 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff < 0 & pan.adult_stats2$avg.mass < 1000  & pan.adult_stats2$avg.mass > 100]) 
 
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #34 (5.0% of total spp)
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #6; 17.6%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3 & pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #28; 82.4%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) #27; 79.4%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) #1; 2.9%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) #(% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == FALSE & pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000])
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == TRUE & pan.adult_stats2$avg.mass < 10000 & pan.adult_stats2$avg.mass > 1000]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff > 0 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff < 0 & pan.adult_stats2$avg.mass < 10000  & pan.adult_stats2$avg.mass > 1000]) 
 
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #19 (2.8% of total spp)
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff >= -3 & pan.adult_stats2$mass.diff <= 3 & pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #1; 5.3%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$abs.mass.diff > 3 & pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #18; 94.7%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff > 3 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) #17; 89.5%
-length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$mass.diff < -3 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) #1; 5.3%
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) #(% of total spp)
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == FALSE & pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig.corr == TRUE & pan.adult_stats2$avg.mass < 100000 & pan.adult_stats2$avg.mass > 10000]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff > 0 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) 
+length(pan.adult_stats2$MSW05_Binomial[pan.adult_stats2$sig == TRUE & pan.adult_stats2$mass.diff < 0 & pan.adult_stats2$avg.mass < 100000  & pan.adult_stats2$avg.mass > 10000]) 
 
 ##FIGURE: mass difference----
 p <- ggplot(data = pan.adult_stats2, aes(x = mass.diff)) +
@@ -163,25 +177,25 @@ p <- ggplot(data = pan.adult_stats2, aes(x = mass.diff)) +
   ggtitle("Difference in Mean Mass (PanTHERIA) to Mean Mass (this paper)") + 
   scale_x_continuous(name = 'Standard Deviations from Mean') + 
   scale_y_continuous(name = 'Probability') + 
-  geom_vline(xintercept = c(-2, 2), linetype = "dashed", col = "darkgray") +
+  geom_vline(xintercept = c(-3, 3), linetype = "dashed", col = "darkgray") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ggsave(p, file=paste0("diff.mass", ".png"), width = 14, height = 10, units = "cm")
 
 ##FIGURE: body mass distributions w/ line from PanTHERIA----
 
-pan.data.stats <- pan.data.mass[pan.data.mass$MSW05_Binomial %in% pan.adult_stats2$MSW05_Binomial,] #222
-
-uniq_species <- unique(pan.data.stats$MSW05_Binomial)
-for (i in uniq_species) {
-  p = ggplot(data = subset(pan.adult.clean.10, MSW05_Binomial == i)) + 
-    geom_density(aes(log10(mass)), fill = "slateblue4") +
-    ggtitle(i) +
-    scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
-    scale_y_continuous(name = 'Probability') + 
-    geom_vline(xintercept = log10(pan.adult.clean.10$X5.1_AdultBodyMass_g[pan.adult.clean.10$MSW05_Binomial == i][1]))
-  ggsave(p, file=paste0("dist_", i,".png"), width = 14, height = 10, units = "cm")
-}
+# pan.data.stats <- pan.data.mass[pan.data.mass$MSW05_Binomial %in% pan.adult_stats2$MSW05_Binomial,] #222
+# 
+# uniq_species <- unique(pan.data.stats$MSW05_Binomial)
+# for (i in uniq_species) {
+#   p = ggplot(data = subset(pan.adult.clean.10, MSW05_Binomial == i)) + 
+#     geom_density(aes(log10(mass)), fill = "slateblue4") +
+#     ggtitle(i) +
+#     scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
+#     scale_y_continuous(name = 'Probability') + 
+#     geom_vline(xintercept = log10(pan.adult.clean.10$X5.1_AdultBodyMass_g[pan.adult.clean.10$MSW05_Binomial == i][1]))
+#   ggsave(p, file=paste0("dist_", i,".png"), width = 14, height = 10, units = "cm")
+# }
 
 ##Q2: length v. mass----
 #clean data
@@ -231,21 +245,20 @@ for(i in 1:length(sp.models)){
 
 #lots of repeats for Neofiber alleni; only 4 unique occurrence ids....why???
 
-##model resutls----
 write.csv(model.results.species, "model.results.species.csv")
 
 ##figures of mass v length----
-uniq_species <- unique(pan.data.adult.10$MSW05_Binomial)
-for (i in uniq_species) {
-  p = ggplot(data = subset(pan.data.adult.10, MSW05_Binomial  == i)) + 
-    geom_point(aes(x = log10(mass), y = log10(head.body.length))) +
-    geom_smooth(aes(x = log10(mass), y = log10(head.body.length)),
-                method = "lm", color = "slateblue4")
-    ggtitle(i) +
-    scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
-    scale_y_log10(name = expression(log[10]~Head~Body~Length~(mm))) + 
-  ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
-}
+# uniq_species <- unique(pan.data.adult.10$MSW05_Binomial)
+# for (i in uniq_species) {
+#   p = ggplot(data = subset(pan.data.adult.10, MSW05_Binomial  == i)) + 
+#     geom_point(aes(x = log10(mass), y = log10(head.body.length))) +
+#     geom_smooth(aes(x = log10(mass), y = log10(head.body.length)),
+#                 method = "lm", color = "slateblue4")
+#     ggtitle(i) +
+#     scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
+#     scale_y_log10(name = expression(log[10]~Head~Body~Length~(mm))) + 
+#   ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
+# }
 
 ##Q3: transfer function----
 #code for regressions of limb data vs bodymass
@@ -257,326 +270,220 @@ for (i in uniq_species) {
 
 Sbeecheyi <- data[data$scientificName == "Spermophilus beecheyi",]
 
-Sbeecheyi.clean <- Sbeecheyi[Sbeecheyi$mass.status == "GOOD" & Sbeecheyi$total.length.status == "GOOD" & Sbeecheyi$mass.units == "g" & Sbeecheyi$total.length.units == "mm",
-                             select = c("scientificName","mass", "head.body.length", "tooth.row", "hindfoot.length")]
+Sbeecheyi.clean <- subset(Sbeecheyi, Sbeecheyi$mass.status == "GOOD" & Sbeecheyi$total.length.status == "GOOD" 
+                          & Sbeecheyi$mass.units == "g" & Sbeecheyi$total.length.units == "mm"
+                          & Sbeecheyi$mass > 0 & Sbeecheyi$total.length > 0,
+                             select = c("scientificName","mass", "head.body.length", "tooth.row", "hindfoot.length"))
 Sbeecheyi <- Sbeecheyi.cleaner
+write.csv(Sbeecheyi, "Sbeecheyi.csv")
 
-#mass vs toothrow length
-model1 <- lm(log10(Sbeecheyi$mass) ~ log10(Sbeecheyi$tooth.row), na.action=na.exclude)
-sum.model1 <- summary(model1)
-sub1 <- data.frame(binomial = Sbeecheyi$MSW05_Binomial[1],
-                   comparison = ("Mass/toothrow"),
-                   intercept = model1$coefficients[[1]],
-                   slope = model1$coefficients[[2]],
-                   resid.std.err = sum.model1$sigma,
-                   df = max(sum.model1$df),
-                   std.err.slope =  sum.model1$coefficients[4],
-                   std.err.intercept = sum.model1$coefficients[3],
-                   r.squared = sum.model1$r.squared,
-                   sample.size = nrow(Sbeecheyi[!is.na(Sbeecheyi$mass) & !is.na(Sbeecheyi$tooth.row),]))
+#Code for plotting Spermophilus beecheyi
 
-p = ggplot(data = Sbeecheyi) + 
-  geom_point(aes(x = log10(tooth.row), y = log10(mass))) +
-  geom_smooth(aes(x = log10(tooth.row), y = log10(mass)),
-              method = "lm", color = "slateblue4") +
-  ggtitle("Spermophilus beecheyi") +
-  theme(plot.title = element_text(face = "italic"))+
-  ylab(expression(log[10]~Body~Mass~(g))) +
-  xlab(expression(log[10]~Toothrow~Length~(mm)))
-ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow.png"), width = 14, height = 10, units = "cm")
-
-#mass vs hindfoot
-model2 <- lm(log10(Sbeecheyi$mass) ~ log10(Sbeecheyi$hindfoot.length), na.action=na.exclude)
-sum.model2 <- summary(model2)
-sub2 <- data.frame(binomial = Sbeecheyi$MSW05_Binomial[1],
-                   comparison = ("Mass/hinfoot"),
-                   intercept = model2$coefficients[[1]],
-                   slope = model2$coefficients[[2]],
-                   resid.std.err = sum.model2$sigma,
-                   df = max(sum.model2$df),
-                   std.err.slope =  sum.model2$coefficients[4],
-                   std.err.intercept = sum.model2$coefficients[3],
-                   r.squared = sum.model2$r.squared,
-                   sample.size = nrow(Sbeecheyi[!is.na(Sbeecheyi$hindfoot.length) & !is.na(Sbeecheyi$mass),]))
-
-p = ggplot(data = Sbeecheyi) + 
-  geom_point(aes(x = log10(hindfoot.length), y = log10(mass))) +
-  geom_smooth(aes(x = log10(hindfoot.length), y = log10(mass)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Spermophilus beecheyi") +
-  theme(plot.title = element_text(face = "italic"))+
-  ylab(expression(log[10]~Body~Mass~(g))) +
-  xlab(expression(log[10]~Hindfoot~Length~(mm))) 
-ggsave(p, file=paste0("plot_Spermophilus beecheyi_hingfoot.png"), width = 14, height = 10, units = "cm")
-
-model.Spermophilus.beecheyi <- rbind(sub1, sub2)  
-
-#tooth row vs hindfoot  
-
-model3 <- lm(log10(Sbeecheyi$hindfoot.length) ~ log10(Sbeecheyi$tooth.row), na.action=na.exclude)
-sum.model3 <- summary(model3)
-sub3 <- data.frame(binomial = Sbeecheyi$MSW05_Binomial[1],
-                   comparison = ("hindfoot length/toothrow length"),
-                   intercept = model3$coefficients[[1]],
-                   slope = model3$coefficients[[2]],
-                   resid.std.err = sum.model3$sigma,
-                   df = max(sum.model3$df),
-                   std.err.slope =  sum.model3$coefficients[4],
-                   std.err.intercept = sum.model3$coefficients[3],
-                   r.squared = sum.model3$r.squared,
-                   sample.size = nrow(Sbeecheyi[!is.na(Sbeecheyi$hindfoot.length) & !is.na(Sbeecheyi$tooth.row),]))
-
-p = ggplot(data = Sbeecheyi) + 
-  geom_point(aes(x = log10(tooth.row), y = log10(hindfoot.length))) +
-  geom_smooth(aes(x = log10(tooth.row), y = log10(hindfoot.length)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Spermophilus beecheyi") +
-  theme(plot.title = element_text(face = "italic"))+
-  xlab(expression(log[10]~Toothrow~Length~(mm))) +
-  ylab(expression(log[10]~Hindfoot~Length~(mm))) 
-ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_hingfoot.png"), width = 14, height = 10, units = "cm")
-
-model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub3)  
-
-#mass versus total length
-model4 <- lm(log10(Sbeecheyi$mass) ~ log10(Sbeecheyi$head.body.length), na.action=na.exclude)
-sum.model4 <- summary(model4)
-sub4 <- data.frame(binomial = Sbeecheyi$MSW05_Binomial[1],
-                   comparison = ("Mass/Total length"),
-                   intercept = model4$coefficients[[1]],
-                   slope = model4$coefficients[[2]],
-                   resid.std.err = sum.model4$sigma,
-                   df = max(sum.model4$df),
-                   std.err.slope =  sum.model4$coefficients[4],
-                   std.err.intercept = sum.model4$coefficients[3],
-                   r.squared = sum.model4$r.squared,
-                   sample.size = nrow(Sbeecheyi[!is.na(Sbeecheyi$mass) & !is.na(Sbeecheyi$total.length),]))
-
-p = ggplot(data = Sbeecheyi) + 
-  geom_point(aes(x = log10(head.body.length), y = log10(mass))) +
-  geom_smooth(aes(x = log10(head.body.length), y = log10(mass)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Spermophilus beecheyi") +
-  theme(plot.title = element_text(face = "italic"))+
-  ylab(expression(log[10]~Body~Mass~(g))) +
-  xlab(expression(log[10]~Total~Length~(mm)))
-
-ggsave(p, file=paste0("plot_Spermophilus beecheyi_totallength.png"), width = 14, height = 10, units = "cm")
-
-model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub4)  
-
+#Now we want to see if translating between the models is fruitful. The first step is to predict total length from tooth row length
+#predict function works better if the naming scheme inside the lm model is simple. It will automatically log the values.
 #toothrow versus total length
-model5 <- lm(log10(Sbeecheyi$head.body.length) ~ log10(Sbeecheyi$tooth.row), na.action=na.exclude)
-sum.model5 <- summary(model5)
-sub5 <- data.frame(binomial = Sbeecheyi$MSW05_Binomial[1],
-                   comparison = ("Total length/toothrow length"),
-                   intercept = model5$coefficients[[1]],
-                   slope = model5$coefficients[[2]],
-                   resid.std.err = sum.model5$sigma,
-                   df = max(sum.model5$df),
-                   std.err.slope =  sum.model5$coefficients[4],
-                   std.err.intercept = sum.model5$coefficients[3],
-                   r.squared = sum.model5$r.squared,
-                   sample.size = nrow(Sbeecheyi[!is.na(Sbeecheyi$total.length) & !is.na(Sbeecheyi$tooth.row),]))
+squirrel.hbl.tooth <- lm(log10(Sbeecheyi$head.body.length) ~ log10(Sbeecheyi$tooth.row), na.action = na.exclude)
+sum.squirrel.hbl.tooth <- summary(squirrel.hbl.tooth)
+toothpredict <- data.frame(x = Sbeecheyi$tooth.row)
+predict.hbl <- data.frame(predict(squirrel.hbl.tooth, toothpredict, se.fit = TRUE))
+toothpredict$fit.hbl <- predict.hbl$fit
+toothpredict$se.fit.hbl <- predict.hbl$se.fit
 
+#plotting this relationship here
+squirrel.hbl.tooth.stats <- data.frame(Binomial = Sbeecheyi$scientificName[1],
+                                       comparison = ("head.body.length/tooth.row"),
+                                       intercept = squirrel.hbl.tooth$coefficients[[1]],
+                                       slope = squirrel.hbl.tooth$coefficients[[2]],
+                                       resid.std.err = sum.squirrel.hbl.tooth$sigma,
+                                       df = max(sum.squirrel.hbl.tooth$df),
+                                       std.err.slope =  sum.squirrel.hbl.tooth$coefficients[4],
+                                       std.err.intercept = sum.squirrel.hbl.tooth$coefficients[3],
+                                       r.squared = sum.squirrel.hbl.tooth$r.squared,
+                                       sample.size = nrow(Sbeecheyi[!is.na(Sbeecheyi$tooth.row) & !is.na(Sbeecheyi$head.body.length),]))
+
+nrow(Sbeecheyi[!is.na(Sbeecheyi$tooth.row) & !is.na(Sbeecheyi$head.body.length),])
 p = ggplot(data = Sbeecheyi) + 
   geom_point(aes(x = log10(tooth.row), y = log10(head.body.length))) +
-  geom_smooth(aes(x = log10(tooth.row), y = log10(head.body.length)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Spermophilus beecheyi") +
-  theme(plot.title = element_text(face = "italic"))+
-  xlab(expression(log[10]~Toothrow~Length~(mm))) +
-  ylab(expression(log[10]~Total~Length~(mm))) 
-ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_totallength.png"), width = 14, height = 10, units = "cm")
+  geom_smooth(aes(x = log10(tooth.row), y = log10(head.body.length)), method = "lm", color = "slateblue4")+
+  ggtitle("Spermophilus beecheyi, N = 85") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Head~Body~Length~(mm))) +
+  scale_x_log10(expression(log[10]~Toothrow~Length~(mm)))
+ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_hbl.png"), width = 14, height = 10, units = "cm")
 
-model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, sub5)  
-#write.csv(model.Spermophilus.beecheyi, file= "model.results.Spermophilus.beecheyi.csv")
+#Now to push the toothrow points through the second regression. I am already in log 10 space with the predictions.
+#need to sample the whole genus for this data
+#some masses=0? below regression won't work if anything=0
+squirrel.hbl.mass <- lm(Sbeecheyi$mass ~ Sbeecheyi$head.body.length, na.action = na.exclude)
+sum.squirrel.hbl.mass <- summary(squirrel.hbl.mass)
 
-#Strangely Futres does not have the hindfoot data for Odocoileus virginianus so for now I am going to pull it from a different dataset?
+#remember the variable has to have the same name for the predict function to work so we have to name it x2
+fit.tooth <- data.frame(x2 = toothpredict$fit.hbl)
+predict.mass <- data.frame(predict(squirrel.hbl.mass, newdata = fit.tooth, se.fit = TRUE))
+toothpredict$fit.mass <- predict.mass$fit
+toothpredict$se.fit.mass <- predict.mass$se.fit
 
-## Odocoileus virginianus----
-## add paleo deer data----
-old.deer <- read.csv(ArchaeoDeerAstragalusCalcaneus.csv, header = TRUE)
+#plotting this relationship
+squirrel.hbl.mass.stats <- data.frame(Binomial = Sbeecheyi$scientificName[1],
+                                      comparison = ("mass/head.body.length"),
+                                      intercept = squirrel.hbl.mass$coefficients[[1]],
+                                      slope = squirrel.hbl.mass$coefficients[[2]],
+                                      resid.std.err = sum.squirrel.hbl.mass$sigma,
+                                      df = max(sum.squirrel.hbl.mass$df),
+                                      std.err.slope =  sum.squirrel.hbl.mass$coefficients[4],
+                                      std.err.intercept = sum.squirrel.hbl.mass$coefficients[3],
+                                      r.squared = sum.squirrel.hbl.mass$r.squared,
+                                      sample.size = nrow(Sbeecheyi[!is.na(Sbeecheyi$mass) & !is.na(Sbeecheyi$head.body.length),]))
 
-Ovirginianus <- pan.data[pan.data$MSW05_Binomial == "Odocoileus virginianus",]
+nrow(Sbeecheyi[!is.na(Sbeecheyi$mass) & !is.na(Sbeecheyi$head.body.length),])
+p = ggplot(data = Sbeecheyi) + 
+  geom_point(aes(x = log10(head.body.length), y = log10(mass))) +
+  geom_smooth(aes(x = log10(head.body.length), y = log10(mass)), method = "lm", color = "slateblue4")+
+  ggtitle("Spermophilus beecheyi N = 204") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Body~Mass~(g))) +
+  scale_x_log10(expression(log[10]~Head~Body~Length~(mm)))
 
-Ovirginianus.clean <- Ovirginianus[Ovirginianus$lifeStage != "Juvenile" & Ovirginianus$mass.status != "outlier" & Ovirginianus$total.length.status != "outlier",]
+#seems like there is a outlier on this plot.
+ggsave(p, file=paste0("plot_Spermophilus beecheyi_hbl_mass.png"), width = 14, height = 10, units = "cm")
+
+model.Spermophilus.beecheyi <- rbind(squirrel.hbl.tooth.stats, squirrel.hbl.mass.stats)
+
+#gaussian error propogation
+toothpredict$GauTRLp <- sqrt((sum.squirrel.hbl.mass$coefficients[[2]] * toothpredict$se.fit.hbl)^2)
+
+#summing together the error from the gaussian propogation and the error from pushing the points through
+toothpredict$sumerror <- sqrt((toothpredict$GauTRL)^2 + (toothpredict$se.fit.mass)^2)
+
+#compare to the error in the relationship between tooth row and mass
+squirrel.toothrow.mass <- lm(log10(Sbeecheyi$mass) ~ log10(Sbeecheyi$tooth.row), na.action = na.exclude)
+sum.squirrel.toothrow.mass <- summary(squirrel.toothrow.mass)
+predict.mass.tooth <- data.frame(predict(squirrel.toothrow.mass, toothpredict, se.fit = TRUE))
+toothpredict$fit.mass.tooth <- predict.mass.tooth$fit
+toothpredict$se.fit.mass.tooth <- predict.mass.tooth$se.fit
+
+#plot this relationship
+squirrel.toothrow.mass.stats <- data.frame(Binomial = Sbeecheyi$scientificName[1],
+                                           comparison = ("mass/tooth.row"),
+                                           intercept = squirrel.toothrow.mass$coefficients[[1]],
+                                           slope = squirrel.toothrow.mass$coefficients[[2]],
+                                           resid.std.err = sum.squirrel.toothrow.mass$sigma,
+                                           df = max(sum.squirrel.toothrow.mass$df),
+                                           std.err.slope =  sum.squirrel.toothrow.mass$coefficients[4],
+                                           std.err.intercept = sum.squirrel.toothrow.mass$coefficients[3],
+                                           r.squared = sum.squirrel.toothrow.mass$r.squared,
+                                           sample.size = nrow(Sbeecheyi[!is.na(Sbeecheyi$mass) & !is.na(Sbeecheyi$tooth.row),]))
+
+nrow(Sbeecheyi[!is.na(Sbeecheyi$mass) & !is.na(Sbeecheyi$tooth.row),])
+p = ggplot(data = Sbeecheyi) + 
+  geom_point(aes(x = log10(tooth.row), y = log10(mass))) +
+  geom_smooth(aes(x = log10(tooth.row), y = log10(mass)), method = "lm", color = "slateblue4")+
+  ggtitle("Spermophilus beecheyi N = 86") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Body~Mass~(g))) +
+  scale_x_log10(expression(log[10]~Tooth~row~Length~(mm)))
+
+#seems like there is a outlier on this plot.
+ggsave(p, file=paste0("plot_Spermophilus beecheyi_toothrow_mass.png"), width = 14, height = 10, units = "cm")
+
+model.Spermophilus.beecheyi <- rbind(model.Spermophilus.beecheyi, squirrel.toothrow.mass.stats)
+
+write.csv(model.Spermophilus.beecheyi, file= "model.results.whole.genus.Spermophilus.beecheyi.csv")
+
+write.csv(toothpredict, file= "error.propogation.Spermophilus.beecheyi.csv")
+
+#some questions: is it ok to be working in log log space this whole time? DO we want to transform them at the end of the analysis.
+
+##Odocoileus virginianus----
+
+Ovirginianus <- data[data$scientificName == "Odocoileus virginianus",]
+
+Ovirginianus.clean <- subset(Ovirginianus, Ovirginianus$mass.status == "GOOD" & Ovirginianus$mass.units == "g" 
+                             & Ovirginianus$total.length.status == "GOOD" & Ovirginianus$total.length.units == "mm"
+                             & Ovirginianus$total.length > 0 & Ovirginianus$mass > 0
+                             & Ovirginianus$hindfoot.length.status != "outlier" & Ovirginianus$hindfoot.length.units == "mm",
+                             select = c("scientificName", "mass", "head.body.length", "hindfoot.length", "astragalus.length", "astragalus.width", "calcaneus.GB", "calcaneus.GL"))
 Ovirginianus <- Ovirginianus.clean
+write.csv(Ovirginianus, "Ovirginianus.csv")
 
-#mass vs hindfoot length
-model1 <- lm(log10(Ovirginianus$mass) ~ log10(Ovirginianus$hindfoot.length), na.action=na.exclude)
-sum.model1 <- summary(model1)
-sub1 <- data.frame(binomial = Ovirginianus$MSW05_Binomial[1],
-                   comparison = ("Mass/hindfoot"),
-                   intercept = model$coefficients[[1]],
-                  slope = model$coefficients[[2]],
-                  resid.std.err = sum.model$sigma,
-                  df = max(sum.model$df),
-                  std.err.slope =  sum.model$coefficients[4],
-                  std.err.intercept = sum.model$coefficients[3],
-                  r.squared = sum.model$r.squared,
-                  sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$hindfoot.length),]))
+deer.mass.astragalus <- lm(log10(Ovirginianus$mass) ~ log10(Ovirginianus$astragalus.length), na.action = na.exclude)
+sum.deer.mass.astragalus <- summary(deer.mass.astragalus)
+deer.mass.astragalus.stats <- data.frame(Binomial = Ovirginianus$scientificName[1],
+                                       intercept = deer.mass.astragalus$coefficients[[1]],
+                                       slope = deer.mass.astragalus$coefficients[[2]],
+                                       resid.std.err = sum.deer.mass.astragalus$sigma,
+                                       df = max(sum.deer.mass.astragalus$df),
+                                       std.err.slope =  sum.deer.mass.astragalus$coefficients[4],
+                                       std.err.intercept = sum.deer.mass.astragalus$coefficients[3],
+                                       r.squared = sum.deer.mass.astragalus$r.squared,
+                                       sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$astragalus.length),]))
 
-#ggtitle doesn't seem to be doing anything because it is not connected to p. When I do connect it scale_x and scale y takes away the axis tick marks. 
-p = ggplot(data = Ovirginianus) + 
-  geom_point(aes(x = log10(mass), y = log10(hindfoot.length))) +
-  geom_smooth(aes(x = log10(mass), y = log10(hindfoot.length)),
-              method = "lm", color = "slateblue4") +
-ggtitle("Odocoileus virginianus") +
-  theme(plot.title = element_text(face = "italic"))+
-  xlab(expression(log[10]~Body~Mass~(g))) +
-  ylab(expression(log[10]~Hindfoot~Length~(mm))) + 
-  ggsave(p, file=paste0("plot_Odocoileus virginianus_mass_hindfoot.png"), width = 14, height = 10, units = "cm")
-
-#mass vs astragalus
-model2 <- lm(log10(Ovirginianus$mass) ~ log10(Ovirginianus$astragalus.length), na.action=na.exclude)
-sum.model2 <- summary(model2)
-sub2 <- data.frame(binomial = Ovirginianusi$MSW05_Binomial[1],
-                   comparison = ("Mass/astragalus"),
-                   intercept = model2$coefficients[[1]],
-                   slope = model2$coefficients[[2]],
-                   resid.std.err = sum.model2$sigma,
-                   df = max(sum.model2$df),
-                   std.err.slope =  sum.model2$coefficients[4],
-                   std.err.intercept = sum.model2$coefficients[3],
-                   r.squared = sum.model2$r.squared,
-                   sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$astragalus.length) & !is.na(Ovirginianus$mass),]))
-
+nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$astragalus.length),])
 p = ggplot(data = Ovirginianus) + 
   geom_point(aes(x = log10(astragalus.length), y = log10(mass))) +
   geom_smooth(aes(x = log10(astragalus.length), y = log10(mass)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Odocoileus virginianus") +
-  theme(plot.title = element_text(face = "italic"))+
-  ylab(expression(log[10]~Body~Mass~(g))) +
-  xlab(expression(log[10]~Astragalus~Length~(mm))) 
-ggsave(p, file=paste0("plot_Odocoileus virginianus_mass_astragalus.png"), width = 14, height = 10, units = "cm")
+              method = "lm", color = "slateblue4") +
+  ggtitle("Odocoileus virginianus N = 24") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Body~Mass~(g))) +
+  scale_x_log10(expression(log[10]~Astragalus~Length~(mm)))
+ggsave(p, file=paste0("plot_Odocoileus virginianus_astragalus_mass.png"), width = 14, height = 10, units = "cm")
 
-model.Odocoileus.virginianus <- rbind(sub1, sub2)  
+deer.hbl.astragalus <- lm(log10(Ovirginianus$head.body.length) ~ log10(Ovirginianus$astragalus.length), na.action = na.exclude)
+sum.deer.hbl.astragalus <- summary(deer.hbl.astragalus)
+deer.hbl.astragalus.stats <- data.frame(Binomial = Ovirginianus$scientificName[1],
+                                        intercept = deer.hbl.astragalus$coefficients[[1]],
+                                        slope = deer.hbl.astragalus$coefficients[[2]],
+                                        resid.std.err = sum.deer.hbl.astragalus$sigma,
+                                        df = max(sum.deer.hbl.astragalus$df),
+                                        std.err.slope =  sum.deer.hbl.astragalus$coefficients[4],
+                                        std.err.intercept = sum.deer.hbl.astragalus$coefficients[3],
+                                        r.squared = sum.deer.hbl.astragalus$r.squared,
+                                        sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$astragalus.length) & !is.na(Ovirginianus$head.body.length),]))
 
-#astragalus vs hindfoot  
-
-model3 <- lm(log10(Ovirginianus$hindfoot.length) ~ log10(Ovirginianus$astragalus.length), na.action=na.exclude)
-sum.model3 <- summary(model3)
-sub3 <- data.frame(binomial = Ovirginianus$MSW05_Binomial[1],
-                   comparison = ("hindfoot length/astraglus length"),
-                   intercept = model3$coefficients[[1]],
-                   slope = model3$coefficients[[2]],
-                   resid.std.err = sum.model3$sigma,
-                   df = max(sum.model3$df),
-                   std.err.slope =  sum.model3$coefficients[4],
-                   std.err.intercept = sum.model3$coefficients[3],
-                   r.squared = sum.model3$r.squared,
-                   sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$astragalus.length) & !is.na(Ovirginianus$hindfoot.length),]))
-
+nrow(Ovirginianus[!is.na(Ovirginianus$astragalus.length) & !is.na(Ovirginianus$head.body.length),])
 p = ggplot(data = Ovirginianus) + 
-  geom_point(aes(x = log10(astragalus.length), y = log10(hindfoot.length))) +
-  geom_smooth(aes(x = log10(astragalus.length), y = log10(hindfoot.length)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Odocoileus virginianus") +
-  theme(plot.title = element_text(face = "italic"))+
-  xlab(expression(log[10]~Astragalus~Length~(mm))) +
-  ylab(expression(log[10]~Hindfoot~Length~(mm))) 
-ggsave(p, file=paste0("plot_Odocoileus virginianus_astragalus_hingfoot.png"), width = 14, height = 10, units = "cm")
-
-model.Odocoileus.virginianus <- rbind(model.Odocoileus.virginianus, sub3)  
-
-#mass versus total length
-model4 <- lm(log10(Ovirginianus$mass) ~ log10(Ovirginianus$total.length), na.action=na.exclude)
-sum.model4 <- summary(model4)
-sub4 <- data.frame(binomial = Ovirginianus$MSW05_Binomial[1],
-                   comparison = ("Mass/Total length"),
-                   intercept = model4$coefficients[[1]],
-                   slope = model4$coefficients[[2]],
-                   resid.std.err = sum.model4$sigma,
-                   df = max(sum.model4$df),
-                   std.err.slope =  sum.model4$coefficients[4],
-                   std.err.intercept = sum.model4$coefficients[3],
-                   r.squared = sum.model4$r.squared,
-                   sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$total.length),]))
-
-p = ggplot(data = Ovirginianus) + 
-  geom_point(aes(x = log10(total.length), y = log10(mass))) +
-  geom_smooth(aes(x = log10(total.length), y = log10(mass)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Odocoileus virginianus") +
-  theme(plot.title = element_text(face = "italic"))+
-  ylab(expression(log[10]~Body~Mass~(g))) +
-  xlab(expression(log[10]~Total~Length~(mm)))
-
-ggsave(p, file=paste0("plot_Odocoileus virginianus_mass_totallength.png"), width = 14, height = 10, units = "cm")
-
-model.Odocoileus.virginianus <- rbind(model.Odocoileus.virginianus, sub4)  
-
-#astragalus versus total length
-model5 <- lm(log10(Ovirginianus$total.length) ~ log10(Ovirginianus$astragalus.length), na.action=na.exclude)
-sum.model5 <- summary(model5)
-sub5 <- data.frame(binomial = Ovirginianus$MSW05_Binomial[1],
-                   comparison = ("Total length/astragalus length"),
-                   intercept = model5$coefficients[[1]],
-                   slope = model5$coefficients[[2]],
-                   resid.std.err = sum.model5$sigma,
-                   df = max(sum.model5$df),
-                   std.err.slope =  sum.model5$coefficients[4],
-                   std.err.intercept = sum.model5$coefficients[3],
-                   r.squared = sum.model5$r.squared,
-                   sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$total.length) & !is.na(Ovirginianus$astragalus.length),]))
-
-p = ggplot(data = Ovirginianus) + 
-  geom_point(aes(x = log10(astragalus.length), y = log10(total.length))) +
+  geom_point(aes(x = log10(astragalus.length), y = log10(head.body.length))) +
   geom_smooth(aes(x = log10(astragalus.length), y = log10(head.body.length)),
-              method = "lm", color = "slateblue4")+
-  ggtitle("Odocoileus virginianus") +
-  theme(plot.title = element_text(face = "italic"))+
-  xlab(expression(log[10]~Astragalus~Length~(mm))) +
-  ylab(expression(log[10]~Total~Length~(mm))) 
-ggsave(p, file=paste0("plot_Odocoileus virginanus_astragalus_totallength.png"), width = 14, height = 10, units = "cm")
+              method = "lm", color = "slateblue4") +
+  ggtitle("Odocoileus virginianus N = 24") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Head~Body~Length~(mm))) +
+  scale_x_log10(expression(log[10]~Astragalus~Length~(mm)))
+ggsave(p, file=paste0("plot_Odocoileus virginianus_hbl_astragalus.png"), width = 14, height = 10, units = "cm")
 
-model.Odocoileus.virginianus <- rbind(model.Odocoileus.virginianus, sub5)  
-#write.csv(model.Spermophilus.beecheyi, file= "model.results.Spermophilus.beecheyi.csv")
+deer.hbl.mass <- lm(log10(Ovirginianus$mass) ~ log10(Ovirginianus$head.body.length), na.action = na.exclude)
+sum.deer.hbl.mass <- summary(deer.hbl.mass)
+deer.hbl.mass.stats <- data.frame(Binomial = Ovirginianus$scientificName[1],
+                                  intercept = deer.hbl.mass$coefficients[[1]],
+                                  slope = deer.hbl.mass$coefficients[[2]],
+                                  resid.std.err = sum.deer.hbl.mass$sigma,
+                                  df = max(sum.deer.hbl.mass$df),
+                                  std.err.slope =  sum.deer.hbl.mass$coefficients[4],
+                                  std.err.intercept = sum.deer.hbl.mass$coefficients[3],
+                                  r.squared = sum.deer.hbl.mass$r.squared,
+                                  sample.size = nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$head.body.length),]))
 
+nrow(Ovirginianus[!is.na(Ovirginianus$mass) & !is.na(Ovirginianus$head.body.length),])
+p = ggplot(data = Ovirginianus) + 
+  geom_point(aes(x = log10(head.body.length), y = log10(mass))) +
+  geom_smooth(aes(x = log10(head.body.length), y = log10(mass)),
+              method = "lm", color = "slateblue4") +
+  ggtitle("Odocoileus virginianus N = 671") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_y_log10(expression(log[10]~Body~Mass~(g))) +
+  scale_x_log10(expression(log[10]~Head~Body~Length~(mm)))
+ggsave(p, file=paste0("plot_Odocoileus virginianus_hbl_mass.png"), width = 14, height = 10, units = "cm")
 
-
-#the below code is for plotting many measurments.
-#can switch out species name for whichever is the target
-#test <- subset(data.limb, scientificName== "Aepyceros melampus", select = c("X","occurrenceID", "scientificName", "lifeStage", "sex", "catalogNumber", "mass", "astragalus.length", "astragalus.width", "calcaneus.GB", "calcaneus.GL", "femur.length", "humerus.length", "forearm.length", "tooth.row"))
-
-test_reshape <- gather(data = test, 
-                       key = Measurement, 
-                       value = value, 
-                       8:15)
-
-sp.models.lim <- unique(test_reshape$Measurement)
-model.results.species.limb <- data.frame()
-for(i in 1:length(sp.models.lim)){
-  sub.data <- as.data.frame(test_reshape[test_reshape$Measurement == sp.models[i],])
-  model <- lm(log10(sub.data$mass) ~ log10(sub.data$value), na.action=na.exclude)
-  sum.model <- summary(model)
-  sub <- data.frame(binomial = sub.data$scientificName[1],
-                    intercept = model$coefficients[[1]],
-                    slope = model$coefficients[[2]],
-                    resid.std.err = sum.model$sigma,
-                    df = max(sum.model$df),
-                    std.err.slope =  sum.model$coefficients[4],
-                    std.err.intercept = sum.model$coefficients[3],
-                    r.squared = sum.model$r.squared,
-                    sample.size = length(sub.data$mass))
-  model.results.species.limb <- rbind(sub, model.results.species.limb)
-}
-
-#plotting, I need to still fix this
-for (i in sp.models.lim) {
-  p = ggplot(data = subset(test_reshape, Measurement  == i)) + 
-    geom_point(aes(x = log10(mass), y = log10(value))) +
-    geom_smooth(aes(x = log10(mass), y = log10(value)),
-                method = "lm", color = "slateblue4")
-  ggtitle(i) +
-    scale_x_log10(name = expression(log[10]~Body~Mass~(g))) +
-    scale_y_log10(name = expression(log[10]~Total~Length~(mm))) + 
-    ggsave(p, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
-}
-
-
+               
+## add paleo deer data----
+old.deer <- read.csv("https://de.cyverse.org/dl/d/E237E454-9EE3-4169-8777-134D21B067FA/ArchaeoDeerAstragalusCalcaneus.csv", header = TRUE)
 
 
 
