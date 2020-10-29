@@ -354,6 +354,10 @@ length(unique(data.meas$scientificName)) #1747
 write.csv(data.meas, "less.dirty.data.csv")
 #data.meas <- read.csv("less.dirty.data.csv", header = TRUE)
 
+## TO DO:----
+#make all traits with values of "0" <- NA
+#only like 80 records for mass, so likely not too big of an issue
+
 ##Figure 1 panel 1: lifeStage----
 length(data.meas$mass[data.meas$scientificName == "Artibeus jamaicensis" & !is.na(data.meas$mass)]) #1394
 length(data.meas$mass[data.meas$scientificName == "Peromyscus maniculatus" & !is.na(data.meas$mass)]) #30717
