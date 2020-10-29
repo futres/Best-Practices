@@ -360,61 +360,61 @@ length(data.meas$mass[data.meas$scientificName == "Peromyscus maniculatus" & !is
 length(data.meas$mass[data.meas$scientificName == "Spermophilus beecheyi" & !is.na(data.meas$mass)]) #222
 length(data.meas$mass[data.meas$scientificName == "Odocoileus virginianus" & !is.na(data.meas$mass)]) #930
 
-ccStage <- c("darkgray", "darkslateblue", "lightslateblue")
-data.meas$lifeStage[data.meas$lifeStage == "--"] <- ""
+ccStage <- c("darkgray", "mediumslateblue")
+data.meas$lifeStage[data.meas$lifeStage == "--" | data.meas$lifeStage == ""] <- "NS"
 data.meas$lifeStage <- as.factor(data.meas$lifeStage)
 data.meas$lifeStage = relevel(data.meas$lifeStage, "Adult")
-data.meas$lifeStage <- factor(data.meas$lifeStage,levels = c("Adult","","NS"))
+data.meas$lifeStage <- factor(data.meas$lifeStage,levels = c("Adult","NS"))
 df <- subset(data.meas, data.meas$scientificName == "Artibeus jamaicensis" & mass.units == "g" & !is.na(data.meas$mass))
 length(df$mass) 
 p <- ggplot(data = df) + 
-  geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.6) +
+  geom_density(aes(x = mass, fill = lifeStage), alpha = 0.6) +
   scale_fill_manual(values = ccStage, 
                     name="Life Stage") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   ggtitle("Artibeus jamaicensis N=1235") +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 3))+
-  ylim(0, 40)
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
+  scale_y_continuous(name = "Density", limits = c(0, .15))
 ggsave(p, file=paste0("orig.dist.lifeStage.bat",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.meas, data.meas$scientificName == "Peromyscus maniculatus" & mass.units == "g" & !is.na(data.meas$mass))
 length(df$mass)
 p <- ggplot(data = df) + 
-  geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.6) +
+  geom_density(aes(x = mass, fill = lifeStage), alpha = 0.6) +
   scale_fill_manual(values = ccStage, 
                     name="Life Stage") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   ggtitle("Peromyscus maniculatus N=24650") +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 7))+
-  ylim(0, 40)
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
+  scale_y_continuous(name = "Density", limits = c(0, .15))
 ggsave(p, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.meas, scientificName == "Spermophilus beecheyi" & mass.units == "g" & !is.na(data.meas$mass))
 length(df$mass)
 p <- ggplot(data = df) + 
-  geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.6) +
+  geom_density(aes(x = mass, fill = lifeStage), alpha = 0.6) +
   scale_fill_manual(values = ccStage, 
                     name="Life Stage") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   ggtitle("Spermophilus beecheyi N=161") +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 4)) +
-  ylim(0, 40)
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
+  scale_y_continuous(name = "Density", limits = c(0, .005))
 ggsave(p, file=paste0("orig.dist.lifeStage.squirrel",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.meas, scientificName == "Odocoileus virginianus" & mass.units == "g" & !is.na(data.meas$mass))
 length(df$mass)
 p <- ggplot(data = df) + 
-  geom_density(aes(x = log10(mass), fill = lifeStage), alpha = 0.6) +
+  geom_density(aes(x = mass, fill = lifeStage), alpha = 0.6) +
   scale_fill_manual(values = ccStage, 
                     name="Life Stage") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   ggtitle("Odocoileus virginianus N=66") +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 8)) +
-  ylim(0, 40)
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
+  scale_y_continuous(name = "Density", limits = c(0, .001))
 ggsave(p, file=paste0("orig.dist.lifeStage.deer",".png"), width = 14, height = 10, units = "cm")
 
 ##Mahalanobis Outlier test----
@@ -489,7 +489,7 @@ write.csv(data.mh, "mh.outlier.checked.data.csv")
 #data.mh <- read.csv("mh.outlier.checked.csv", header = TRUE)
 
 ##Figure 1, panel 2: outliers----
-ccStatus <- c("darkslateblue", "lightslateblue")
+#ccStatus <- c("darkslateblue", "lightslateblue")
 data.mh2 <- data.mh
 data.mh2$mass.status <- as.factor(data.mh2$mass.status)
 data.mh2$mass.status = relevel(data.mh2$mass.status, "")
@@ -500,61 +500,61 @@ length(df$mass[df$mass.status == "outlier"]) #70
 length(df$mass[df$mass.status != "outlier"]) #1165
 p <- ggplot() + 
   #geom_histogram(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = "darkgray", alpha = 0.3, binwidth = .005, boundary = TRUE) +
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-  geom_density(data = filter(df, mass.status != "outlier"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
+  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA) + #alpha = 0.3
+  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "slateblue") +
+  geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   ggtitle("Artibeus jamaicensis N = 1235, Noutliers = 70") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ylim(0, 40) +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 3))
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
+  scale_y_continuous(name = "Density", limits = c(0, .15))
 ggsave(p, file=paste0("outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.mh2, data.mh2$scientificName == "Peromyscus maniculatus" & !is.na(data.mh2$mass) & data.mh2$mass.units == "g")
 length(df$mass)
 length(df$mass[df$mass.status == "outlier"])
 p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-  geom_density(data = filter(df, mass.status != "outlier"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
+  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA) + #alpha = 0.3
+  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "slateblue") +
+  geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   ggtitle("Peromyscus maniculatus N = 24650, Noutlier = 1") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ylim(0, 40) +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 7))
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
+  scale_y_continuous(name = "Density", limits = c(0, .15))
 ggsave(p, file=paste0("outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.mh2, data.mh2$scientificName == "Spermophilus beecheyi" & !is.na(data.mh2$mass) & data.mh2$mass.units == "g")
 length(df$mass)
 length(df$mass[df$mass.status == "outlier"])
 p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-  geom_density(data = filter(df, mass.status != "outlier"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
+  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA) + #alpha = 0.3
+  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "slateblue") +
+  geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   #scale_fill_manual(values = ccStatus,
   #                  name="Mass Status") +
   ggtitle("Spermophilus beecheyi N = 161, Noutlier = 10") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ylim(0, 40) +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 4))
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
+  scale_y_continuous(name = "Density", limits = c(0, .005))
 ggsave(p, file=paste0("outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.mh2, data.mh2$scientificName == "Odocoileus virginianus" & !is.na(data.mh2$mass) & data.mh2$mass.units == "g")
 length(df$mass)
 length(df$mass[df$mass.status == "outlier"])
 p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-  geom_density(data = filter(df, mass.status != "outlier"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
+  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, adjust = 1/10) + #alpha = 0.3
+  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "slateblue") +
+  geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9, adjust = 1/10) +
   #geom_density(data = df, aes(x = log10(mass), fill = mass.status), alpha = 0.9) +
   #scale_fill_manual(values = ccStatus,
   #                  name="Mass Status") +
   ggtitle("Odocoileus virginianus N = 66, Noutlier = 6") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ylim(0, 40) +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 8)) 
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
+  scale_y_continuous(name = "Density", limits = c(0, .0001))
 ggsave(p, file=paste0("outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
 ##TO DO: make into function
@@ -934,66 +934,68 @@ df <- subset(data.outlier2, data.outlier2$scientificName == "Artibeus jamaicensi
 length(df$mass)
 length(df$mass[df$mass.status == "outlier"])
 p <- ggplot(data = df) + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
+  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA) + #alpha = 0.3
+  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "slateblue") +
+  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
   #scale_fill_manual(values = ccStatus,
   #                  name="Mass Status") +
   ggtitle("Artibeus jamaicensis N = 1364, Noutlier = 53") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 3)) +
-  ylim(0, 40)
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 100)) +
+  scale_y_continuous(name = "Density", limits = c(0, .15))
 ggsave(p, file=paste0("third.outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.outlier2, data.outlier2$scientificName == "Peromyscus maniculatus" & !is.na(data.outlier2$mass) & data.outlier2$mass.units == "g")
 length(df$mass)
 length(df$mass[df$mass.status == "outlier"])
 p <- ggplot(data = df) + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
+  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA) + #alpha = 0.3
+  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "slateblue") +
+  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
   #scale_fill_manual(values = ccStatus,
   #                  name="Mass Status") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   ggtitle("Peromyscus maniculatus N = 30714, Noutlier = 234") +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 7)) + 
-  ylim(0, 40)
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
+  scale_y_continuous(name = "Density", limits = c(0, .15))
 ggsave(p, file=paste0("third.outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.outlier2, data.outlier2$scientificName == "Spermophilus beecheyi" & !is.na(data.outlier2$mass) & data.outlier2$mass.units == "g")
 length(df$mass)
 length(df$mass[df$mass.status == "outlier"])
 p <- ggplot(data = df) + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
+  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA) + #alpha = 0.3
+  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "slateblue") +
+  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
   #scale_fill_manual(values = ccStatus,
   #                  name="Mass Status") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   ggtitle("Spermophilus beecheyi N = 215, Noutlier = 1") +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 4)) + 
-  ylim(0, 40)
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
+  scale_y_continuous(name = "Density", limits = c(0, .005))
 ggsave(p, file=paste0("third.outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.outlier2, data.outlier2$scientificName == "Odocoileus virginianus" & !is.na(data.outlier2$mass) & data.outlier2$mass.units == "g")
 length(df$mass)
 length(df$mass[df$mass.status == "outlier"])
 p <- ggplot(data = df) + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = NA) + #alpha = 0.3
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), sides = "b", col = "slateblue") +
-  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = log10(mass)), color = "darkgray", fill = "darkgray", alpha = 0.9) +
+  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, adjust = 1/10) + #alpha = 0.3
+  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "slateblue") +
+  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9, adjust = 1/10) +
   #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
   #scale_fill_manual(values = ccStatus,
   #                  name="Mass Status") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   ggtitle("Odocoileus virginianus N = 918, Noutlier = 2") +
-  scale_x_log10(name = expression(log[10]~Body~Mass~(g)), limits = c(.5, 8)) +
-  ylim(0, 40)
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
+  scale_y_continuous(name = "Density", limits = c(0, .0001))
 ggsave(p, file=paste0("third.outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
 ##info about outliers----
