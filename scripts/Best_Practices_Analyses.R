@@ -416,47 +416,77 @@ Odocoileus <- Odocoileus.clean
 write.csv(Odocoileus, "Odocoileus.csv")
 
 ## add paleo deer data----
-old.deer <- read.csv("https://de.cyverse.org/dl/d/E237E454-9EE3-4169-8777-134D21B067FA/ArchaeoDeerAstragalusCalcaneus.csv", header = TRUE)
+old.deer.full <- read.csv("https://de.cyverse.org/dl/d/47792C1B-EB37-43AB-AE1B-DC90497DECD7/NEW_ArchaeoDeerAstragalusCalcaneus.csv", header = TRUE)
+old.deer <- subset(old.deer.full, subset = old.deer.full$Site.Name == "Saint Catherines" | old.deer.full$Site.Name == "Fort Center")
 
-x.species <- Odocoileus$astragalus.length[Odocoileus$MSW05_Binomial == "Odocoileus virginianus" & !is.na(Odocoileus$astragalus.length)]
-y.species <- Odocoileus$mass[Odocoileus$MSW05_Binomial == "Odocoileus virginianus" & !is.na(Odocoileus$astragalus.length)]
-deer.mass.astragalus <- lm(y.species ~ x.species, na.action = na.exclude)
-sum.deer.mass.astragalus <- summary(deer.mass.astragalus)
-anklepredict <- data.frame(x.species = old.deer$astragalus.length) 
+log.x.species <- Odocoileus$astragalus.length[Odocoileus$MSW05_Binomial == "Odocoileus virginianus" & !is.na(Odocoileus$astragalus.length)]
+log.y.species <- Odocoileus$mass[Odocoileus$MSW05_Binomial == "Odocoileus virginianus" & !is.na(Odocoileus$astragalus.length)]
+log.deer.mass.astragalus <- lm(log10(y.species) ~ log10(x.species), na.action = na.exclude)
+log.sum.deer.mass.astragalus <- summary(deer.mass.astragalus)
+anklepredict <- data.frame(x.species = old.deer$astragalus.length)
 predict.mass <- data.frame(predict(deer.mass.astragalus, anklepredict, se.fit = TRUE))
-anklepredict$fit.mass <- predict.mass$fit
-anklepredict$se.fit.mass <- predict.mass$se.fit
+anklepredict$log.fit.mass <- predict.mass$fit
+anklepredict$log.se.fit.mass <- predict.mass$se.fit
+anklepredict$site <- as.factor(old.deer$Site.Name)
+
+anklepredict$log.lower <- anklepredict$log.fit.mass - anklepredict$log.se.fit.mass
+anklepredict$log.upper <- anklepredict$log.fit.mass + anklepredict$log.se.fit.mass
+
+anklepredict$lower <- 10^anklepredict$log.lower
+anklepredict$upper <- 10^anklepredict$log.upper
+anklepredict$fit.mass <- 10^anklepredict$log.fit.mass
+
+cc_Site = c("lightslateblue", "darkslateblue")
 
 p <- ggplot() +
-  geom_smooth(data = Odocoileus, aes(x = astragalus.length, y = mass), method = "lm", color = "slateblue4", fill = "gray74")+
-  geom_point(data = Odocoileus, aes(x = astragalus.length, y = mass)) +
-  geom_point(data = anklepredict, aes(x = x.species, y = fit.mass), 
-             shape = 18, size = 3, color = "gray36") +
-  geom_errorbar(data = anklepredict, aes(x = x.species, ymin = fit.mass - se.fit.mass, ymax = fit.mass + se.fit.mass),
-                color = "gray36") +
+  geom_smooth(data = filter(Odocoileus, Odocoileus$MSW05_Binomial == "Odocoileus virginianus" & !is.na(Odocoileus$astragalus.length)), 
+              aes(x = log10(astragalus.length), y = log10(mass)), method = "lm", color = "black", fill = "gray74")+
+  geom_point(data = filter(Odocoileus, Odocoileus$MSW05_Binomial == "Odocoileus virginianus" & !is.na(Odocoileus$astragalus.length)), 
+                           aes(x = log10(astragalus.length), y = log10(mass))) +
+  geom_point(data = anklepredict, aes(x = log10(x.species), y = log.fit.mass, color = site), 
+             shape = 18, size = 3) +#, color = "gray36") +
+  scale_color_manual(values = cc_Site) + 
+  geom_errorbar(data = anklepredict, aes(x = log10(x.species), 
+                                         ymin = log.fit.mass - log.se.fit.mass, 
+                                         ymax = log.fit.mass + log.se.fit.mass, color = site)) +
+  #scale_color_manual(name = "siteName", values = cc_Site, labels = c("Fort Center, 200-800 ACE", "Saint Catherines Island, 1565-1763 ACE")) + 
+  #scale_fill_discrete(name = "siteName", labels = c("Fort Center, 200-800 ACE", "Saint Catherines Island, 1565-1763 ACE", "Florida, modern" = "black")) + 
   ggtitle("Odocoileus virginianus") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_y_continuous(name = "Body Mass (g)") +
-  scale_x_continuous(name = "Astragalus Length (mm)") 
-ggsave(p, file=paste0("plot_Odocoileus virginianus_astragalus_mass_predict.png"), width = 14, height = 10, units = "cm")
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        legend.position = "none") +
+  scale_y_continuous(name = expression(log[10]~Body~Mass~(g))) +
+  scale_x_continuous(name = expression(log[10]~Astragalus~Length~(mm)))
+ggsave(p, file=paste0("plot_log_Odocoileus virginianus_astragalus_mass_predict.png"), width = 14, height = 10, units = "cm")
 
-deer.mass.astragalus.stats <- data.frame(scientificName = "Odocoileus virginianus",
+log.deer.mass.astragalus.stats <- data.frame(scientificName = "Odocoileus virginianus",
                                         comparison = ("mass/astragalus.length"),
-                                        intercept = deer.mass.astragalus$coefficients[[1]],
-                                        slope = deer.mass.astragalus$coefficients[[2]],
-                                        resid.std.err = sum.deer.mass.astragalus$sigma,
-                                        df = max(sum.deer.mass.astragalus$df),
-                                        std.err.slope =  sum.deer.mass.astragalus$coefficients[4],
-                                        std.err.intercept = sum.deer.mass.astragalus$coefficients[3],
-                                        r.squared = sum.deer.mass.astragalus$r.squared,
-                                        p.value = sum.deer.mass.astragalus$coefficients[,4][[2]],
-                                        sample.size = nrow(Odocoileus[!is.na(Odocoileus$astragalus.length) & !is.na(Odocoileus$head.body.length & Odocoileus$MSW05_Binomial == "Odocoileus virginianus"),]))
-write.csv(deer.mass.astragalus.stats, "deer.mass.astragalus.stats.csv")
+                                        intercept = log.deer.mass.astragalus$coefficients[[1]],
+                                        slope = log.deer.mass.astragalus$coefficients[[2]],
+                                        resid.std.err = log.sum.deer.mass.astragalus$sigma,
+                                        df = max(log.sum.deer.mass.astragalus$df),
+                                        std.err.slope =  log.sum.deer.mass.astragalus$coefficients[4],
+                                        std.err.intercept = log.sum.deer.mass.astragalus$coefficients[3],
+                                        r.squared = log.sum.deer.mass.astragalus$r.squared,
+                                        p.value = log.sum.deer.mass.astragalus$coefficients[,4][[2]],
+                                        FLmodern.sample.size = nrow(Odocoileus[!is.na(Odocoileus$astragalus.length) & !is.na(Odocoileus$head.body.length & Odocoileus$MSW05_Binomial == "Odocoileus virginianus"),]),
+                                        FortCenter.sample.size = nrow(anklepredict[!is.na(anklepredict$x.species) & anklepredict$site == "Fort Center",]),
+                                        StCatherines.sample.size = nrow(anklepredict[!is.na(anklepredict$x.species) & anklepredict$site == "Saint Catherines",]))
+write.csv(log.deer.mass.astragalus.stats, "log.deer.mass.astragalus.stats.csv")
 write.csv(anklepredict, "anklepredict.csv")
 
+#predict using old method: logy = -6.71 + (5.29)logx
+compare <- subset(anklepredict, select = c("site", "x.species", "fit.mass", "lower", "upper"))
+colnames(compare)[colnames(compare) == "x.species"] <- "astragalus.length"
+compare$wing.mass <- 10^((-6.71)+(5.29)*log10(compare$astragalus.length)) * 1000
+compare$withing2se <- (compare$fit.mass - (2*compare$lower)) < compare$wing.mass & compare$wing.mass < (compare$fit.mass + (2*compare$upper))
 
-#toothrow versus total length
+write.csv(compare, "old.deer.mass.comparison.csv")
+
+old.deer$astragalus.length[old.deer$compare == FALSE] #quite a few (18/24)
+
+
+##OLD 
 x.species <- Odocoileus$astragalus.length[Odocoileus$MSW05_Binomial == "Odocoileus virginianus" & !is.na(Odocoileus$astragalus.length)]
 y.species <- Odocoileus$head.body.length[Odocoileus$MSW05_Binomial == "Odocoileus virginianus" & !is.na(Odocoileus$astragalus.length)]
 deer.hbl.astragalus <- lm(y.species ~ x.species, na.action = na.exclude)
@@ -790,4 +820,21 @@ geom_density(data = Odocoileus, aes(x = mass), color = "NA", alpha = .7) +
   scale_y_continuous(name = "Taxa", breaks = seq(0, 1, .5), 
                      labels = c("","predicted mass range", "original mass range")) 
 
-  
+####FuTRES Summary Stats ----
+sum.stats <- read.csv("summary_stats_GEOME.csv", header = TRUE)
+unique(sum.stats$measurmentType)
+sum(sum.stats$Totals, na.rm = TRUE)
+length(unique(sum.stats$scientificName))
+sum(sum.stats$Totals[sum.stats$measurmentType == "body mass"])
+sum(sum.stats$Totals[sum.stats$measurmentType == "body length"])
+sum(sum.stats$Totals[sum.stats$measurmentType == "ear length to notch"])
+sum(sum.stats$Totals[sum.stats$measurmentType == "tail length"])
+sum(sum.stats$Totals[sum.stats$measurmentType == "pes length"])
+length(unique(sum.stats$scientificName[sum.stats$measurmentType == "body mass"]))
+length(unique(sum.stats$scientificName[sum.stats$measurmentType == "body length"]))
+length(unique(sum.stats$scientificName[sum.stats$measurmentType == "ear length to notch"]))
+length(unique(sum.stats$scientificName[sum.stats$measurmentType == "tail length"]))
+length(unique(sum.stats$scientificName[sum.stats$measurmentType == "pes length"]))
+
+#select out species only
+
