@@ -565,21 +565,6 @@ for(i in 1:length(sp)){
   #return(data.test)
 }
 
-# df.mass <- outlier.function(data = data.binom, threshold = 0.95, column.counter = "scientificName", vector.counter = sp, 
-#                             trait.column == "measurementType", trait = "mass", unit.infer = "measurementUnitInferred", TorF = "F", 
-#                             status = "measurementValueStatus", stage.column = "lifestage", stage.value = stages)
-# df.total.length <- outlier.function(data = df.mass, threshold = 0.95, column = "scientificName", vector = sp, 
-#                             trait = "total.length", units = "total.length.units", unit = "mm", unit.infer = "total.length.units.inferred", values = values, status = "total.length.status")
-# df.hindfoot.length <- outlier.function(data = df.total.length, threshold = 0.95, column = "scientificName", vector = sp, 
-#                             trait = "hindfoot.length", units = "hindfoot.length.units", unit = "mm", unit.infer = "hindfoot.length.units.inferred", values = values, status = "hindfoot.length.status")
-# df.ear.length <- outlier.function(data = df.hindfoot.length, threshold = 0.95, column = "scientificName", vector = sp,
-#                                   trait = "ear.length", units = "ear.length.units", unit = "mm", unit.infer = "ear.length.units.inferred", values = values, status = "ear.length.status")
-#df.ear.length[is.nan(df.ear.length$tail.length)] <- NA
-#df.tail.length <- outlier.function(data = df.ear.length, threshold = 0.95, column = "scientificName", vector = sp,
-  #                                 trait = "tail.length", units = "tail.length.units", unit = "mm", unit.infer = "tail.length.units.inferred", values = values, status = "tail.length.status")
-
-#NOTE: tail length not working
-
 ##write out Mahalanobis outlier test data----
 data.mh <- data.test
 length(unique(data.mh$scientificName)) #4346
@@ -778,48 +763,8 @@ for(i in 1:nrow(data.check["measurementType" == "taill.length" &
   }
 }
 
-# check.2 <- function(data, units, units.infer, status, unit){
-#   for(i in 1:nrow(data)){
-#     if(isTRUE(data[i,status][units != unit] == "GOOD")){
-#       data[i,units.infer] <- "TRUE"
-#       data[i,units] <- unit
-#     }
-#     else{
-#       next
-#     }
-#   }
-#   return(data)
-# }
-
-#test
-#which(data.limit$sample.size.mass < 10)
-#data.limit$scientificName[6977]
-#df <- subset(data.limit, data.limit$scientificName == "Ametrida centurio")
-#df2 <- subset(df, select = c("mass", "mass.status", "upper.limit.mass", "lower.limit.mass", "sample.size.mass", "mass.units", "mass.units.inferred"))
-#df3 <- check.1(data = df2, trait = "mass", status = "mass.status", upper = "upper.limit.mass", lower = "lower.limit.mass", sample.size = "sample.size.mass")
-#df3$mass.status
-
-
-
-data.mass.check1 <- check.1(data = data.limit, trait = "mass", status = "mass.status", upper = "upper.limit.mass", lower = "lower.limit.mass", sample.size = "sample.size.mass")
-data.mass.check2 <- check.2(data = data.mass.check1, status = "mass.status", units = "mass.units", units.infer = "mass.units.inferred", unit = "g")
-
-data.length.check1 <- check.1(data = data.mass.check2, trait = "total.length", status = "total.length.status", upper = "upper.limit.length", lower = "lower.limit.length", sample.size = "sample.size.length")
-data.length.check2 <- check.2(data = data.length.check1, status = "total.length.status", units = "total.length.units", units.infer = "total.length.units.inferred", unit = "mm")
-
-data.ear.check1 <- check.1(data = data.length.check2, trait = "ear.length", status = "ear.length.status", upper = "upper.limit.ear", lower = "lower.limit.ear", sample.size = "sample.size.ear")
-data.ear.check2 <- check.2(data = data.ear.check1, status = "ear.length.status", units = "ear.length.units", units.infer = "ear.length.units.inferred", unit = "mm")
-
-data.hindfoot.check1 <- check.1(data = data.ear.check2, trait = "hindfoot.length", status = "hindfoot.length.status", upper = "upper.limit.hindfoot", lower = "lower.limit.hindfoot", sample.size = "sample.size.hindfoot")
-data.hindfoot.check2 <- check.2(data = data.hindfoot.check1, status = "hindfoot.length.status", units = "hindfoot.length.units", units.infer = "hindfoot.length.units.inferred", unit = "mm")
-
-data.tail.check1 <- check.1(data = data.hindfoot.check2, trait = "tail.length", status = "tail.length.status", upper = "upper.limit.tail", lower = "lower.limit.tail", sample.size = "sample.size.hindfoot")
-data.tail.check2 <- check.2(data = data.tail.check1, status = "tail.length.status", units = "tail.length.units", units.infer = "tail.length.units.inferred", unit = "mm")
-
 ##write out first round of upper and lower limits checking----
-data.check <- data.tail.check2
-write.csv(data.check, "data.check1.csv")
-#data.check <- read.csv("data.check1.csv", header = TRUE)
+write.csv(data.check, "data.check.csv")
 
 ##Figure 1, Panel 3----
 data.check2 <- data.check
