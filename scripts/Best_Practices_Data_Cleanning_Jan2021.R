@@ -22,6 +22,8 @@ futres <- read.csv("https://de.cyverse.org/dl/d/53BFE69F-EDD2-47FF-B508-72305045
 #about futres data:
 #has various terms for adult and juvenile
 #currently aligned manually; fixed Amelia's weight data to be g, deleted lone mass that did not have units
+#need to fix OR units (currently in lb and in)
+#note: astragalus width is actually astragalus breadth
 #6 species
 nrow(futres[futres$origin == "EAP",]) #34
 nrow(futres[futres$origin == "Amelia",]) #94
@@ -29,6 +31,11 @@ nrow(futres[futres$origin == "Blois 2008",]) #288
 nrow(futres[futres$origin == "OR",]) #7841
 
 ## Vertnet data
+#extracted from R. LaFrance using Traiter to extract traits and trait values in fields like "dynamicProperties"
+#inferred means that units were converted to g or mm
+#estimated means that trait values were in non-standard ways (e.g., [5])
+#lots of lifeStage info missing
+#for traits we're interested in (e.g., not sided traits like testes and ovaries), use first measurement
 
 #bats
 bats <- read.csv("https://de.cyverse.org/dl/d/8BE15938-0A21-4712-9FD9-D22B3DF31101/bats_2020-08-11b.csv", header = TRUE)
@@ -45,6 +52,7 @@ nrow(mamm) #584865
 ncol(mamm) #368
 
 ## Combine VertNet Bat & Mammal data----
+#mammals and bats have different ear length measurements; bats additionally have forearm length
 
 setdiff(colnames(mamm), colnames(bats)) #85 different
 setdiff(colnames(bats), colnames(mamm)) #17 different
@@ -93,6 +101,8 @@ setdiff(colnames(mamm.3), colnames(bats.2))
 setdiff(colnames(bats.2), colnames(mamm.3))
 
 vertnet <- rbind(mamm.3, bats.2) #5075
+
+write.csv(vertnet, "vertnetcombinded.csv")
 
 #vertnet data has a column header "units" which were the original units. All units have been changed to either "g" or "mm"
 #change column names to reflect this
@@ -150,7 +160,7 @@ vertnet.sub <- vertnet %>%
   mutate_at(c("elevation", "mass", "total.length", "hindfoot.length", "ear.length",
               "tail.length", "forearm.length"), as.numeric)
 
-write.csv(x = vertnet.sub, file = "vertnet.combined.first.meas.csv")
+write.csv(x = vertnet.sub, file = "vertnet.first.meas.csv")
 
 #create long version
 vertnet_mass <- subset(vertnet.sub, select = 1:24)
@@ -223,6 +233,8 @@ vertnet_long$verbatimMeasurementValue <- ""
 
 vertnet_long$origin <- "vertnet"
 
+write.csv(vertnet_long, "vertnet.long.csv")
+
 ##clean FuTRES data----
 
 ##group lifeStages
@@ -290,13 +302,10 @@ futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & fut
 futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "mass"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "mass"] / .0022
 futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "total.length"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "total.length"] * 25.4
 
-futres_long$measurementValueEstimated[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "skinned"] <- "TRUE"
-futres_long$measurementValueEstimated[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "gutted"] <- "TRUE"
-futres_long$measurementValueEstimated[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "mass"] <- "TRUE"
-futres_long$measurementValueEstimated[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "total.length"] <- "TRUE"
-
 futres_long$measurementUnit[futres_long$measurementType == "mass" | futres_long$measurementType == "gutted" | futres_long$measurementType == "skinned"] <- "g"
 futres_long$measurementUnit[futres_long$measurementType != "mass" | futres_long$measurementType != "gutted" | futres_long$measurementType != "skinned"] <- "g"
+
+write.csv(futres_long, "futres.long.csv")
 
 ##Combine VertNet and FuTRES Data----
 
@@ -310,151 +319,13 @@ col.order <- c("origin", "scientificName", "lifeStage", "sex", "reproductiveCond
            "measurementType", "measurementValue", "measurementUnit", 
            "verbatimMeasurementValue", "verbatimMeasurementUnit", 
            "measurementUnitInferred", "measurementValueEstimated", "measurementStatus")
-           #"mass", "mass.units", "mass.units.inferred", "mass.estimated.value",
-           #"gutted", "gutted.units", "gutted.units.inferred",
-           #"skinned", "skinned.units", "skinned.units.inferred",
-           #"total.length", "total.length.units", "total.length.units.inferred", "total.length.estimated.value", "total.length.verbatim.units",
-           #"hindfoot.length", "hindfoot.length.units", "hindfoot.length.units.inferred", "hindfoot.length.estimated.value", "hinfoot.length.verbaitm.units",
-           #"ear.length", "ear.length.units", "ear.length.units.inferred", "ear.length.estimated.value", "ear.length.verbatim.units",
-           #"tail.length", "tail.length.units", "tail.length.units.inferred", "tail.length.estimated.value", "tail.length.verbatim.units",
-           #"astragalus.length", "astragalus.length.units", "astragalus.length.units.inferred", "astragalus.length.estimated.value",
-           #"astragalus.width", "astragalus.width.units", "astragalus.width.units.inferred", "astragalus.width.estimated.value",
-           #"calcaneus.GB", "calcaneus.GB.units", "calcaneus.GB.units.inferred", "calcaneus.GB.estimated.value",
-           #"calcaneus.GL", "calcaneus.GL.units", "calcaneus.GL.units.inferred", "calcaneus.GL.estimated.value",
-           #"femur.length", "femur.length.units", "femur.length.units.inferred", "femur.length.estimated.value",
-           #"humerus.length", "humerus.length.units", "humerus.length.units.inferred", "humerus.length.estimated.value",
-           #"forearm.length", "forearm.length.units", "forearm.length.units.inferred", "forearm.length.estimated.value", "forearm.length.verbatim.units",
-           #"tooth.row", "tooth.row.units", "tooth.row.units.inferred", "tooth.row.estimated.value")
 
 ##futres
 #add in missing columns
 emptyvector <- c("institutionCode", "collectionCode", "higherGeography",
                 "waterBody", "island", "islandGroup", "continent") 
-                #"forearm.length", "forearm.length.units", "forearm.length.units.inferred",
-                #"forearm.length.estimated.value", "tooth.row.estimated.value",
-                #"humerus.length.estimated.value")
+
 futres_long[ , emptyvector] <- ""
-
-#futres.sub <- futres.sub %>% mutate_at(c("forearm.length"), as.numeric)
-
-#falsevector <- c("mass.estimated.value", "total.length.estimated.value", "hindfoot.length.estimated.value",
-#                 "calcaneus.GB.estimated.value", "calcaneus.GL.estimated.value",
-#                 "tail.length.estimated.value", "ear.length.estimated.value",
-#                 "astragalus.length.estimated.value", "astragalus.width.estimated.value",
-#                 "femur.length.estimated.value", "tooth.row.estimated.value")
-#futres.sub[ , falsevector] <- "FALSE"
-
-# futres.sub$occurrenceID <- as.character(c(1:length(futres.sub$scientificName)))
-# futres.sub$mass.units[!is.na(futres.sub$mass)] <- "g"
-# futres.sub$mass.units.inferred[!is.na(futres.sub$mass.units)] <- "FALSE"
-# futres.sub$total.length.units[!is.na(futres.sub$total.length)] <- "mm"
-# futres.sub$total.length.units.inferred[!is.na(futres.sub$total.length.units)] <- "FALSE"
-# futres.sub$hindfoot.length.units[!is.na(futres.sub$hindfoot.length)] <- "mm"
-# futres.sub$hindfoot.length.units.inferred[!is.na(futres.sub$hindfoot.length.units)] <- "FALSE"
-# futres.sub$calcaneus.GB.units[!is.na(futres.sub$calcaneus.GB)] <- "mm"
-# futres.sub$calcaneus.GB.units.inferred[!is.na(futres.sub$calcaneus.GB.units)] <- "FALSE"
-# futres.sub$calcaneus.GL.units[!is.na(futres.sub$calcaneus.GL)] <- "mm"
-# futres.sub$calcaneus.GL.units.inferred[!is.na(futres.sub$calcaneus.GL.units)] <- "FALSE"
-# futres.sub$tail.length.units[!is.na(futres.sub$tail.length)] <- "mm"
-# futres.sub$tail.length.units.inferred[!is.na(futres.sub$tail.length.units)] <- "FALSE"
-# futres.sub$ear.length.units[!is.na(futres.sub$ear.length)] <- "mm"
-# futres.sub$ear.length.units.inferred[!is.na(futres.sub$ear.length.units)] <- "FALSE"
-# futres.sub$gutted.units[!is.na(futres.sub$gutted)] <- "g" 
-# futres.sub$gutted.units.inferred[!is.na(futres.sub$gutted.units)] <- "FALSE"
-# futres.sub$skinned.units[!is.na(futres.sub$skinned)] <- "g" 
-# futres.sub$skinned.units.inferred[!is.na(futres.sub$skinned.units)] <- "FALSE"
-# futres.sub$astragalus.length.units[!is.na(futres.sub$astragalus.length)] <- "mm"
-# futres.sub$astragalus.length.units.inferred[!is.na(futres.sub$astragalus.length.units)] <- "FALSE"
-# futres.sub$astragalus.width.units[!is.na(futres.sub$astragalus.width)] <- "mm"
-# futres.sub$astragalus.width.units.inferred[!is.na(futres.sub$astragalus.width.units)] <- "FALSE"
-# futres.sub$femur.length.units[!is.na(futres.sub$femur.length)] <- "mm"
-# futres.sub$femur.length.units.inferred[!is.na(futres.sub$femur.length.units)] <- "FALSE"
-# futres.sub$humerus.length.units[!is.na(futres.sub$humerus.length)] <- "mm"
-# futres.sub$humerus.length.units.inferred[!is.na(futres.sub$humerus.length.units)] <- "FALSE"
-# futres.sub$tooth.row.units[!is.na(futres.sub$tooth.row)] <- "mm"
-# futres.sub$tooth.row.units.inferred[!is.na(futres.sub$tooth.row.units)] <- "FALSE"
-
-##vertnet
-# vertnet.sub <- vertnet %>%
-#   dplyr::select(scientificName = scientificname, 
-#          occurrenceID = occurrenceid,
-#          lifeStage = lifestage_cor, 
-#          sex,
-#          locality,
-#          elevation = verbatimelevation,
-#          catalogNumber = catalognumber,
-#          reproductiveCondition = reproductivecondition,
-#          decimalLatitude = decimallatitude,
-#          decimalLongitude = decimallongitude,
-#          continent,
-#          country,
-#          county,
-#          eventDate = eventdate,
-#          institutionCode = institutioncode,
-#          collectionCode = collectioncode,
-#          higherGeography = highergeography,
-#          waterBody = waterbody,
-#          island,
-#          islandGroup = islandgroup,
-#          mass = body_mass.1.value,
-#          mass.units = body_mass.units,
-#          mass.units.inferred = body_mass.1.units_inferred,
-#          mass.estimated.value = body_mass.1.estimated_value,
-#          mass.verbatim.units = body_mass.verbatim_units,
-#          total.length = total_length.1.value, 
-#          total.length.units = total_length.units,
-#          total.length.verbatim.units = ""
-#          total.length.units.inferred = total_length.1.units_inferred,
-#          total.length.estimated.value = total_length.1.estimated_value,
-#          hindfoot.length = hind_foot_length.1.value,
-#          hindfoot.length.units = hind_foot_length.units,
-#          hindfoot.length.units.inferred = hind_foot_length.1.units_inferred,
-#          hindfoot.length.estimated.value = hind_foot_length.1.estimated_value,
-#          ear.length = ear_length.1.value,
-#          ear.length.units = ear_length.units,
-#          ear.length.units.inferred = ear_length.1.units_inferred,
-#          ear.length.estimated.value = ear_length.1.estimated_value,
-#          tail.length = tail_length.1.value,
-#          tail.length.units = tail_length.units,
-#          tail.length.units.inferred = tail_length.1.units_inferred,
-#          tail.length.estimated.value = tail_length.1.estimated_value,
-#          forearm.length = forearm_length.1.value,
-#          forearm.length.units = forearm_length.units,
-#          forearm.length.units.inferred = forearm_length.1.units_inferred,
-#          forearm.length.estimated.value = forearm_length.1.estimated_value) %>%
-#   mutate_at(c("elevation", "mass", "total.length", "hindfoot.length", "ear.length",
-#               "tail.length", "forearm.length"), as.numeric)
-# 
-# "body_mass.verbatim_units", "ear_length.verbatim_units",
-# "forearm_length.verbatim_units", "hind_foot_length.verbatim_units",
-# "tail_length.verbatim_units", "total_length.verbatim_units",
-# "tragus_length.verbatim_units")
-# vertnet$body_mass.units <- "g"
-# vertnet$ear_length.units <- "mm"
-# vertnet$forearm_length.units <- "mm"
-# vertnet$hind_foot_length.units <- "mm"
-# vertnet$tail_length.units <- "mm"
-# vertnet$total_length.units <- "mm"
-# vertnet$tragus_length.units <- "mm"
-# 
-# #create long version
-# 
-# empty.vector <- c("calcaneus.GL", "calcaneus.GL.units", "calcaneus.GL.units.inferred", "calcaneus.GL.estimated.value",
-#                 "calcaneus.GB", "calcaneus.GB.units", "calcaneus.GB.units.inferred", "calcaneus.GB.estimated.value",
-#                 "tooth.row", "tooth.row.units", "tooth.row.units.inferred", "tooth.row.estimated.value",
-#                 "astragalus.length", "astragalus.length.units", "astragalus.length.units.inferred", "astragalus.length.estimated.value",
-#                 "astragalus.width", "astragalus.width.units", "astragalus.width.units.inferred", "astragalus.width.estimated.value",
-#                 "gutted", "gutted.units", "gutted.units.inferred",
-#                 "skinned", "skinned.units", "skinned.units.inferred",
-#                 "femur.length", "femur.length.units", "femur.length.units.inferred", "femur.length.estimated.value",
-#                 "humerus.length", "humerus.length.units", "humerus.length.units.inferred", "humerus.length.estimated.value")
-# vertnet.sub[ , empty.vector] <- ""
-# 
-# vertnet.sub <- vertnet.sub %>% mutate_at(c("calcaneus.GL", "calcaneus.GB", "tooth.row", 
-#                           "astragalus.length", "astragalus.width",
-#                           "gutted", "skinned", "femur.length", "humerus.length"),
-#                           as.numeric)
-
 
 #check that columns are the same
 setdiff(colnames(futres_long), colnames(vertnet_long))
@@ -482,51 +353,57 @@ data.binom$lifeStage[data.binom$lifeStage == "--" | data.binom$lifeStage == ""] 
 data.binom$measurementUnitInferred[data.binom$measurementUnitInferred == "False" | data.binom$measurementUnitInferred == "FALSE"] <- ""
 data.binom$measurementUnitInferred[data.binom$measurementUnitInferred == "True" | data.binom$measurementUnitInferred == "TRUE"] <- "T"
 
-data.binom$measurementValueEstimated[data.binom$measurementValueEstimated == "True" | data.binom$measurementValueEstimated == "TRUE"] <- T
-data.binom$measurementValueEstimated[data.binom$measurementValueEstimated == ""] <- NA
-
 ##write data file with futres and vertnet combined----
 write.csv(data.binom, "dirty.data.csv")
 
 ##Figure 1 panel 1: lifeStage----
 data.fig1 <- data.binom
-length(data.fig1$measurementValue[data.fig1$scientificName == "Artibeus jamaicensis" & data.fig1$measurementType == "mass" & !is.na(data.fig1$measurementValue)]) #1406
-length(data.fig1$measurementValue[data.fig1$scientificName == "Peromyscus maniculatus" & data.fig1$measurementType == "mass" & !is.na(data.fig1$measurementValue)]) #31669
-length(data.fig1$measurementValue[data.fig1$scientificName == "Spermophilus beecheyi" & data.fig1$measurementType == "mass" & !is.na(data.fig1$measurementValue)]) #233
-length(data.fig1$measurementValue[data.fig1$scientificName == "Odocoileus virginianus" & data.fig1$measurementType == "mass" & !is.na(data.fig1$measurementValue)]) #932
+length(data.fig1$measurementValue[data.fig1$scientificName == "Artibeus jamaicensis" & 
+                                    data.fig1$measurementType == "mass" & 
+                                    !is.na(data.fig1$measurementValue)]) #1406
+length(data.fig1$measurementValue[data.fig1$scientificName == "Peromyscus maniculatus" & 
+                                    data.fig1$measurementType == "mass" & 
+                                    !is.na(data.fig1$measurementValue)]) #31669
+length(data.fig1$measurementValue[data.fig1$scientificName == "Spermophilus beecheyi" & 
+                                    data.fig1$measurementType == "mass" & 
+                                    !is.na(data.fig1$measurementValue)]) #233
+length(data.fig1$measurementValue[data.fig1$scientificName == "Odocoileus virginianus" & 
+                                    data.fig1$measurementType == "mass" & 
+                                    !is.na(data.fig1$measurementValue)]) #932
 
 ccQuality <- c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue", "lightsteelblue1")
 
-data.fig1$cat <- paste(data.fig1$lifeStage, data.fig1$measurementUnitInferred)
+#care about estimated and lifeStage
+data.fig1$cat <- paste(data.fig1$lifeStage, data.fig1$measurementValueEstimated)
 unique(data.fig1$cat)
-data.fig1$cat[data.fig1$cat == "NS NA"] <- "No stage; units known" #lightslateblue
-data.fig1$cat[data.fig1$cat == "Adult NA"] <- "Adult; units known" #darkslateblue
-data.fig1$cat[data.fig1$cat == "Juvenile NA"] <- "Juvenile; units known" #mediumslateblue
-data.fig1$cat[data.fig1$cat == "NS F"] <- "No stage; units known" #lightslateblue
-data.fig1$cat[data.fig1$cat == "Adult F"] <- "Adult; units known" #darkslateblue
-data.fig1$cat[data.fig1$cat == "Juvenile F"] <- "Juvenile; units known" #mediumslateblue
+data.fig1$cat[data.fig1$cat == "NS NA" |
+                data.fig1$cat == "NS "] <- "No stage; data possibly good" #lightslateblue
+data.fig1$cat[data.fig1$cat == "Adult NA" |
+                data.fig1$cat == "Adult "] <- "Adult; data possibly good" #darkslateblue
+data.fig1$cat[data.fig1$cat == "Juvenile NA" |
+                data.fig1$cat == "Juvenile "] <- "Juvenile; data possibly good" #mediumslateblue
 
-data.fig1$cat[data.fig1$cat == "NS T"] <- "No stage; units inferred" #lightsteelblue1
-data.fig1$cat[data.fig1$cat == "Adult T"] <- "Adult; units inferred" #lightsteelblue4
-data.fig1$cat[data.fig1$cat == "Juvenile T"] <- "Juvenile; units inferred" #lightslateblue
+data.fig1$cat[data.fig1$cat == "NS True"] <- "No stage; data estimated" #lightsteelblue1
+data.fig1$cat[data.fig1$cat == "Adult True"] <- "Adult; data estimated" #lightsteelblue4
+data.fig1$cat[data.fig1$cat == "Juvenile True"] <- "Juvenile; data estimated" #lightslateblue
 
 data.fig1$cat <- as.factor(data.fig1$cat)
-data.fig1$cat = relevel(data.fig1$cat, "Adult; units known")
-data.fig1$cat <- factor(data.fig1$cat, levels = c("Adult; units known", "Adult; units inferred", 
-                                                  "Juvenile; units known", "Juvenile; units inferred",
-                                                  "No stage; units known", "No stage; units inferred"))
-df <- subset(data.fig1, data.fig1$scientificName == "Artibeus jamaicensis" & data.fig1$measurementType == "mass" & !is.na(data.fig1$measurementValue))
-length(df$measurementType) 
+data.fig1$cat = relevel(data.fig1$cat, "Adult; data possibly good")
+data.fig1$cat <- factor(data.fig1$cat, levels = c("Adult; data possibly good", "Adult; data estimated", 
+                                                  "Juvenile; data possibly good", "Juvenile; data estimated",
+                                                  "No stage; data possibly good", "No stage; data estimated"))
+df <- subset(data.fig1, data.fig1$scientificName == "Artibeus jamaicensis" & 
+               data.fig1$measurementType == "mass" & 
+               !is.na(data.fig1$measurementValue))
+length(df$measurementType) #1406
 unique(df$cat)
-length(df$cat[df$cat == "Adult; units known"]) #239
-length(df$cat[df$cat == "Adult; units inferred"]) #1
-length(df$cat[df$cat == "Juvenile; units known"]) #11
-length(df$cat[df$cat == "No stage; units known"]) #996
-length(df$cat[df$cat == "No stage; units inferred"]) #159
+length(df$cat[df$cat == "Adult; data possibly good"]) #247
+length(df$cat[df$cat == "Juvenile; data possibly good"]) #12
+length(df$cat[df$cat == "No stage; data possibly good"]) #1147
 
 p <- ggplot(data = df) + 
   geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "mediumslateblue", "lightslateblue", "lightsteelblue1"),
+  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue"),
                     name = "Data Quality Category") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
@@ -535,179 +412,91 @@ p <- ggplot(data = df) +
   scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
 ggsave(p, file=paste0("orig.dist.lifeStage.bat",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.fig1, data.fig1$scientificName == "Peromyscus maniculatus" & data.fig1$measurementType == "mass" & !is.na(data.fig1$measurementValue))
+df <- subset(data.fig1, data.fig1$scientificName == "Peromyscus maniculatus" & 
+               data.fig1$measurementType == "mass" & 
+               !is.na(data.fig1$measurementValue))
 length(df$measurementValue) #31669
 unique(df$cat)
-length(df$cat[df$cat == "Adult; units known"]) #2955
-length(df$cat[df$cat == "Adult; units inferred"]) #31
-length(df$cat[df$cat == "Juvenile; units known"]) #921
-length(df$cat[df$cat == "No stage; units known"]) #21700
-length(df$cat[df$cat == "No stage; units inferred"]) #6062
-p <- ggplot(data = df) + 
-  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "mediumslateblue", "lightslateblue", "lightsteelblue1"), 
-                    name="Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Peromyscus maniculatus N = 31669") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
-  scale_y_continuous(name = "Density", limits = c(0, .2))
-ggsave(p, file=paste0("orig.dist.lifeStage.mouse2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.fig1, data.fig1$scientificName == "Spermophilus beecheyi" & data.fig1$measurementType == "mass" & !is.na(data.fig1$measurementValue))
-length(df$measurementValue) #233
-unique(df$cat)
-length(df$cat[df$cat == "Adult; units known"]) #113
-length(df$cat[df$cat == "Adult; units inferred"]) #2
-length(df$cat[df$cat == "Juvenile; units known"]) #9
-length(df$cat[df$cat == "No stage; units known"]) #52
-length(df$cat[df$cat == "No stage; units inferred"]) #57
-p <- ggplot(data = df) + 
-  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "mediumslateblue", "lightslateblue", "lightsteelblue1"), 
-                    name="Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Spermophilus beecheyi N = 233") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-  scale_y_continuous(name = "Density", limits = c(0, .02)) #.2?
-ggsave(p, file=paste0("orig.dist.lifeStage.squirrel2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.fig1, data.fig1$scientificName == "Odocoileus virginianus" & data.fig1$measurementType == "mass" & !is.na(data.fig1$measurementValue))
-length(df$measurementValue) #932
-unique(df$cat)
-length(df$cat[df$cat == "Adult; units known"]) #4
-length(df$cat[df$cat == "Juvenile; units known"]) #2
-length(df$cat[df$cat == "No stage; units known"]) #904
-length(df$cat[df$cat == "No stage; units inferred"]) #22
+length(df$cat[df$cat == "Adult; data possibly good"]) #3025
+length(df$cat[df$cat == "Juvenile; data possibly good"]) #952
+length(df$cat[df$cat == "No stage; data possibly good"]) #27588
+length(df$cat[df$cat == "No stage; data estimated"]) #104
 p <- ggplot(data = df) + 
   geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
   scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue1"), 
                     name="Data Quality Category") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Odocoileus virginianus N = 930") +
+  ggtitle("Peromyscus maniculatus N = 31669") +
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
+  scale_y_continuous(name = "Density", limits = c(0, .2))
+ggsave(p, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.fig1, data.fig1$scientificName == "Spermophilus beecheyi" & 
+               data.fig1$measurementType == "mass" & 
+               !is.na(data.fig1$measurementValue))
+length(df$measurementValue) #233
+unique(df$cat)
+length(df$cat[df$cat == "Adult; data possibly good"]) #114
+length(df$cat[df$cat == "Juvenile; data possibly good"]) #11
+length(df$cat[df$cat == "No stage; data possibly good"]) #107
+length(df$cat[df$cat == "No stage; data estimated"]) #1
+p <- ggplot(data = df) + 
+  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
+  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue1"), 
+                    name="Data Quality Category") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ggtitle("Spermophilus beecheyi N = 233") +
+  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
+  scale_y_continuous(name = "Density", limits = c(0, .02)) #.2?
+ggsave(p, file=paste0("orig.dist.lifeStage.squirrel",".png"), width = 14, height = 10, units = "cm")
+
+df <- subset(data.fig1, data.fig1$scientificName == "Odocoileus virginianus" & 
+               data.fig1$measurementType == "mass" & 
+               !is.na(data.fig1$measurementValue))
+length(df$measurementValue) #932
+unique(df$cat)
+length(df$cat[df$cat == "Adult; data possibly good"]) #4
+length(df$cat[df$cat == "Juvenile; data possibly good"]) #2
+length(df$cat[df$cat == "No stage; data possibly good"]) #827
+length(df$cat[df$cat == "No stage; data estimated"]) #99
+p <- ggplot(data = df) + 
+  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
+  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue1"), 
+                    name="Data Quality Category") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ggtitle("Odocoileus virginianus N = 932") +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
   scale_y_continuous(name = "Density", limits = c(0, .001))
 ggsave(p, file=paste0("orig.dist.lifeStage.deer2",".png"), width = 14, height = 10, units = "cm")
-
-
-##remove Juv. and less than 10 samples---
-# data.adult <- data.binom[data.binom$lifeStage != "Juvenile",]
-# length(unique(data.adult$scientificName))
-# 
-# data.adult.stats <- data.adult %>%
-#   group_by(scientificName) %>%
-#   dplyr::summarise(sample.size = n())
-# 
-# keep.10 <- data.adult.stats$scientificName[data.adult.stats$sample.size >= 10]
-# data.adult.10 <- data.adult[data.adult$scientificName %in% keep.10,]
-# 
-# ##write data file without juveniles and species with less than 10 records
-# write.csv(data.adult.10, "data.adult.noJuv.csv")
-# 
-##functions to standardize unit type----
-
-# correct.units <- function(data, column.unit, column.infer, values, unit){
-#   for(i in 1:nrow(data)){
-#     if(isTRUE(data[,column.unit][i] %in% values)){
-#       data[,column.unit][i] <- unit 
-#     }
-#     else {
-#       next
-#     }
-#   }
-#   return(data)
-# }
-# 
-# #apply function for mass, total.length, tail.length, ear.length, forearm.length
-# grams = c("GRAMS", "GR", "grams", "G", "gm", "gms", "gr", "Grams", "GMS", "['Grams', 'gm']")
-# millimeters = c("mm_shorthand", "MM", "Millimeters", "['MM', 'mm']", "('MM', 'mm')", "('Millimeters', 'mm')")
-# 
-# data.mass <- correct.units(data = data.adult, column.unit = "mass.units", column.infer = "mass.units.inferred", values = grams, unit = "g")
-# data.total.length <- correct.units(data = data.mass, column.unit = "total.length.units", column.infer = "total.length.units.inferred", values = millimeters, unit = "mm")
-# data.tail.length <- correct.units(data = data.total.length, column.unit = "tail.length.units", column.infer = "tail.length.units.inferred", values = millimeters, unit = "mm")
-# data.ear.length <- correct.units(data = data.tail.length, column.unit = "ear.length.units", column.infer = "ear.length.units.inferred", values = millimeters, unit = "mm")
-# data.hindfoot.length <- correct.units(data = data.ear.length, column.unit = "hindfoot.length.units", column.infer = "hindfoot.length.units.inferred", values = millimeters, unit = "mm")
-# #data.forearm.length <- correct.units(data = data.hindfoot.length, column.unit = "forearm.length.units", column.infer = "forearm.length.units.inferred", values = millimeters, unit = "mm")
-# 
-# #make measurementValue numeric
-# data.meas <- data.hindfoot.length
-# cols <- c("mass", "total.length", "hindfoot.length", "ear.length", "tail.length", "calcaneus.GB", "calcaneus.GL", "astragalus.length", "astragalus.width")
-# data.meas[,cols] <- sapply(data.meas[,cols], as.numeric)
-# length(unique(data.meas$scientificName)) #1747
-# 
-# ##write datafile with standardization of units----
-# write.csv(data.meas, "less.dirty.data.csv")
-# #data.meas <- read.csv("less.dirty.data.csv", header = TRUE)
 
 ## TO DO:----
 #make all traits with values of "0" <- NA
 #only like 80 records for mass, so likely not too big of an issue
 
+data.binom$measurementValue[data.binom$measurementValue == 0] <- NA
 
 ##Mahalanobis Outlier test----
-#add rownames for indexing
-# rownames(data.binom) <- seq(1, nrow(data.binom),1)
-# 
-# #create status columns
-# # data.meas$mass.status <- rep("", nrow(data.meas))
-# # data.meas$total.length.status <- rep("", nrow(data.meas))
-# # data.meas$tail.length.status <- rep("", nrow(data.meas))
-# # data.meas$hindfoot.length.status <- rep("", nrow(data.meas))
-# # data.meas$ear.length.status <- rep("", nrow(data.meas))
-# #data.meas$forearm.length.status <- rep("", nrow(data.meas))
-# 
-# #need to select out trait
-# #remove NAs from trait
-# #apply maha() function
-# #select out indices
-# #label those rows as outliers
-# 
-# ##NOTE: this function on works on spp. with more than ten samples.
-# outlier.function <- function(data, threshold, column.counter, vector.counter, 
-#                              trait.column, trait, values, unit.infer, TorF, 
-#                              status, stage.column, stage){
-#   #data = dataframe of trait values
-#   #threshold = cutoff criteria in maha()
-#   #column = how the data should be subsetted (e.g., species, locality); not in quotes
-#   #vector = a vector of the unique values in the column (e.g., unique(column))
-#   #trait = trait of interest (e.g., mass, total body length); in quotes
-#   #unit = unit type to restric it to; not in quotes
-#   #unit.infer = column for if values were inferred; not in quotes
-#   #value = True or False or a vector for if units inferred
-#   #status = outlier status column for the trait; in quotes
-#   for(i in 1:length(vector)){
-#     sub <- subset(data, subset = data[,column.counter] == vector.counter[i] & 
-#                     data[,unit.infer] == TorF & data[,trait.column] == trait & 
-#                     data[,stage] %in% stage.value, 
-#                   select = values) %>%
-#       drop_na()
-#     if(isTRUE(nrow(sub) >= 10)){
-#       outlier <- maha(sub, cutoff = threshold, rnames = FALSE)
-#       index <- names(outlier[[2]])
-#       if(isTRUE(length(index) != 0)){
-#         data[index,status] <- "outlier"
-#       }
-#       else if(isTRUE(nrow(sub) <= 10)){
-#         data[index,status] <- "too few records"
-#       }
-#     }
-#     else{
-#       next
-#     }
-#   }
-#   return(data)
-# }
-
 data.test <- data.binom
 
+#add rownames for indexing
 rownames(data.test) <- seq(1, nrow(data.test),1)
+
+#need to select out trait
+#remove NAs from trait
+#apply maha() function
+#select out indices
+#label those rows as outliers
+
+#want to find outliers for known adults and non-estimated values
 sp <- unique(data.test$scientificName)
 
 for(i in 1:length(sp)){
   sub <- subset(data.test, subset = data.test[,"scientificName"] == sp[i] & 
-                  data.test[,"measurementUnitInferred"] != "T" & data.test[,"measurementType"] == "mass" & 
+                  data.test[,"measurementValueEstimated"] != "True" & 
+                  data.test[,"measurementType"] == "mass" & 
                   data.test[,"lifeStage"] == "Adult", 
                 select = "measurementValue") %>%
     drop_na()
@@ -719,7 +508,7 @@ for(i in 1:length(sp)){
     }
   }
   else if(isTRUE(nrow(sub) <= 10)){
-      data.test[index,"measurementStatus"] <- "too few records"
+      data.test$measurementStatus[data.test$scientificName == sp[i]] <- "too few records"
     }
   else{
     next
@@ -729,7 +518,8 @@ for(i in 1:length(sp)){
 
 for(i in 1:length(sp)){
   sub <- subset(data.test, subset = data.test[,"scientificName"] == sp[i] & 
-                  data.test[,"measurementUnitInferred"] != "T" & data.test[,"measurementType"] == "total.length" & 
+                  data.test[,"measurementValueEstimated"] != "True" & 
+                  data.test[,"measurementType"] == "total.length" & 
                   data.test[,"lifeStage"] == "Adult", 
                 select = "measurementValue") %>%
     drop_na()
@@ -741,7 +531,7 @@ for(i in 1:length(sp)){
     }
   }
   else if(isTRUE(nrow(sub) <= 10)){
-    data.test[index,"measurementStatus"] <- "too few records"
+    data.test$measurementStatus[data.test$scientificName == sp[i]] <- "too few records"
   }
   else{
     next
@@ -751,11 +541,15 @@ for(i in 1:length(sp)){
 
 for(i in 1:length(sp)){
   sub <- subset(data.test, subset = data.test[,"scientificName"] == sp[i] & 
-                  data.test[,"measurementUnitInferred"] != "T" & data.test[,"measurementType"] == "tail.length" & 
+                  data.test[,"measurementValueEstimated"] != "True" & 
+                  data.test[,"measurementType"] == "tail.length" & 
                   data.test[,"lifeStage"] == "Adult", 
                 select = "measurementValue") %>%
     drop_na()
-  if(isTRUE(nrow(sub) >= 10)){
+  if(isTRUE(nrow(sub) == 0)){
+    next
+  }
+  else if(isTRUE(nrow(sub) >= 10)){
     outlier <- maha(sub, cutoff = 0.95, rnames = FALSE)
     index <- names(outlier[[2]])
     if(isTRUE(length(index) != 0)){
@@ -763,7 +557,7 @@ for(i in 1:length(sp)){
     }
   }
   else if(isTRUE(nrow(sub) <= 10)){
-    data.test[index,"measurementStatus"] <- "too few records"
+    data.test$measurementStatus[data.test$scientificName == sp[i]] <- "too few records"
   }
   else{
     next
@@ -797,56 +591,58 @@ write.csv(data.mh, "mh.outlier.checked.data.csv")
 data.fig2 <- data.mh[data.mh$lifeStage != "Juvenile" & 
                        data.mh$measurementStatus != "too few records",]
 
-data.fig2$cat <- paste(data.fig2$measurementUnitInferred, data.fig2$measurementStatus)
-data.fig2$cat[data.fig2$cat == " "] <- "possibly good; units known" #darkslateblue
-data.fig2$cat[data.fig2$cat == " outlier"] <- "outlier; units known" #lightsteelblue4
-#lightslateblue
-data.fig2$cat[data.fig2$cat == "T "] <- "untested; units inferred" #lightsteelblue1
+data.fig2$cat <- paste(data.fig2$lifeStage, data.fig2$measurementStatus)
+unique(data.fig2$cat)
+data.fig2$cat[data.fig2$cat == "Adult "] <- "Adult; possibly good" #darkslateblue
+data.fig2$cat[data.fig2$cat == "Adult outlier"] <- "Adult; outlier" #lightsteelblue4
+data.fig2$cat[data.fig2$cat == "NS "] <- "No stage; untested" #lightslateblue
+#lightsteelblue1
 #lightsteelblue
 #mediumslateblue
 
 data.fig2$cat <- as.factor(data.fig2$cat)
-data.fig2$cat = relevel(data.fig2$cat, "possibly good; units known")
-data.fig2$cat <- factor(data.fig2$cat, levels = c("possibly good; units known", "outlier; units known", "untested; units inferred"))
+data.fig2$cat = relevel(data.fig2$cat, "Adult; possibly good")
+data.fig2$cat <- factor(data.fig2$cat, levels = c("Adult; possibly good", "Adult; outlier", "No stage; untested"))
                                                     
-df <- subset(data.fig2, data.fig2$scientificName == "Artibeus jamaicensis" &
-             data.fig2$measurementType == "mass" &
-             !is.na(data.fig2$measurementValue))
-length(df$measurementType) #1382
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units known"]) #1223
-length(df$cat[df$cat == "untested; units inferred"]) #159
-
-p <- ggplot() + 
-  #geom_histogram(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = "darkgray", alpha = 0.3, binwidth = .005, boundary = TRUE) +
-  geom_density(data = filter(df, measurementStatus == "outlier; units known"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, measurementStatus == "outlier; units known"), aes(x = measurementValue), sides = "b", col = "gray34") +
-  geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
-                    name = "Data Quality Category") +
-  #geom_density(data = df, aes(x = mass), color = "darkgray", fill = cat, alpha = 0.9) +
-  ggtitle("Artibeus jamaicensis N = 1382") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
-  scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
-ggsave(p, file=paste0("outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
+# df <- subset(data.fig2, data.fig2$scientificName == "Artibeus jamaicensis" &
+#              data.fig2$measurementType == "mass" &
+#              !is.na(data.fig2$measurementValue))
+# length(df$measurementType) #1382
+# unique(df$cat)
+# length(df$cat[df$cat == "possibly good; units known"]) #1223
+# length(df$cat[df$cat == "untested; units inferred"]) #159
+# 
+# p <- ggplot() + 
+#   #geom_histogram(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = "darkgray", alpha = 0.3, binwidth = .005, boundary = TRUE) +
+#   geom_density(data = filter(df, measurementStatus == "outlier; units known"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
+#   geom_rug(data = filter(df, measurementStatus == "outlier; units known"), aes(x = measurementValue), sides = "b", col = "gray34") +
+#   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
+#   scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
+#                     name = "Data Quality Category") +
+#   #geom_density(data = df, aes(x = mass), color = "darkgray", fill = cat, alpha = 0.9) +
+#   ggtitle("Artibeus jamaicensis N = 1382") +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+#   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
+#   scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
+# ggsave(p, file=paste0("outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.fig2, data.fig2$scientificName == "Peromyscus maniculatus" & 
                data.fig2$measurementType == "mass" &
                !is.na(data.fig2$measurementValue))
-length(df$measurementType) #30716
+length(df$measurementType) #30708
 unique(df$cat)
-length(df$cat[df$cat == "possibly good; units known"]) #24654
-length(df$cat[df$cat == "untested; units inferred"]) #6062
+length(df$cat[df$cat == "Adult; possibly good"]) #3020
+length(df$cat[df$cat == "Adult; outlier"]) #1
+length(df$cat[df$cat == "No stage; untested"]) #27687
 p <- ggplot() + 
   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
   #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
+  scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "lightslateblue"),
                     name = "Data Quality Category") +
-  ggtitle("Peromyscus maniculatus N = 30716") +
+  ggtitle("Peromyscus maniculatus N = 30708, Noutlier = 1") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
@@ -856,19 +652,19 @@ ggsave(p, file=paste0("outlier.test.mouse",".png"), width = 14, height = 10, uni
 df <- subset(data.fig2, data.fig2$scientificName == "Spermophilus beecheyi" & 
                data.fig2$measurementType == "mass" &
                !is.na(data.fig2$measurementValue))
-length(df$measurementType)
+length(df$measurementType) #222
 unique(df$cat)
-length(df$cat[df$cat == "possibly good; units known"]) #158
-length(df$cat[df$cat == "untested; units inferred"]) #57
-length(df$cat[df$cat == "outlier; units known"]) #7
+length(df$cat[df$cat == "Adult; possibly good"]) #107
+length(df$cat[df$cat == "Adult; outlier"]) #7
+length(df$cat[df$cat == "No stage; untested"]) #108
 p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
+  geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
+  geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
   #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   #scale_fill_manual(values = ccStatus,
   #                  name="Mass Status") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "lightsteelblue1"),
+  geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
+  scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "lightslateblue"),
                     name = "Data Quality Category") +
   ggtitle("Spermophilus beecheyi N = 222, Noutlier = 7") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -877,58 +673,34 @@ p <- ggplot() +
   scale_y_continuous(name = "Density", limits = c(0, .02))
 ggsave(p, file=paste0("outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.fig2, data.fig2$scientificName == "Odocoileus virginianus" & 
-               data.fig2$measurementType == "mass" &
-               !is.na(data.fig2$measurementValue))
-length(df$measurementType) #930
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units known"]) #908
-length(df$cat[df$cat == "untested; units inferred"]) #22
-p <- ggplot() + 
-  geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, adjust = 1/10, alpha = 0.4) +
-  geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9, adjust = 1/10) +
-  #geom_density(data = df, aes(x = log10(mass), fill = mass.status), alpha = 0.9) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4, adjust = 1/10) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
-                    name = "Data Quality Category") +
-  ggtitle("Odocoileus virginianus N = 930") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
-  scale_y_continuous(name = "Density", limits = c(0, .001))#.0001
-ggsave(p, file=paste0("outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
+# df <- subset(data.fig2, data.fig2$scientificName == "Odocoileus virginianus" & 
+#                data.fig2$measurementType == "mass" &
+#                !is.na(data.fig2$measurementValue))
+# length(df$measurementType) #930
+# unique(df$cat)
+# length(df$cat[df$cat == "possibly good; units known"]) #908
+# length(df$cat[df$cat == "untested; units inferred"]) #22
+# p <- ggplot() + 
+#   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, adjust = 1/10, alpha = 0.4) +
+#   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
+#   #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9, adjust = 1/10) +
+#   #geom_density(data = df, aes(x = log10(mass), fill = mass.status), alpha = 0.9) +
+#   #scale_fill_manual(values = ccStatus,
+#   #                  name="Mass Status") +
+#   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4, adjust = 1/10) +
+#   scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
+#                     name = "Data Quality Category") +
+#   ggtitle("Odocoileus virginianus N = 930") +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+#   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
+#   scale_y_continuous(name = "Density", limits = c(0, .001))#.0001
+# ggsave(p, file=paste0("outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
-##TO DO: make into function
-# limits.specific <- function(data, column, trait, units.infer, values, status, unit, amt){
-#   data %>%
-#     dplyr::group_by(column) %>%
-#     dplyr::summarise(sample.size = n(),
-#       avg = mean(trait[units.infer %in% values & status != "outlier" & units == unit], na.rm = TRUE),
-#       sigma = sd(trait[units.infer %in% values & status != "outlier" & units == unit], na.rm = TRUE),
-#       upper.limit = avg + amt*sigma,
-#       lower.limit = avg - amt*sigma) %>%
-#     as.data.frame()
-# }
-
-# values <- c("TRUE", "True")
-# data.noJuv.noinfer.mass_stats <-  limits.specific(data = noJuv, column = scientificName, 
-#                                                   trait = mass, units.infer = mass.units.inferred,
-#                                                   values = values, status = mass.status, unit = "g",
-#                                                   amt = 3)
-
-## Function for upper and lower limits (round 1) ----
-##create function to find upper and lower limit for each measurementType based on non-juveniles, non-inferred units, and correct units ("g" or "mm")
-
-##mean, standard deviation, and upper and lower limit
-
-#values <- c("FALSE", "False")
 data.noInfer_Adults <- subset(data.mh, subset = c(data.mh$measurementStatus != "outlier" &
                                                     data.mh$measurementStatus != "too few records" &
                                                     data.mh$lifeStage == "Adult" &
-                                                    data.mh$measurementUnitInferred != "T"))
+                                                    data.mh$measurementValueEstimated != "True"))
 data.noInfer_stats <- data.noInfer_Adults %>%
   dplyr::group_by(scientificName) %>%
   dplyr::summarise(sample.size.mass = length(measurementValue[measurementType == "mass" & !is.na(measurementValue)]),
@@ -943,86 +715,81 @@ data.noInfer_stats <- data.noInfer_Adults %>%
                    upper.limit.length = avg.length + (3*sigma.length),
                    lower.limit.length = avg.length - (3*sigma.length),
                    
-                   # sample.size.hindfoot = length(hindfoot.length[hindfoot.length.units.inferred %in% values & hindfoot.length.units == "mm" & !is.na(hindfoot.length)]),
-                   # avg.hindfoot = mean(hindfoot.length[hindfoot.length.units.inferred %in% values & hindfoot.length.units == "mm"], na.rm = TRUE),
-                   # sigma.hindfoot = sd(hindfoot.length[hindfoot.length.units.inferred %in% values & hindfoot.length.units == "mm"], na.rm = TRUE),
-                   # upper.limit.hindfoot = avg.hindfoot + (3*sigma.hindfoot),
-                   # lower.limit.hindfoot = avg.hindfoot - (3*sigma.hindfoot),
-                   
-                   # sample.size.ear = length(ear.length[ear.length.units.inferred %in% values & ear.length.units == "mm" & !is.na(ear.length)]),
-                   # avg.ear.length = mean(ear.length[ear.length.units.inferred %in% values & ear.length.units == "mm"], na.rm = TRUE),
-                   # sigma.ear = sd(ear.length[ear.length.units.inferred %in% values & ear.length.units == "mm"], na.rm = TRUE),
-                   # upper.limit.ear = avg.ear.length + (3*sigma.ear),
-                   # lower.limit.ear = avg.ear.length - (3*sigma.ear),
-                   
-                   #sample.size.forearm = length(forearm.length[forearm.length.units.inferred %in% values & forearm.length.units == "mm" & !is.na(forearm.length)])
-                   #avg.forearm.length = mean(forearm.length[forearm.length.units.inferred %in% values & forearm.length.units == "mm"], na.rm = TRUE),
-                   #sigma.forearm = sd(forearm.length[forearm.length.units.inferred %in% values & forearm.length.units == "mm"], na.rm = TRUE),
-                   #upper.limit.forearm = avg.forearm.length + (3*sigma.forearm),
-                   #lower.limit.forearm = avg.forearm.length - (3*sigma.forearm),
-                   
                    sample.size.tail = length(measurementValue[measurementType == "total.length" & !is.na(measurementValue)]),
                    avg.tail.length = mean(measurementValue[measurementType == "total.length" & !is.na(measurementValue)], na.rm = TRUE),
                    sigma.tail = sd(measurementValue[measurementType == "total.length" & !is.na(measurementValue)], na.rm = TRUE),
                    upper.limit.tail = avg.tail.length + (3*sigma.tail),
                    lower.limit.tail = avg.tail.length - (3*sigma.tail)) %>%
   as.data.frame()
-nrow(data.noInfer_stats) #1681
+nrow(data.noInfer_stats) #251
 
 ##add stats to dataframe
 data.limit <- merge(data.mh, data.noInfer_stats, by = "scientificName", all.x = TRUE, all.y = FALSE)
-length(unique(data.limit$scientificName)) #1747
+length(unique(data.limit$scientificName)) #4346
+
+write.csv(data.limit, "data.limit.csv")
 
 ##label outliers
 #label samples that are outside of limits with outlier, and label those within limits as "g" and inferred = TRUE
 
-check.1 <- function(data, trait, status, upper, lower, sample.size){
-  for(i in 1:nrow(data)){
-    if(isTRUE(data[i,sample.size] < 10)){
-      data[i,status] <- "too few records"
-    }
-    else if(isTRUE(data[i,trait] <= data[i,lower])){
-      data[i,status] <- "outlier"
-    }
-    else if(isTRUE(data[i,trait] >= data[i,upper])){
-      data[i,status] <- "outlier"
-    }
-    else{
-      data[i,status] <- "GOOD"
-    }
-  }
-  return(data)
-}
+data.check <- data.limit
 
-data.check <- data.check
-for(i in 1:nrow(data.check)){
-  if(isTRUE(data.check$measurementValue["measurementType" == "mass" &
-                                        "measurementUnitInferred" != "too few records"][i] <= data.check$lower.limit.mass[i])){
-    data.check[i,measurementStatus] <- "outlier"
+#mass
+for(i in 1:nrow(data.check["measurementType" == "mass" &
+                           "measurementStatus" != "too few records" & 
+                           "measurementStatus" != "outlier"])){
+  if(isTRUE(data.check$measurementValue[i] <= data.check$lower.limit.mass[i])){
+    data.check$measurementStatus[i] <- "outlier"
   }
-  else if(isTRUE(data.check$measurementValue["measurementType" == "mass" &
-                                             "measurementUnitInferred" != "too few records"][i] >= data.check$upper.limit.mass[i])){
-    data.check[i,measurementStatus] <- "outlier"
+  else if(isTRUE(data.check$measurementValue[i] >= data.check$upper.limit.mass[i])){
+    data.check$measurementStatus[i] <- "outlier"
   }
   else{
-    data.check[i,measurementStatus] <- "GOOD"
+    data.check$measurementStatus[i] <- "possibly good"
   }
 }
 #return(data)
 
-
-check.2 <- function(data, units, units.infer, status, unit){
-  for(i in 1:nrow(data)){
-    if(isTRUE(data[i,status][units != unit] == "GOOD")){
-      data[i,units.infer] <- "TRUE"
-      data[i,units] <- unit
-    }
-    else{
-      next
-    }
+for(i in 1:nrow(data.check["measurementType" == "total.length" &
+                           "measurementStatus" != "too few records" & 
+                           "measurementStatus" != "outlier"])){
+  if(isTRUE(data.check$measurementValue[i] <= data.check$lower.limit.mass[i])){
+    data.check$measurementStatus[i] <- "outlier"
   }
-  return(data)
+  else if(isTRUE(data.check$measurementValue[i] >= data.check$upper.limit.mass[i])){
+    data.check$measurementStatus[i] <- "outlier"
+  }
+  else{
+    data.check$measurementStatus[i] <- "possibly good"
+  }
 }
+
+for(i in 1:nrow(data.check["measurementType" == "taill.length" &
+                           "measurementStatus" != "too few records" & 
+                           "measurementStatus" != "outlier"])){
+  if(isTRUE(data.check$measurementValue[i] <= data.check$lower.limit.mass[i])){
+    data.check$measurementStatus[i] <- "outlier"
+  }
+  else if(isTRUE(data.check$measurementValue[i] >= data.check$upper.limit.mass[i])){
+    data.check$measurementStatus[i] <- "outlier"
+  }
+  else{
+    data.check$measurementStatus[i] <- "possibly good"
+  }
+}
+
+# check.2 <- function(data, units, units.infer, status, unit){
+#   for(i in 1:nrow(data)){
+#     if(isTRUE(data[i,status][units != unit] == "GOOD")){
+#       data[i,units.infer] <- "TRUE"
+#       data[i,units] <- unit
+#     }
+#     else{
+#       next
+#     }
+#   }
+#   return(data)
+# }
 
 #test
 #which(data.limit$sample.size.mass < 10)
