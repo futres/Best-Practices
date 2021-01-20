@@ -353,6 +353,11 @@ data.binom$lifeStage[data.binom$lifeStage == "--" | data.binom$lifeStage == ""] 
 data.binom$measurementUnitInferred[data.binom$measurementUnitInferred == "False" | data.binom$measurementUnitInferred == "FALSE"] <- ""
 data.binom$measurementUnitInferred[data.binom$measurementUnitInferred == "True" | data.binom$measurementUnitInferred == "TRUE"] <- "T"
 
+#make all traits with values of "0" <- NA
+#only like 80 records for mass, so likely not too big of an issue
+
+data.binom$measurementValue[data.binom$measurementValue == 0] <- NA
+
 ##write data file with futres and vertnet combined----
 write.csv(data.binom, "dirty.data.csv")
 
@@ -370,8 +375,6 @@ length(data.fig1$measurementValue[data.fig1$scientificName == "Spermophilus beec
 length(data.fig1$measurementValue[data.fig1$scientificName == "Odocoileus virginianus" & 
                                     data.fig1$measurementType == "mass" & 
                                     !is.na(data.fig1$measurementValue)]) #932
-
-ccQuality <- c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue", "lightsteelblue1")
 
 #care about estimated and lifeStage
 data.fig1$cat <- paste(data.fig1$lifeStage, data.fig1$measurementValueEstimated)
@@ -472,12 +475,6 @@ p <- ggplot(data = df) +
   scale_y_continuous(name = "Density", limits = c(0, .001))
 ggsave(p, file=paste0("orig.dist.lifeStage.deer2",".png"), width = 14, height = 10, units = "cm")
 
-## TO DO:----
-#make all traits with values of "0" <- NA
-#only like 80 records for mass, so likely not too big of an issue
-
-data.binom$measurementValue[data.binom$measurementValue == 0] <- NA
-
 ##Mahalanobis Outlier test----
 data.test <- data.binom
 
@@ -513,7 +510,6 @@ for(i in 1:length(sp)){
   else{
     next
   }
- #return(data.test)
 }
 
 for(i in 1:length(sp)){
@@ -536,7 +532,6 @@ for(i in 1:length(sp)){
   else{
     next
   }
-  #return(data.test)
 }
 
 for(i in 1:length(sp)){
@@ -562,7 +557,6 @@ for(i in 1:length(sp)){
   else{
     next
   }
-  #return(data.test)
 }
 
 ##write out Mahalanobis outlier test data----
@@ -572,7 +566,6 @@ write.csv(data.mh, "mh.outlier.checked.data.csv")
 #data.mh <- read.csv("mh.outlier.checked.csv", header = TRUE)
 
 ##Figure 1, panel 2: outliers----
-#cQuality <- c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue", "lightsteelblue1")
 data.fig2 <- data.mh[data.mh$lifeStage != "Juvenile" & 
                        data.mh$measurementStatus != "too few records",]
 
@@ -598,13 +591,11 @@ data.fig2$cat <- factor(data.fig2$cat, levels = c("Adult; possibly good", "Adult
 # length(df$cat[df$cat == "untested; units inferred"]) #159
 # 
 # p <- ggplot() + 
-#   #geom_histogram(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = "darkgray", alpha = 0.3, binwidth = .005, boundary = TRUE) +
 #   geom_density(data = filter(df, measurementStatus == "outlier; units known"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
 #   geom_rug(data = filter(df, measurementStatus == "outlier; units known"), aes(x = measurementValue), sides = "b", col = "gray34") +
 #   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
 #   scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
 #                     name = "Data Quality Category") +
-#   #geom_density(data = df, aes(x = mass), color = "darkgray", fill = cat, alpha = 0.9) +
 #   ggtitle("Artibeus jamaicensis N = 1382") +
 #   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
 #         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
@@ -623,7 +614,6 @@ length(df$cat[df$cat == "No stage; untested"]) #27687
 p <- ggplot() + 
   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
   scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "lightslateblue"),
                     name = "Data Quality Category") +
@@ -645,9 +635,6 @@ length(df$cat[df$cat == "No stage; untested"]) #108
 p <- ggplot() + 
   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
   scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "lightslateblue"),
                     name = "Data Quality Category") +
@@ -668,10 +655,6 @@ ggsave(p, file=paste0("outlier.test.squirrel",".png"), width = 14, height = 10, 
 # p <- ggplot() + 
 #   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, adjust = 1/10, alpha = 0.4) +
 #   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
-#   #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9, adjust = 1/10) +
-#   #geom_density(data = df, aes(x = log10(mass), fill = mass.status), alpha = 0.9) +
-#   #scale_fill_manual(values = ccStatus,
-#   #                  name="Mass Status") +
 #   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4, adjust = 1/10) +
 #   scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
 #                     name = "Data Quality Category") +
@@ -692,19 +675,7 @@ data.noInfer_stats <- data.noInfer_Adults %>%
                    avg.mass = mean(measurementValue[measurementType == "mass" & !is.na(measurementValue)], na.rm = TRUE),
                    sigma.mass = sd(measurementValue[measurementType == "mass" & !is.na(measurementValue)], na.rm = TRUE),
                    upper.limit.mass = avg.mass + (3*sigma.mass),
-                   lower.limit.mass = avg.mass - (3*sigma.mass),
-                   
-                   sample.size.length = length(measurementValue[measurementType == "total.length" & !is.na(measurementValue)]),
-                   avg.length = mean(measurementValue[measurementType == "total.length" & !is.na(measurementValue)], na.rm = TRUE),
-                   sigma.length = sd(measurementValue[measurementType == "total.length" & !is.na(measurementValue)], na.rm = TRUE),
-                   upper.limit.length = avg.length + (3*sigma.length),
-                   lower.limit.length = avg.length - (3*sigma.length),
-                   
-                   sample.size.tail = length(measurementValue[measurementType == "total.length" & !is.na(measurementValue)]),
-                   avg.tail.length = mean(measurementValue[measurementType == "total.length" & !is.na(measurementValue)], na.rm = TRUE),
-                   sigma.tail = sd(measurementValue[measurementType == "total.length" & !is.na(measurementValue)], na.rm = TRUE),
-                   upper.limit.tail = avg.tail.length + (3*sigma.tail),
-                   lower.limit.tail = avg.tail.length - (3*sigma.tail)) %>%
+                   lower.limit.mass = avg.mass - (3*sigma.mass)) %>%
   as.data.frame()
 nrow(data.noInfer_stats) #251
 
@@ -712,680 +683,168 @@ nrow(data.noInfer_stats) #251
 data.limit <- merge(data.mh, data.noInfer_stats, by = "scientificName", all.x = TRUE, all.y = FALSE)
 length(unique(data.limit$scientificName)) #4346
 
+##write out csv with limits----
 write.csv(data.limit, "data.limit.csv")
 
 ##label outliers
 #label samples that are outside of limits with outlier, and label those within limits as "g" and inferred = TRUE
+data.limit$index <- rownames(data.limit)
+data.limit$measurementStatus[data.limit$sample.size.length < 10] <- "too few records"
+data.limit$measurementStatus[data.limit$sample.size.mass < 10] <- "too few records"
+data.limit$measurementStatus[data.limit$sample.size.tail < 10] <- "too few records"
+data.limit$measurementStatus[is.na(data.limit$measurementValue)] <- "ignore"
+data.limit$measurementValue[data.limit$measurementValue < 0 | is.infinite(data.limit$measurementValue)] <- ""
+data.check <- data.limit[data.limit$measurementStatus != "too few records" & 
+                         data.limit$measurementStatus != "outlier" &
+                           data.limit$measurementStatus != "ignore",]
+data.uncheck <- data.limit[data.limit$measurementStatus == "too few records" | 
+                             data.limit$measurementStatus == "outlier" |
+                             data.limit$measurementStatus == "ignore",]
 
-data.check <- data.limit
+sp <- unique(data.check$scientificName)
+length(sp) #240
+nrow(data.check) #1681159
 
+#need to split up datasets to test
 #mass
-for(i in 1:nrow(data.check["measurementType" == "mass" &
-                           "measurementStatus" != "too few records" & 
-                           "measurementStatus" != "outlier"])){
-  if(isTRUE(data.check$measurementValue[i] <= data.check$lower.limit.mass[i])){
-    data.check$measurementStatus[i] <- "outlier"
+for(i in 1:length(sp)){
+  sub <- data.check[data.check$scientificName == sp[i] & 
+                  data.check$measurementType == "mass",]
+  for(j in 1:nrow(sub)){
+    if(isTRUE(sub$measurementValue[j] <= sub$lower.limit.mass[1])){
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "outlier"
+    }
+    else if(isTRUE(sub$measurementValue[j] >= sub$upper.limit.mass[1])){
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "outlier"
+    }
+    else{
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly good"
+    }
   }
-  else if(isTRUE(data.check$measurementValue[i] >= data.check$upper.limit.mass[i])){
-    data.check$measurementStatus[i] <- "outlier"
-  }
-  else{
-    data.check$measurementStatus[i] <- "possibly good"
-  }
-}
-#return(data)
+} 
 
-for(i in 1:nrow(data.check["measurementType" == "total.length" &
-                           "measurementStatus" != "too few records" & 
-                           "measurementStatus" != "outlier"])){
-  if(isTRUE(data.check$measurementValue[i] <= data.check$lower.limit.mass[i])){
-    data.check$measurementStatus[i] <- "outlier"
-  }
-  else if(isTRUE(data.check$measurementValue[i] >= data.check$upper.limit.mass[i])){
-    data.check$measurementStatus[i] <- "outlier"
-  }
-  else{
-    data.check$measurementStatus[i] <- "possibly good"
-  }
-}
-
-for(i in 1:nrow(data.check["measurementType" == "taill.length" &
-                           "measurementStatus" != "too few records" & 
-                           "measurementStatus" != "outlier"])){
-  if(isTRUE(data.check$measurementValue[i] <= data.check$lower.limit.mass[i])){
-    data.check$measurementStatus[i] <- "outlier"
-  }
-  else if(isTRUE(data.check$measurementValue[i] >= data.check$upper.limit.mass[i])){
-    data.check$measurementStatus[i] <- "outlier"
-  }
-  else{
-    data.check$measurementStatus[i] <- "possibly good"
-  }
-}
+data.total <- rbind(data.check, data.uncheck)
 
 ##write out first round of upper and lower limits checking----
 write.csv(data.check, "data.check.csv")
+write.csv(data.total, "data.total.csv")
 
 ##Figure 1, Panel 3----
-data.check2 <- data.check
-#ccQuality <- c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue", "lightsteelblue1")
-data.check2$lifeStage[data.check2$lifeStage == "--" | data.check2$lifeStage == ""] <- "NS"
+data.fig3 <- data.total[data.total$lifeStage != "Juvenile",]
 
-data.check2$mass.units.inferred[data.check2$mass.units.inferred == "False" | data.check2$mass.units.inferred == "FALSE"] <- "F"
-data.check2$mass.units.inferred[data.check2$mass.units.inferred == "True" | data.check2$mass.units.inferred == "TRUE"] <- "T"
-data.check2$mass.units.inferred[data.check2$mass.units.inferred == ""] <- NA
+data.fig3$cat <- paste(data.fig3$lifeStage, data.fig3$measurementStatus) #weird, no units aren't inferred and GOOD
+unique(data.fig3$cat)
+data.fig3$cat[data.fig3$cat == "Adult possibly good"] <- "Adult; possibly good" #darkslateblue
+data.fig3$cat[data.fig3$cat == "Adult outlier"] <- "Adult; outlier" #lightslateblue
+data.fig3$cat[data.fig3$cat == "Adult too few records"] <- "Adult; too few records" #gray
+data.fig3$cat[data.fig3$cat == "Adult "] <- "Adult; untested" #mediumslateblue
+data.fig3$cat[data.fig3$cat == "NS possibly good"] <- "No stage; possibly good" #lightsteelblue4
+data.fig3$cat[data.fig3$cat == "NS outlier"] <- "No stage; outlier" #lightsteelblue1
+data.fig3$cat[data.fig3$cat == "NS too few records"] <- "No stage; too few records" #gray
+data.fig3$cat[data.fig3$cat == "NS "] <- "No stage; untested" #lightsteelblue
 
-data.check2$cat <- paste(data.check2$mass.units.inferred, data.check2$mass.status) #weird, no units aren't inferred and GOOD
-data.check2$cat[data.check2$cat == "T GOOD"] <- "possibly good; units inferred" #mediumslateblue
-data.check2$cat[data.check2$cat == "F outlier"] <- "outlier; units known" #lightsteelblue4
-data.check2$cat[data.check2$cat == "T too few records"] <- "too few records; units inferred" #gray
-data.check2$cat[data.check2$cat == "NA too few records"] <- "too few records; units unknown" #gray
-data.check2$cat[data.check2$cat == "F too few records"] <- "too few records; units known" #gray
-data.check2$cat[data.check2$cat == "T outlier"] <- "outlier; units inferred" #lightsteelblue
-#darkslateblue
-#lightslateblue
-#lightsteelblue4
+data.fig3$cat <- as.factor(data.fig3$cat)
+data.fig3$cat = relevel(data.fig3$cat, "Adult; possibly good")
+data.fig3$cat <- factor(data.fig3$cat, levels = c("Adult; possibly good", "Adult; outlier", "Adult; untested", "Adult; too few records", 
+                                                  "No stage; possibly good", "No stage; outlier", "No stage; untested", "No stage; too few records"))
 
-data.check2$cat <- as.factor(data.check2$cat)
-data.check2$cat = relevel(data.check2$cat, "possibly good; units inferred")
-data.check2$cat <- factor(data.check2$cat, levels = c("possibly good; units inferred", "outlier; units known", "outlier; units inferred", 
-                                                      "too few records; units known", "too few records; units inferred", "too few records; units unknown"))
+# df <- subset(data.fig3, data.fig3$scientificName == "Artibeus jamaicensis" & 
+#                data.fig3$measurementType == "mass" &
+#                !is.na(data.fig3$measurementValue))
+# length(df$measurementValue) #1394
+# unique(df$cat)
+# length(df$cat[df$cat == "No stage; too few records"]) #1147
+# length(df$cat[df$cat == "Adult; too few records"]) #247
+# p <- ggplot() + 
+#   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
+#   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
+#   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
+#   scale_fill_manual(values = c("darkslateblue", "lightsteelblue4"),
+#                     name = "Data Quality Category") +
+#   ggtitle("Artibeus jamaicensis N = 1394") +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+#   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
+#   scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
+# ggsave(p, file=paste0("check.test.bat",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.check2, data.check2$scientificName == "Artibeus jamaicensis" & !is.na(data.check2$mass))
-length(df$mass)
+df <- subset(data.fig3, data.fig3$scientificName == "Peromyscus maniculatus" & 
+               data.fig3$measurementType == "mass" &
+               !is.na(data.fig3$measurementValue))
+df$measurementValue <- as.numeric(df$measurementValue)
+length(df$measurementValue) #30708
 unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #1302
-length(df$cat[df$cat == "outlier; units known"]) #62
-length(df$cat[df$cat == "outlier; units inferred"]) #30
-length(df$mass[df$mass.status == "outlier"]) #92
+length(df$cat[df$cat == "No stage; possibly good"]) #9554
+length(df$cat[df$cat == "Adult; possibly good"]) #1060
+length(df$cat[df$cat == "Adult; outlier"]) #1961
+length(df$cat[df$cat == "No stage; outlier"]) #18133
 p <- ggplot() + 
-  #geom_histogram(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = "darkgray", alpha = 0.3, binwidth = .005, boundary = TRUE) +
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4", "lightsteelblue"),
+  geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
+  geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
+  geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
+  scale_fill_manual(values = c("darkslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue1"),
                     name = "Data Quality Category") +
-  #geom_density(data = df, aes(x = mass), color = "darkgray", fill = cat, alpha = 0.9) +
-  ggtitle("Artibeus jamaicensis N = 1394, Noutliers = 92") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
-  scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
-ggsave(p, file=paste0("check1.test.bat2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.check2, data.check2$scientificName == "Peromyscus maniculatus" & !is.na(data.check2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #30694
-length(df$cat[df$cat == "outlier; units known"]) #20
-length(df$cat[df$cat == "outlier; units inferred"]) #3
-length(df$mass[df$mass.status == "outlier"]) #23
-p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4", "lightsteelblue"),
-                    name = "Data Quality Category") +
-  ggtitle("Peromyscus maniculatus N = 30717, Noutlier = 23") +
+  ggtitle("Peromyscus maniculatus N = 30708, Noutlier = 20094") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
   scale_y_continuous(name = "Density", limits = c(0, .2))
-ggsave(p, file=paste0("check1.test.mouse2",".png"), width = 14, height = 10, units = "cm")
+ggsave(p, file=paste0("check.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.check2, data.check2$scientificName == "Spermophilus beecheyi" & !is.na(data.check2$mass))
-length(df$mass)
+df <- subset(data.fig3, data.fig3$scientificName == "Spermophilus beecheyi" & 
+               data.fig3$measurementType == "mass" &
+               !is.na(data.fig3$measurementValue))
+df$measurementValue <- as.numeric(df$measurementValue)
+length(df$measurementValue) #222
 unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #213
-length(df$cat[df$cat == "outlier; units known"]) #2
-length(df$cat[df$cat == "outlier; units inferred"]) #7
-length(df$mass[df$mass.status == "outlier"]) #9
+length(df$cat[df$cat == "No stage; possibly good"]) #102
+length(df$cat[df$cat == "Adult; possibly good"]) #107
+length(df$cat[df$cat == "Adult; outlier"]) #7
+length(df$cat[df$cat == "No stage; outlier"]) #6
 p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) +
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4", "lightsteelblue"),
+  geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) +
+  geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
+  geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
+  scale_fill_manual(values = c("darkslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue1"),
                     name = "Data Quality Category") +
-  ggtitle("Spermophilus beecheyi N = 222, Noutlier = 9") +
+  ggtitle("Spermophilus beecheyi N = 222, Noutlier = 13") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
   scale_y_continuous(name = "Density", limits = c(0, .02))
-ggsave(p, file=paste0("check1.test.squirrel2",".png"), width = 14, height = 10, units = "cm")
+ggsave(p, file=paste0("check.test.squirrel",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.check2, data.check2$scientificName == "Odocoileus virginianus" & !is.na(data.check2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #915
-length(df$cat[df$cat == "outlier; units known"]) #15
-length(df$mass[df$mass.status == "outlier"]) #125
-p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, adjust = 1/10, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9, adjust = 1/10) +
-  #geom_density(data = df, aes(x = log10(mass), fill = mass.status), alpha = 0.9) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4, adjust = 1/10) +
-  scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4"),
-                    name = "Data Quality Category") +
-  ggtitle("Odocoileus virginianus N = 930, Noutlier = 15") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
-  scale_y_continuous(name = "Density", limits = c(0, .001))#.0001
-ggsave(p, file=paste0("check1.test.deer2",".png"), width = 14, height = 10, units = "cm")
-
-##unit conversion----
-#convert units that are wrong (i.e., not "g" or "mm") to proper units
-
-#convert units to "g" or "mm"
-convert.g <- function(data, trait, units, units.infer){
-  for(i in 1:nrow(data)){
-    if(isTRUE(data[i, units] == "mg")){
-      data[i, trait] <- data[i, trait] * 1000
-      data[i, units] <- "g"
-      data[i, units.infer] <- "CONVERTED"
-    }
-    else if(isTRUE(data[i, units] == "kg")){
-      data[i, trait] <- data[i, trait] / 1000
-      data[i, units] <- "g"
-      data[i, units.infer] <- "CONVERTED"
-    }
-    else if(isTRUE(data[i, units] == "lb" | data[i, units][i] == "lbs" | data[i, units][i] == "pounds")){
-      data[i, trait] <- data[i, trait] / 0.002204623
-      data[i, units] <- "g"
-      data[i, units.infer] <- "CONVERTED"
-    }
-    else if(isTRUE(data[i, units] == "oz")){
-      data[i, trait] <- data[i, trait] / 0.03527396
-      data[i, units] <- "g"
-      data[i, units.infer] <- "CONVERTED"
-    }
-    else{
-      next
-    }
-  }
-  return(data)
-}
-
-convert.mm <- function(data, trait, units, units.infer){
-  for(i in 1:nrow(data)){
-    if(isTRUE(data[i, units] == "cm" | data[i, units] == "CM")){
-      data[i, trait] <- data[i, trait] / 10
-      data[i, units] <- "mm"
-      data[i, units.infer] <- "CONVERTED"
-    }
-    else if(isTRUE(data[i, units] == "in" | data[i, units] == "inches" | data[i, units] == "\"" | data[i, units] == "[\"'\", 'in']")){
-      data[i, trait] <- data[i, trait] / 0.03937008
-      data[i, units] <- "mm"
-      data[i, units.infer] <- "CONVERTED"
-    }
-    else if(isTRUE(data[i, units] == "Foot" | data[i, units] == "ft" | data[i, units] == "FT" | data[i, units] == "feet" | data[i, units] == "'")){
-      data[i, trait] <- data[i, trait] / 0.00328084
-      data[i, units] <- "mm"
-      data[i, units.infer] <- "CONVERTED"
-    }
-    else{
-      next
-    }
-  }
-  return(data)
-}
-
-data.convert.mass <- convert.g(data = data.check, trait = "mass", units = "mass.units", units.infer = "mass.units.inferred")
-data.convert.length <- convert.mm(data = data.convert.mass, trait = "total.length", units = "total.length.units", units.infer = "total.length.units.inferred")
-data.convert.hindfoot <- convert.mm(data = data.convert.length, trait = "hindfoot.length", units = "hindfoot.length.units", units.infer = "hindfoot.length.units.inferred")
-data.convert.ear <- convert.mm(data = data.convert.hindfoot, trait = "ear.length", units = "ear.length.units", units.infer = "ear.length.units.inferred")
-data.convert.tail <- convert.mm(data = data.convert.ear, trait = "tail.length", units = "tail.length.units", units.infer = "tail.length.units.inferred")
-#data.convert.forearm <- convert.mm(data = data.convert.tail, trait = "forearm.length", units = "forearm.length.units",units.infer = "forearm.length.units.inferred")
-
-##write out data with converted units----
-data.convert <- data.convert.tail
-write.csv(data.convert, "data.convert.csv")
-#data.convert <- read.csv("data.convert.csv", header = TRUE)
-
-##Figure 1, panel 4----
-data.convert2 <- data.convert
-#ccQuality <- c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue", "lightsteelblue1")
-data.convert2$lifeStage[data.convert2$lifeStage == "--" | data.convert2$lifeStage == ""] <- "NS"
-
-data.convert2$mass.units.inferred[data.convert2$mass.units.inferred == "False" | data.convert2$mass.units.inferred == "FALSE"] <- "F"
-data.convert2$mass.units.inferred[data.convert2$mass.units.inferred == "True" | data.convert2$mass.units.inferred == "TRUE"] <- "T"
-data.convert2$mass.units.inferred[data.convert2$mass.units.inferred == ""] <- NA
-
-data.convert2$cat <- paste(data.convert2$mass.units.inferred, data.convert2$mass.status) #weird, no units aren't inferred and GOOD
-data.convert2$cat[data.convert2$cat == "T GOOD"] <- "possibly good; units inferred" #darkslateblue
-data.convert2$cat[data.convert2$cat == "F outlier"] <- "outlier; units known" #lightsteelblue4
-data.convert2$cat[data.convert2$cat == "T too few records"] <- "too few records; units inferred" #gray
-data.convert2$cat[data.convert2$cat == "NA too few records"] <- "too few records; units unknown" #gray
-data.convert2$cat[data.convert2$cat == "F too few records"] <- "too few records; units known" #gray
-data.convert2$cat[data.convert2$cat == "T outlier"] <- "outlier; units inferred" #lightsteelblue
-data.convert2$cat[data.convert2$cat == "CONVERTED too few records"] <- "too few records; units converted" #gray
-data.convert2$cat[data.convert2$cat == "CONVERTED outlier"] <- "outlier; units converted" #lightsteelblue1
-#mediumslateblue
-#lightslateblue
-
-
-data.convert2$cat <- as.factor(data.convert2$cat)
-data.convert2$cat = relevel(data.convert2$cat, "possibly good; units inferred")
-data.convert2$cat <- factor(data.convert2$cat, levels = c("possibly good; units inferred", "outlier; units known", "outlier; units inferred", "outlier; units converted",
-                                                      "too few records; units known", "too few records; units inferred", "too few records; units unknown", "too few records; units converted"))
-
-df <- subset(data.convert2, data.convert2$scientificName == "Artibeus jamaicensis" & !is.na(data.convert2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #1302
-length(df$cat[df$cat == "outlier; units known"]) #62
-length(df$cat[df$cat == "outlier; units inferred"]) #30
-length(df$mass[df$mass.status == "outlier"]) #92
-p <- ggplot() + 
-  #geom_histogram(data = filter(df, mass.status == "outlier"), aes(x = log10(mass)), color = "darkgray", alpha = 0.3, binwidth = .005, boundary = TRUE) +
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4", "lightsteelblue"),
-                    name = "Data Quality Category") +
-  #geom_density(data = df, aes(x = mass), color = "darkgray", fill = cat, alpha = 0.9) +
-  ggtitle("Artibeus jamaicensis N = 1394, Noutliers = 92") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
-  scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
-ggsave(p, file=paste0("convert.test.bat2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.convert2, data.convert2$scientificName == "Peromyscus maniculatus" & !is.na(data.convert2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #30694
-length(df$cat[df$cat == "outlier; units known"]) #19
-length(df$cat[df$cat == "outlier; units inferred"]) #3
-length(df$cat[df$cat == "outlier; units converted"]) #1
-length(df$mass[df$mass.status == "outlier"]) #23
-p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4", "lightsteelblue", "lightsteelblue1"),
-                    name = "Data Quality Category") +
-  ggtitle("Peromyscus maniculatus N = 30717, Noutlier = 23") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
-  scale_y_continuous(name = "Density", limits = c(0, .2))
-ggsave(p, file=paste0("check1.test.mouse2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.convert2, data.convert2$scientificName == "Spermophilus beecheyi" & !is.na(data.convert2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #213
-length(df$cat[df$cat == "outlier; units known"]) #2
-length(df$cat[df$cat == "outlier; units inferred"]) #7
-length(df$mass[df$mass.status == "outlier"]) #9
-p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) +
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4", "lightsteelblue"),
-                    name = "Data Quality Category") +
-  ggtitle("Spermophilus beecheyi N = 222, Noutlier = 9") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-  scale_y_continuous(name = "Density", limits = c(0, .02))
-ggsave(p, file=paste0("check1.test.squirrel2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.convert2, data.convert2$scientificName == "Odocoileus virginianus" & !is.na(data.convert2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #915
-length(df$cat[df$cat == "outlier; units known"]) #12
-length(df$cat[df$cat == "outlier; units converted"])  #3
-length(df$mass[df$mass.status == "outlier"]) #15
-p <- ggplot() + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, adjust = 1/10, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status != "outlier"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9, adjust = 1/10) +
-  #geom_density(data = df, aes(x = log10(mass), fill = mass.status), alpha = 0.9) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4, adjust = 1/10) +
-  scale_fill_manual(values = c("mediumslateblue", "lightsteelblue", "lightsteelblue1"),
-                    name = "Data Quality Category") +
-  ggtitle("Odocoileus virginianus N = 930, Noutlier = 15") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
-  scale_y_continuous(name = "Density", limits = c(0, .001))
-ggsave(p, file=paste0("check1.test.deer2",".png"), width = 14, height = 10, units = "cm")
-
-
-##recalculate upper and lower limits (round 2)----
-
-##create new sigma, this time allow for inferred units
-##next time, don't allow for inferred units...
-data.stats <- data.convert %>%
-  group_by(scientificName) %>%
-  dplyr::summarise(sample.size.mass.2 = length(mass[mass.status != "outlier" & lifeStage != "Juvenile" & !is.na(mass)]),
-                   avg.mass.2 = mean(mass[mass.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.mass.2 = sd(mass[mass.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.mass.2 = avg.mass.2 + (3*sigma.mass.2),
-                   lower.limit.mass.2 = avg.mass.2 - (3*sigma.mass.2),
-                   
-                   sample.size.length.2 = length(total.length[total.length.status != "outlier" & lifeStage != "Juvenile" & !is.na(total.length)]),
-                   avg.length.2 = mean(total.length[total.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.length.2 = sd(total.length[total.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.length.2 = avg.length.2 + (2.5*sigma.length.2),
-                   lower.limit.length.2 = avg.length.2 - (2.5*sigma.length.2),
-                   
-                   sample.size.ear.2 = length(ear.length[ear.length.status != "outlier" & lifeStage != "Juvenile" & !is.na(ear.length)]),
-                   avg.ear.length.2 = mean(ear.length[ear.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.ear.2 = sd(ear.length[ear.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.ear.2 = avg.ear.length.2 + (2.5*sigma.ear.2),
-                   lower.limit.ear.2 = avg.ear.length.2 - (2.5*sigma.ear.2),
-                   
-                   sample.size.hindfoot.2 = length(hindfoot.length[hindfoot.length.status != "outlier" & lifeStage != "Juvenile" & !is.na(hindfoot.length)]),
-                   avg.hindfoot.2 = mean(hindfoot.length[hindfoot.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.hindfoot.2 = sd(hindfoot.length[hindfoot.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.hindfoot.2 = avg.hindfoot.2 + (2.5*sigma.length.2),
-                   lower.limit.hindfoot.2 = avg.hindfoot.2 - (2.5*sigma.length.2),
-                   
-                   sample.size.tail.2 = length(tail.length[tail.length.status != "outlier" & lifeStage != "Juvenile" & !is.na(tail.length)]),
-                   avg.tail.2 = mean(tail.length[tail.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   sigma.tail.2 = sd(tail.length[tail.length.status != "outlier" & lifeStage != "Juvenile"], na.rm = TRUE),
-                   upper.limit.tail.2 = avg.length.2 + (2.5*sigma.length.2),
-                   lower.limit.tail.2 = avg.length.2 - (2.5*sigma.length.2)) %>%
-  as.data.frame()
-
-#add stats to dataframe
-data.recheck <- merge(data.convert, data.stats, by = "scientificName", all.x = TRUE, all.y = FALSE)
-
-##RE-label outliers & check to see if old outliers are still outliers----
-
-for(i in 1:nrow(data.recheck)){
-  if(isTRUE(data.recheck$sample.size.mass.2[i] < 10)){
-    data.recheck$mass.status[i] <- "too few records"
-  }
-  else if(isTRUE(data.recheck$mass[i] < data.recheck$lower.limit.mass.2[i])){
-    data.recheck$mass.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$mass[i] > data.recheck$upper.limit.mass.2[i])){
-    data.recheck$mass.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$mass[i] <= data.recheck$upper.limit.mass.2[i])){
-    data.recheck$mass.status[i] <- "GOOD"
-  }
-  else if(isTRUE(data.recheck$mass[i] >= data.recheck$lower.limit.mass.2[i])){
-    data.recheck$mass.status[i] <- "GOOD"
-  }
-  else{
-    next
-  }
-}
-
-for(i in 1:nrow(data.recheck)){
-  if(isTRUE(data.recheck$sample.size.length.2[i] < 10)){
-    data.recheck$total.length.status[i] <- "too few samples"
-  }
-  else if(isTRUE(data.recheck$total.length[i] < data.recheck$lower.limit.length.2[i])){
-    data.recheck$total.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$total.length[i] > data.recheck$upper.limit.length.2[i])){
-    data.recheck$total.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$total.length[i] <= data.recheck$upper.limit.length.2[i])){
-    data.recheck$total.length.status[i] <- "GOOD"
-  }
-  else if(isTRUE(data.recheck$total.length[i] >= data.recheck$lower.limit.length.2[i])){
-    data.recheck$total.length.status[i] <- "GOOD"
-  }
-  else{
-    next
-  }
-}
-
-for(i in 1:nrow(data.recheck)){
-  if(isTRUE(data.recheck$sample.size.tail.2[i] < 10)){
-    data.recheck$tail.length.status[i] <- "too few records"
-  }
-  else if(isTRUE(data.recheck$tail.length[i] < data.recheck$lower.limit.tail.2[i])){
-    data.recheck$tail.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$tail.length[i] > data.recheck$upper.limit.tail.2[i])){
-    data.recheck$tail.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$tail.length[i] <= data.recheck$upper.limit.tail.2[i])){
-    data.recheck$tail.length.status[i] <- "GOOD"
-  }
-  else if(isTRUE(data.recheck$tail.length[i] >= data.recheck$lower.limit.tail.2[i])){
-    data.recheck$tail.length.status[i] <- "GOOD"
-  }
-  else{
-    next
-  }
-}
-
-for(i in 1:nrow(data.recheck)){
-  if(isTRUE(data.recheck$sample.size.ear.2[i] < 10)){
-    data.recheck$ear.length.status[i] <- "too few records"
-  }
-  else if(isTRUE(data.recheck$ear.length[i] < data.recheck$lower.limit.ear.2[i])){
-    data.recheck$ear.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$ear.length[i] > data.recheck$upper.limit.ear.2[i])){
-    data.recheck$ear.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$ear.length[i] <= data.recheck$upper.limit.ear.2[i])){
-    data.recheck$ear.length[i] <- "GOOD"
-  }
-  else if(isTRUE(data.recheck$ear.length[i] >= data.recheck$lower.limit.ear.2[i])){
-    data.recheck$ear.length.status[i] <- "GOOD"
-  }
-  else{
-    next
-  }
-}
-
-for(i in 1:nrow(data.recheck)){
-  if(isTRUE(data.recheck$sample.size.hindfoot.2[i] < 10)){
-    data.recheck$hindfoot.length.status[i] <- "too few records"
-  }
-  else if(isTRUE(data.recheck$hindfoot.length[i] < data.recheck$lower.limit.hindfoot.2[i])){
-    data.recheck$hindfoot.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$hindfoot.length[i] > data.recheck$upper.limit.hindfoot.2[i])){
-    data.recheck$hindfoot.length.status[i] <- "outlier"
-  }
-  else if(isTRUE(data.recheck$hindfoot.length[i] <= data.recheck$upper.limit.hindfoot.2[i])){
-    data.recheck$hindfoot.length.status[i] <- "GOOD"
-  }
-  else if(isTRUE(data.recheck$hindfoot.length[i] >= data.recheck$lower.limit.hindfoot.2[i])){
-    data.recheck$hindfoot.length.status[i] <- "GOOD"
-  }
-  else{
-    next
-  }
-}
-
-# for(i in 1:length(data.outlier$scientificName)){
-#   if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$forearm.length[i] < data.outlier$forearm.length.lower.limit[i])){
-#     data.outlier$forearm.length.status[i] <- "outlier"
-#   }
-#   else if(isTRUE(data.outlier$lifeStage[i] != "Juvenile" & data.outlier$forearm.length[i] > data.outlier$forearm.length.upper.limit[i])){
-#     data.outlier$forearm.length.status[i] <- "outlier"
-#   }
-#   else if(isTRUE(data.recheck$forearm.length[i] <= data.recheck$upper.limit.forearm.2[i])){
-#     data.recheck$forearm.length.status[i] <- "GOOD"
-#   }
-#   else if(isTRUE(data.recheck$forearm.length[i] >= data.recheck$lower.limit.forearm.2[i])){
-#     data.recheck$forearm.length.status[i] <- "GOOD"
-#   }
-#   else{
-#     next
-#   }
-# }
-
-##write out clean, labeled data----
-data.outlier <- data.recheck
-write.csv(data.outlier, "labeled.clean.data.csv")
-#data.outlier <- read.csv("labeled.clean.data.csv", header = TRUE)
-
-##Figure 1, panel 5: final results----
-data.outlier2 <- data.outlier
-data.outlier2$lifeStage[data.outlier2$lifeStage == "--" | data.outlier2$lifeStage == ""] <- "NS"
-
-data.outlier2$mass.units.inferred[data.outlier2$mass.units.inferred == "False" | data.outlier2$mass.units.inferred == "FALSE"] <- "F"
-data.outlier2$mass.units.inferred[data.outlier2$mass.units.inferred == "True" | data.outlier2$mass.units.inferred == "TRUE"] <- "T"
-data.outlier2$mass.units.inferred[data.outlier2$mass.units.inferred == ""] <- NA
-
-data.outlier2$cat <- paste(data.outlier2$mass.units.inferred, data.outlier2$mass.status) #weird, no units aren't inferred and GOOD
-data.outlier2$cat[data.outlier2$cat == "T GOOD"] <- "possibly good; units inferred"#mediumslateblue
-data.outlier2$cat[data.outlier2$cat == "F outlier"] <- "outlier; units known" #lightsteelblue4
-data.outlier2$cat[data.outlier2$cat == "T too few records"] <- "too few records; units inferred" #gray
-data.outlier2$cat[data.outlier2$cat == "NA too few records"] <- "too few records; units unknown" #gray
-data.outlier2$cat[data.outlier2$cat == "F too few records"] <- "too few records; units known" #gray
-data.outlier2$cat[data.outlier2$cat == "T outlier"] <- "outlier; units inferred" #lightsteelblue
-data.outlier2$cat[data.outlier2$cat == "CONVERTED too few records"] <- "too few records; units converted" #gray
-data.outlier2$cat[data.outlier2$cat == "CONVERTED outlier"] <- "outlier; units converted" #lightsteelblue1
-data.outlier2$cat[data.outlier2$cat == "CONVERTED GOOD"] <- "possibly good; units converted" #lightslateblue
-data.outlier2$cat[data.outlier2$cat == "F GOOD"] <- "possibly good; units known" #darkslateblue
-
-data.outlier2$cat <- as.factor(data.outlier2$cat)
-data.outlier2$cat = relevel(data.outlier2$cat, "possibly good; units inferred")
-data.outlier2$cat <- factor(data.outlier2$cat, levels = c("possibly good; units inferred", "possibly good; units known", "possibly good; units converted",
-                                                          "outlier; units known", "outlier; units inferred", "outlier; units converted",
-                                                          "too few records; units known", "too few records; units inferred", "too few records; units unknown", "too few records; units converted"))
-
-
-df <- subset(data.outlier2, data.outlier2$scientificName == "Artibeus jamaicensis" & !is.na(data.outlier2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #1306
-length(df$cat[df$cat == "possibly good; units known"]) #9
-length(df$cat[df$cat == "outlier; units known"]) #53
-length(df$cat[df$cat == "outlier; units inferred"]) #26
-length(df$mass[df$mass.status == "outlier"]) #79
-
-p <- ggplot(data = df) + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  geom_density(data = filter(df, mass.status == "GOOD"), aes(x = mass), fill = "darkslateblue", alpha = 0.4) +
-  #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  #geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  #scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightsteelblue4", "lightsteelblue"),
-  #                  name = "Data Quality Category") +
-  ggtitle("Artibeus jamaicensis N = 1394, Noutlier = 79") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 100)) +
-  scale_y_continuous(name = "Density", limits = c(0, .15))
-ggsave(p, file=paste0("check2.bat2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.outlier2, data.outlier2$scientificName == "Peromyscus maniculatus" & !is.na(data.outlier2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #30469
-length(df$cat[df$cat == "outlier; units known"]) #19
-length(df$cat[df$cat == "outlier; units inferred"]) #218
-length(df$cat[df$cat == "possibly good; units converted"]) #1
-length(df$mass[df$mass.status == "outlier"]) #237
-
-p <- ggplot(data = df) + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status == "GOOD"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-  #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("mediumslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue"),
-                    name = "Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Peromyscus maniculatus N = 30717, Noutlier = 237") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
-  scale_y_continuous(name = "Density", limits = c(0, .2))
-ggsave(p, file=paste0("check2.mouse2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.outlier2, data.outlier2$scientificName == "Spermophilus beecheyi" & !is.na(data.outlier2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #213
-length(df$cat[df$cat == "outlier; units known"]) #1
-length(df$cat[df$cat == "outlier; units inferred"]) #7
-length(df$cat[df$cat == "possibly good; units known"]) #1
-length(df$mass[df$mass.status == "outlier"]) #8
-
-p <- ggplot(data = df) + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status == "GOOD"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-  #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightsteelblue4", "lightsteelblue"),
-                    name = "Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Spermophilus beecheyi N = 222, Noutlier = 8") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-  scale_y_continuous(name = "Density", limits = c(0, .02))
-ggsave(p, file=paste0("check2.test.squirrel2",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.outlier2, data.outlier2$scientificName == "Odocoileus virginianus" & !is.na(data.outlier2$mass))
-length(df$mass)
-unique(df$cat)
-length(df$cat[df$cat == "possibly good; units inferred"]) #915
-length(df$cat[df$cat == "outlier; units known"]) #5
-length(df$cat[df$cat == "outlier; units converted"]) #2
-length(df$cat[df$cat == "possibly good; units known"]) #7
-length(df$cat[df$cat == "possibly good; units converted"]) #1
-length(df$mass[df$mass.status == "outlier"]) #7
-
-p <- ggplot(data = df) + 
-  geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-  #geom_density(data = filter(df, mass.status == "GOOD"), aes(x = mass), color = "darkgray", fill = "darkgray", alpha = 0.9) +
-  #geom_density(aes(x = log10(mass), fill = mass.status), alpha = 0.7) +
-  #scale_fill_manual(values = ccStatus,
-  #                  name="Mass Status") +
-  geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue1"),
-                    name = "Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Odocoileus virginianus N = 930, Noutlier = 7") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
-  scale_y_continuous(name = "Density", limits = c(0, .001))
-ggsave(p, file=paste0("check2.deer2",".png"), width = 14, height = 10, units = "cm")
+# df <- subset(data.fig3, data.fig3$scientificName == "Odocoileus virginianus" & 
+#                data.fig3$measurementType == "mass" &
+#                !is.na(data.fig3$measurementValue))
+# length(df$measurementValue) #930
+# unique(df$cat)
+# p <- ggplot() + 
+#   geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, adjust = 1/10, alpha = 0.4) + 
+#   geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
+#   geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4, adjust = 1/10) +
+#   scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4"),
+#                     name = "Data Quality Category") +
+#   ggtitle("Odocoileus virginianus N = 930, Noutlier = 15") +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+#   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
+#   scale_y_continuous(name = "Density", limits = c(0, .001))#.0001
+# ggsave(p, file=paste0("check1.test.deer2",".png"), width = 14, height = 10, units = "cm")
 
 ##info about outliers----
-outlier_stats <- data.outlier %>%
+outlier_stats <- data.total %>%
   group_by(scientificName) %>%
-  dplyr::summarise(sample.outlier.mass = length(mass[mass.status == "outlier" & mass >= 0]),
-                   sample.mass = length(mass[mass.status != "outlier" & mass >= 0]),
-                   sample.outlier.total.length = length(total.length[total.length.status == "outlier" & total.length >= 0]),
-                   sample.total.length = length(total.length[total.length.status != "outlier" & total.length >= 0]),
-                   #sample.outlier.forearm.length = length(forearm.length[forearm.length.status == "outlier" & forearm.length >= 0 & lifeStage != "Juvenile"]),
-                   #sample.forearm.length = length(forearm.length[forearm.length.status != "outlier" & forearm.length >= 0 & lifeStage != "Juvenile"]),
-                   sample.outlier.hindfoot.length = length(hindfoot.length[hindfoot.length.status == "outlier" & hindfoot.length >= 0]),
-                   sample.hindfoot.length = length(hindfoot.length[hindfoot.length.status != "outlier" & hindfoot.length >= 0]),
-                   sample.outlier.ear.length = length(ear.length[ear.length.status == "outlier" & ear.length >= 0]),
-                   sample.ear.length = length(ear.length[ear.length.status != "outlier" & ear.length >= 0]),
-                   sample.outlier.tail.length = length(tail.length[tail.length.status == "outlier" & tail.length >= 0]),
-                   sample.tail.length = length(tail.length[tail.length.status != "outlier" & tail.length >= 0])) %>%
+  dplyr::summarise(sample.outlier.mass = length(measurementValue[measurementStatus == "outlier" & measurementValue >= 0 & measurementType == "mass"]),
+                   sample.mass = length(measurementValue[measurementStatus == "outlier" & measurementValue >= 0 & measurementType == "mass"])) %>%
   as.data.frame()
 
-##write out csv of outlier stats
+##write out csv of outlier stats----
 write.csv(outlier_stats, "outliers.csv")
+
+##data for analyses----
+data.for.analyses <- data.total[data.total$measurementStatus == "possibly good" &
+                                  data.total$lifeStage != "Juvenile" &
+                                  !is.na(data.total$measurementValue),]
+##write out data for analyses----
+write.csv(data.for.analyses, "data.for.analyses.csv")
