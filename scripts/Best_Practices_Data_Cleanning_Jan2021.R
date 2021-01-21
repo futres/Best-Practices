@@ -842,9 +842,7 @@ outlier_stats <- data.total %>%
 ##write out csv of outlier stats----
 write.csv(outlier_stats, "outliers.csv")
 
-##data for analyses----
-data.for.analyses <- data.total[data.total$measurementStatus == "possibly good" &
-                                  data.total$lifeStage != "Juvenile" &
-                                  !is.na(data.total$measurementValue),]
-##write out data for analyses----
-write.csv(data.for.analyses, "data.for.analyses.csv")
+##put Kitty Deer & Ray's Horses into FuTRES----
+#only focusing on astragalus length, width, mass, and calcaneus length, width
+
+
