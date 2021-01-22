@@ -358,62 +358,40 @@ data.binom$measurementUnitInferred[data.binom$measurementUnitInferred == "True" 
 
 data.binom$measurementValue[data.binom$measurementValue == 0] <- NA
 
+#change known taxonomy error: Spermophilus beecheyi
+data.binom$scientificName[data.binom$scientificName == "Spermophilus beecheyi"] <- "Otospermophilus beecheyi"
+
 ##write data file with futres and vertnet combined----
 write.csv(data.binom, "dirty.data.csv")
 
 ##Figure 1 panel 1: lifeStage----
 data.fig1 <- data.binom
-length(data.fig1$measurementValue[data.fig1$scientificName == "Artibeus jamaicensis" & 
-                                    data.fig1$measurementType == "mass" & 
-                                    !is.na(data.fig1$measurementValue)]) #1406
 length(data.fig1$measurementValue[data.fig1$scientificName == "Peromyscus maniculatus" & 
                                     data.fig1$measurementType == "mass" & 
                                     !is.na(data.fig1$measurementValue)]) #31669
-length(data.fig1$measurementValue[data.fig1$scientificName == "Spermophilus beecheyi" & 
+length(data.fig1$measurementValue[data.fig1$scientificName == "Otospermophilus beecheyi" & 
                                     data.fig1$measurementType == "mass" & 
                                     !is.na(data.fig1$measurementValue)]) #233
-length(data.fig1$measurementValue[data.fig1$scientificName == "Odocoileus virginianus" & 
-                                    data.fig1$measurementType == "mass" & 
-                                    !is.na(data.fig1$measurementValue)]) #932
 
 #care about estimated and lifeStage
 data.fig1$cat <- paste(data.fig1$lifeStage, data.fig1$measurementValueEstimated)
 unique(data.fig1$cat)
 data.fig1$cat[data.fig1$cat == "NS NA" |
-                data.fig1$cat == "NS "] <- "No stage; data possibly good" #lightslateblue
+                data.fig1$cat == "NS "] <- "No stage; data possibly good" #lightgoldenrod3
 data.fig1$cat[data.fig1$cat == "Adult NA" |
-                data.fig1$cat == "Adult "] <- "Adult; data possibly good" #darkslateblue
+                data.fig1$cat == "Adult "] <- "Adult; data possibly good" #darkorchid4
 data.fig1$cat[data.fig1$cat == "Juvenile NA" |
-                data.fig1$cat == "Juvenile "] <- "Juvenile; data possibly good" #mediumslateblue
+                data.fig1$cat == "Juvenile "] <- "Juvenile; data possibly good" #gray74
 
-data.fig1$cat[data.fig1$cat == "NS True"] <- "No stage; data estimated" #lightsteelblue1
-data.fig1$cat[data.fig1$cat == "Adult True"] <- "Adult; data estimated" #lightsteelblue4
-data.fig1$cat[data.fig1$cat == "Juvenile True"] <- "Juvenile; data estimated" #lightslateblue
+data.fig1$cat[data.fig1$cat == "NS True"] <- "No stage; data estimated" #lightgoldenrod1
+data.fig1$cat[data.fig1$cat == "Adult True"] <- "Adult; data estimated" #darkorchid
+data.fig1$cat[data.fig1$cat == "Juvenile True"] <- "Juvenile; data estimated" #gray74
 
 data.fig1$cat <- as.factor(data.fig1$cat)
 data.fig1$cat = relevel(data.fig1$cat, "Adult; data possibly good")
 data.fig1$cat <- factor(data.fig1$cat, levels = c("Adult; data possibly good", "Adult; data estimated", 
                                                   "Juvenile; data possibly good", "Juvenile; data estimated",
                                                   "No stage; data possibly good", "No stage; data estimated"))
-df <- subset(data.fig1, data.fig1$scientificName == "Artibeus jamaicensis" & 
-               data.fig1$measurementType == "mass" & 
-               !is.na(data.fig1$measurementValue))
-length(df$measurementType) #1406
-unique(df$cat)
-length(df$cat[df$cat == "Adult; data possibly good"]) #247
-length(df$cat[df$cat == "Juvenile; data possibly good"]) #12
-length(df$cat[df$cat == "No stage; data possibly good"]) #1147
-
-p <- ggplot(data = df) + 
-  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue"),
-                    name = "Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Artibeus jamaicensis N = 1406") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
-  scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
-ggsave(p, file=paste0("orig.dist.lifeStage.bat",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.fig1, data.fig1$scientificName == "Peromyscus maniculatus" & 
                data.fig1$measurementType == "mass" & 
@@ -425,20 +403,23 @@ length(df$cat[df$cat == "Juvenile; data possibly good"]) #952
 length(df$cat[df$cat == "No stage; data possibly good"]) #27588
 length(df$cat[df$cat == "No stage; data estimated"]) #104
 p <- ggplot(data = df) + 
-  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue1"), 
+  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.6) +
+  scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
                     name="Data Quality Category") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   ggtitle("Peromyscus maniculatus N = 31669") +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
-  scale_y_continuous(name = "Density", limits = c(0, .2))
+  scale_y_continuous(name = "Density", limits = c(0, .25))
 ggsave(p, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.fig1, data.fig1$scientificName == "Spermophilus beecheyi" & 
+df <- subset(data.fig1, data.fig1$scientificName == "Otospermophilus beecheyi" & 
                data.fig1$measurementType == "mass" & 
                !is.na(data.fig1$measurementValue))
 length(df$measurementValue) #233
+length(df$measurementValue[df$lifeStage == "Adult"]) #114
+length(df$measurementValue[df$lifeStage == "NS"]) #108
+length(df$measurementValue[df$lifeStage == "Juvenile"]) #11
 unique(df$cat)
 length(df$cat[df$cat == "Adult; data possibly good"]) #114
 length(df$cat[df$cat == "Juvenile; data possibly good"]) #11
@@ -446,34 +427,14 @@ length(df$cat[df$cat == "No stage; data possibly good"]) #107
 length(df$cat[df$cat == "No stage; data estimated"]) #1
 p <- ggplot(data = df) + 
   geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue1"), 
+  scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
                     name="Data Quality Category") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Spermophilus beecheyi N = 233") +
+  ggtitle("Otospermophilus beecheyi N = 233") +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-  scale_y_continuous(name = "Density", limits = c(0, .02)) #.2?
+  scale_y_continuous(name = "Density", limits = c(0, .01))
 ggsave(p, file=paste0("orig.dist.lifeStage.squirrel",".png"), width = 14, height = 10, units = "cm")
-
-df <- subset(data.fig1, data.fig1$scientificName == "Odocoileus virginianus" & 
-               data.fig1$measurementType == "mass" & 
-               !is.na(data.fig1$measurementValue))
-length(df$measurementValue) #932
-unique(df$cat)
-length(df$cat[df$cat == "Adult; data possibly good"]) #4
-length(df$cat[df$cat == "Juvenile; data possibly good"]) #2
-length(df$cat[df$cat == "No stage; data possibly good"]) #827
-length(df$cat[df$cat == "No stage; data estimated"]) #99
-p <- ggplot(data = df) + 
-  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "mediumslateblue", "lightslateblue", "lightsteelblue1"), 
-                    name="Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Odocoileus virginianus N = 932") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
-  scale_y_continuous(name = "Density", limits = c(0, .001))
-ggsave(p, file=paste0("orig.dist.lifeStage.deer2",".png"), width = 14, height = 10, units = "cm")
 
 ##Mahalanobis Outlier test----
 data.test <- data.binom
@@ -563,7 +524,6 @@ for(i in 1:length(sp)){
 data.mh <- data.test
 length(unique(data.mh$scientificName)) #4346
 write.csv(data.mh, "mh.outlier.checked.data.csv")
-#data.mh <- read.csv("mh.outlier.checked.csv", header = TRUE)
 
 ##Figure 1, panel 2: outliers----
 data.fig2 <- data.mh[data.mh$lifeStage != "Juvenile" & 
@@ -571,37 +531,13 @@ data.fig2 <- data.mh[data.mh$lifeStage != "Juvenile" &
 
 data.fig2$cat <- paste(data.fig2$lifeStage, data.fig2$measurementStatus)
 unique(data.fig2$cat)
-data.fig2$cat[data.fig2$cat == "Adult "] <- "Adult; possibly good" #darkslateblue
-data.fig2$cat[data.fig2$cat == "Adult outlier"] <- "Adult; outlier" #lightsteelblue4
-data.fig2$cat[data.fig2$cat == "NS "] <- "No stage; untested" #lightslateblue
-#lightsteelblue1
-#lightsteelblue
-#mediumslateblue
+data.fig2$cat[data.fig2$cat == "Adult "] <- "Adult; possibly good" #darkorchid4
+data.fig2$cat[data.fig2$cat == "Adult outlier"] <- "Adult; outlier" #darkorchid1
+data.fig2$cat[data.fig2$cat == "NS "] <- "No stage; untested" #lightgoldenrod1
 
 data.fig2$cat <- as.factor(data.fig2$cat)
 data.fig2$cat = relevel(data.fig2$cat, "Adult; possibly good")
 data.fig2$cat <- factor(data.fig2$cat, levels = c("Adult; possibly good", "Adult; outlier", "No stage; untested"))
-                                                    
-# df <- subset(data.fig2, data.fig2$scientificName == "Artibeus jamaicensis" &
-#              data.fig2$measurementType == "mass" &
-#              !is.na(data.fig2$measurementValue))
-# length(df$measurementType) #1382
-# unique(df$cat)
-# length(df$cat[df$cat == "possibly good; units known"]) #1223
-# length(df$cat[df$cat == "untested; units inferred"]) #159
-# 
-# p <- ggplot() + 
-#   geom_density(data = filter(df, measurementStatus == "outlier; units known"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
-#   geom_rug(data = filter(df, measurementStatus == "outlier; units known"), aes(x = measurementValue), sides = "b", col = "gray34") +
-#   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-#   scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
-#                     name = "Data Quality Category") +
-#   ggtitle("Artibeus jamaicensis N = 1382") +
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-#   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
-#   scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
-# ggsave(p, file=paste0("outlier.test.bat",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.fig2, data.fig2$scientificName == "Peromyscus maniculatus" & 
                data.fig2$measurementType == "mass" &
@@ -615,16 +551,17 @@ p <- ggplot() +
   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "lightslateblue"),
+  scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod1"),
                     name = "Data Quality Category") +
   ggtitle("Peromyscus maniculatus N = 30708, Noutlier = 1") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
-  scale_y_continuous(name = "Density", limits = c(0, .2))
+  scale_y_continuous(name = "Density", limits = c(0, .25))
+#outlier @17100g
 ggsave(p, file=paste0("outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.fig2, data.fig2$scientificName == "Spermophilus beecheyi" & 
+df <- subset(data.fig2, data.fig2$scientificName == "Otospermophilus beecheyi" & 
                data.fig2$measurementType == "mass" &
                !is.na(data.fig2$measurementValue))
 length(df$measurementType) #222
@@ -636,34 +573,14 @@ p <- ggplot() +
   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightsteelblue4", "lightslateblue"),
+  scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod1"),
                     name = "Data Quality Category") +
-  ggtitle("Spermophilus beecheyi N = 222, Noutlier = 7") +
+  ggtitle("Otospermophilus beecheyi N = 222, Noutlier = 7") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-  scale_y_continuous(name = "Density", limits = c(0, .02))
+  scale_y_continuous(name = "Density", limits = c(0, .01))
 ggsave(p, file=paste0("outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
-
-# df <- subset(data.fig2, data.fig2$scientificName == "Odocoileus virginianus" & 
-#                data.fig2$measurementType == "mass" &
-#                !is.na(data.fig2$measurementValue))
-# length(df$measurementType) #930
-# unique(df$cat)
-# length(df$cat[df$cat == "possibly good; units known"]) #908
-# length(df$cat[df$cat == "untested; units inferred"]) #22
-# p <- ggplot() + 
-#   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, adjust = 1/10, alpha = 0.4) +
-#   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
-#   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4, adjust = 1/10) +
-#   scale_fill_manual(values = c("darkslateblue", "lightsteelblue1"),
-#                     name = "Data Quality Category") +
-#   ggtitle("Odocoileus virginianus N = 930") +
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-#   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
-#   scale_y_continuous(name = "Density", limits = c(0, .001))#.0001
-# ggsave(p, file=paste0("outlier.test.deer",".png"), width = 14, height = 10, units = "cm")
 
 data.noInfer_Adults <- subset(data.mh, subset = c(data.mh$measurementStatus != "outlier" &
                                                     data.mh$measurementStatus != "too few records" &
@@ -734,39 +651,19 @@ data.fig3 <- data.total[data.total$lifeStage != "Juvenile",]
 
 data.fig3$cat <- paste(data.fig3$lifeStage, data.fig3$measurementStatus) #weird, no units aren't inferred and GOOD
 unique(data.fig3$cat)
-data.fig3$cat[data.fig3$cat == "Adult possibly good"] <- "Adult; possibly good" #darkslateblue
-data.fig3$cat[data.fig3$cat == "Adult outlier"] <- "Adult; outlier" #lightslateblue
-data.fig3$cat[data.fig3$cat == "Adult too few records"] <- "Adult; too few records" #gray
-data.fig3$cat[data.fig3$cat == "Adult "] <- "Adult; untested" #mediumslateblue
-data.fig3$cat[data.fig3$cat == "NS possibly good"] <- "No stage; possibly good" #lightsteelblue4
-data.fig3$cat[data.fig3$cat == "NS outlier"] <- "No stage; outlier" #lightsteelblue1
-data.fig3$cat[data.fig3$cat == "NS too few records"] <- "No stage; too few records" #gray
-data.fig3$cat[data.fig3$cat == "NS "] <- "No stage; untested" #lightsteelblue
+data.fig3$cat[data.fig3$cat == "Adult possibly good"] <- "Adult; possibly good" #darkorchid4
+data.fig3$cat[data.fig3$cat == "Adult outlier"] <- "Adult; outlier" #darkorchid1
+data.fig3$cat[data.fig3$cat == "Adult too few records"] <- "Adult; too few records" #gray74
+data.fig3$cat[data.fig3$cat == "Adult "] <- "Adult; untested" #darkorchid
+data.fig3$cat[data.fig3$cat == "NS possibly good"] <- "No stage; possibly good" #lightgoldenrod3
+data.fig3$cat[data.fig3$cat == "NS outlier"] <- "No stage; outlier" #lightgoldenrodyellow
+data.fig3$cat[data.fig3$cat == "NS too few records"] <- "No stage; too few records" #gray74
+data.fig3$cat[data.fig3$cat == "NS "] <- "No stage; untested" #lightgoldenrod1
 
 data.fig3$cat <- as.factor(data.fig3$cat)
 data.fig3$cat = relevel(data.fig3$cat, "Adult; possibly good")
 data.fig3$cat <- factor(data.fig3$cat, levels = c("Adult; possibly good", "Adult; outlier", "Adult; untested", "Adult; too few records", 
                                                   "No stage; possibly good", "No stage; outlier", "No stage; untested", "No stage; too few records"))
-
-# df <- subset(data.fig3, data.fig3$scientificName == "Artibeus jamaicensis" & 
-#                data.fig3$measurementType == "mass" &
-#                !is.na(data.fig3$measurementValue))
-# length(df$measurementValue) #1394
-# unique(df$cat)
-# length(df$cat[df$cat == "No stage; too few records"]) #1147
-# length(df$cat[df$cat == "Adult; too few records"]) #247
-# p <- ggplot() + 
-#   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
-#   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
-#   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-#   scale_fill_manual(values = c("darkslateblue", "lightsteelblue4"),
-#                     name = "Data Quality Category") +
-#   ggtitle("Artibeus jamaicensis N = 1394") +
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-#   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 250)) +
-#   scale_y_continuous(name = "Density", limits = c(0, .15)) #.7
-# ggsave(p, file=paste0("check.test.bat",".png"), width = 14, height = 10, units = "cm")
 
 df <- subset(data.fig3, data.fig3$scientificName == "Peromyscus maniculatus" & 
                data.fig3$measurementType == "mass" &
@@ -782,16 +679,16 @@ p <- ggplot() +
   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue1"),
+  scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod3", "lightgoldenrodyellow"),
                     name = "Data Quality Category") +
   ggtitle("Peromyscus maniculatus N = 30708, Noutlier = 20094") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
-  scale_y_continuous(name = "Density", limits = c(0, .2))
+  scale_y_continuous(name = "Density", limits = c(0, .25))
 ggsave(p, file=paste0("check.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.fig3, data.fig3$scientificName == "Spermophilus beecheyi" & 
+df <- subset(data.fig3, data.fig3$scientificName == "Otospermophilus beecheyi" & 
                data.fig3$measurementType == "mass" &
                !is.na(data.fig3$measurementValue))
 df$measurementValue <- as.numeric(df$measurementValue)
@@ -805,32 +702,14 @@ p <- ggplot() +
   geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) +
   geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
   geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkslateblue", "lightslateblue", "lightsteelblue4", "lightsteelblue1"),
+  scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod3", "lightgoldenrodyellow"),
                     name = "Data Quality Category") +
-  ggtitle("Spermophilus beecheyi N = 222, Noutlier = 13") +
+  ggtitle("Otospermophilus beecheyi N = 222, Noutlier = 13") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-  scale_y_continuous(name = "Density", limits = c(0, .02))
+  scale_y_continuous(name = "Density", limits = c(0, .01))
 ggsave(p, file=paste0("check.test.squirrel",".png"), width = 14, height = 10, units = "cm")
-
-# df <- subset(data.fig3, data.fig3$scientificName == "Odocoileus virginianus" & 
-#                data.fig3$measurementType == "mass" &
-#                !is.na(data.fig3$measurementValue))
-# length(df$measurementValue) #930
-# unique(df$cat)
-# p <- ggplot() + 
-#   geom_density(data = filter(df, mass.status == "outlier"), aes(x = mass), color = NA, adjust = 1/10, alpha = 0.4) + 
-#   geom_rug(data = filter(df, mass.status == "outlier"), aes(x = mass), sides = "b", col = "gray34") +
-#   geom_density(data = df, aes(x = mass, fill = cat), alpha = 0.4, adjust = 1/10) +
-#   scale_fill_manual(values = c("mediumslateblue", "lightsteelblue4"),
-#                     name = "Data Quality Category") +
-#   ggtitle("Odocoileus virginianus N = 930, Noutlier = 15") +
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-#   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 80000)) +
-#   scale_y_continuous(name = "Density", limits = c(0, .001))#.0001
-# ggsave(p, file=paste0("check1.test.deer2",".png"), width = 14, height = 10, units = "cm")
 
 ##info about outliers----
 outlier_stats <- data.total %>%
