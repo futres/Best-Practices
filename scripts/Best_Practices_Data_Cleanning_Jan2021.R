@@ -844,5 +844,193 @@ write.csv(outlier_stats, "outliers.csv")
 
 ##put Kitty Deer & Ray's Horses into FuTRES----
 #only focusing on astragalus length, width, mass, and calcaneus length, width
+ray <- read.csv("https://de.cyverse.org/dl/d/2C52A5CE-DBBD-4463-A3C4-099C15777D29/Equid_Bernor_Astragalus_subset.csv", header = TRUE)
+setdiff(colnames(ray), colnames(data.total))
+
+data.total$individualID <- rep("", nrow(data.total))
+data.total$diagnosticID <- paste(data.total$catalogNumber, "-", data.total$institutionCode)
+data.total$basisOfRecord <- rep("preserved specimen", nrow(data.total))
+data.total$samplingProtocol <- rep("", nrow(data.total))
+data.total$verbatimEventDate <- rep("", nrow(data.total))
+data.total$yearCollected <- rep("", nrow(data.total))
+data.total$minimumChronometricAge <- rep("", nrow(data.total))
+data.total$maximumChronometricAge <- rep("", nrow(data.total))
+data.total$minimumChronometricAgeReferenceSystem <- rep("", nrow(data.total))
+data.total$maximumChronometricAgeReferenceSystem <- rep("", nrow(data.total))
+data.total$measurementMethod <- rep("", nrow(data.total))
+
+ray$lifeStage <- rep("", nrow(ray))
+ray$sex <- rep("", nrow(ray))
+ray$locality <- rep("protected", nrow(ray))
+ray$elevation <- rep("", nrow(ray))
+ray$decimalLatitude <- rep("", nrow(ray))
+ray$decimalLongitude <- rep("", nrow(ray))
+ray$continent <- rep("", nrow(ray))
+ray$county <- rep("", nrow(ray))
+ray$eventDate <- rep("", nrow(ray))
+ray$institutionCode <- rep("", nrow(ray))
+ray$collectionCode <- rep("", nrow(ray))
+ray$higherGeography <- rep("", nrow(ray))
+ray$waterBody <- rep("", nrow(ray))
+ray$island <- rep("", nrow(ray))
+ray$islandGroup <- rep("", nrow(ray))
+ray$reproductiveCondition <- rep("", nrow(ray))
+ray$measurementUnitInferred <- rep("", nrow(ray))
+ray$measurementStatus <- rep("", nrow(ray))
+ray$catalogNumber <- rep("", nrow(ray))
+ray$verbatimMeasurementValue <- rep("", nrow(ray))
+ray$verbatimMeasurementUnit <- rep("", nrow(ray))
+ray$measurementValueEstimated <- rep("", nrow(ray))
+ray$sigma.mass <- rep("", nrow(ray))
+ray$avg.mass <- rep("", nrow(ray))
+ray$sample.size.mass <- rep("", nrow(ray))
+ray$upper.limit.mass <- rep("", nrow(ray))
+ray$lower.limit.mass <- rep("", nrow(ray))
+ray$origin <- rep("ray", nrow(ray))
+ray$measurementType[ray$measurementType == "astragalus length"] <- "astragalus.length"
+ray$measurementType[ray$measurementType == "talus breadth"] <- "astragalus.width"
+
+ray.sub <- ray %>%
+  dplyr::select(scientificName, 
+                individualID,
+                diagnosticID,
+                materialSampleID,
+                lifeStage, 
+                sex,
+                locality,
+                samplingProtocol,
+                yearCollected,
+                minimumChronometricAge,
+                minimumChronometricAgeReferenceSystem,
+                maximumChronometricAge,
+                maximumChronometricAgeReferenceSystem,
+                basisOfRecord,
+                verbatimEventDate,
+                side,
+                elevation,
+                catalogNumber,
+                reproductiveCondition,
+                decimalLatitude,
+                decimalLongitude,
+                continent,
+                country,
+                county,
+                eventDate,
+                institutionCode,
+                collectionCode,
+                higherGeography,
+                waterBody,
+                island,
+                islandGroup,
+                measurementType,
+                measurementValue,
+                measurementUnit,
+                measurementMethod,
+                measurementUnitInferred,
+                measurementStatus,
+                verbatimMeasurementUnit,
+                verbatimMeasurementValue,
+                measurementValueEstimated,
+                sample.size.mass,
+                avg.mass,
+                sigma.mass,
+                upper.limit.mass,
+                lower.limit.mass,
+                origin) %>%
+  mutate_at("measurementValue", as.numeric)
+
+data.total.sub <- data.total %>%
+  dplyr::select(scientificName, 
+                individualID,
+                diagnosticID,
+                materialSampleID,
+                lifeStage, 
+                sex,
+                locality,
+                samplingProtocol,
+                yearCollected,
+                minimumChronometricAge,
+                minimumChronometricAgeReferenceSystem,
+                maximumChronometricAge,
+                maximumChronometricAgeReferenceSystem,
+                basisOfRecord,
+                verbatimEventDate,
+                side,
+                elevation,
+                catalogNumber,
+                reproductiveCondition,
+                decimalLatitude,
+                decimalLongitude,
+                continent,
+                country,
+                county,
+                eventDate,
+                institutionCode,
+                collectionCode,
+                higherGeography,
+                waterBody,
+                island,
+                islandGroup,
+                measurementType,
+                measurementValue,
+                measurementUnit,
+                measurementMethod,
+                measurementUnitInferred,
+                measurementStatus,
+                verbatimMeasurementUnit,
+                verbatimMeasurementValue,
+                measurementValueEstimated,
+                sample.size.mass,
+                avg.mass,
+                sigma.mass,
+                upper.limit.mass,
+                lower.limit.mass,
+                origin) %>%
+  mutate_at("measurementValue", as.numeric)
+
+setdiff(colnames(ray.sub), colnames(data.total.sub))
+setdiff(colnames(data.total.sub), colnames(ray.sub))
+
+data.all <- rbind(data.total.sub, ray.sub)
+write.csv(data.all, "data.all.csv")
+
+##stats about data----
+data.all <- data.all[!is.na(data.all$measurementValue),]
+
+nrow(data.all) #2305603
+length(unique(data.all$scientificName)) #3970
+length(unique(data.all$catalogNumber)) + length(unique(data.all$individualID)) #342143
+
+nrow(data.all[data.all$measurementType == "mass" & !is.na(data.all$measurementValue),]) #351175
+nrow(data.all[data.all$measurementType == "total.length" & !is.na(data.all$measurementValue),]) #539992
+nrow(data.all[data.all$measurementType == "tail.length" & !is.na(data.all$measurementValue),]) #485585
+nrow(data.all[data.all$measurementType == "ear.length" & !is.na(data.all$measurementValue),]) #415244
+nrow(data.all[data.all$measurementType == "forearm.length" & !is.na(data.all$measurementValue),]) #20129
+nrow(data.all[data.all$measurementType == "astragalus.length" & !is.na(data.all$measurementValue),]) #767
+nrow(data.all[data.all$measurementType == "hindfoot.length" & !is.na(data.all$measurementValue),]) #481096
+nrow(data.all[data.all$measurementType == "astragalus.width" & !is.na(data.all$measurementValue),]) #733
+nrow(data.all[data.all$measurementType == "tooth.row" & !is.na(data.all$measurementValue),]) #288
+nrow(data.all[data.all$measurementType == "humerus.length" & !is.na(data.all$measurementValue),]) #14
+nrow(data.all[data.all$measurementType == "calcaneus.GB" & !is.na(data.all$measurementValue),]) #30
+nrow(data.all[data.all$measurementType == "calcaneus.GL" & !is.na(data.all$measurementValue),]) #19
+
+length(unique(data.all$scientificName[data.all$measurementType == "mass" & !is.na(data.all$measurementValue)])) #2468
+length(unique(data.all$scientificName[data.all$measurementType == "total.length" & !is.na(data.all$measurementValue)])) #3771
+length(unique(data.all$scientificName[data.all$measurementType == "tail.length" & !is.na(data.all$measurementValue)])) #2861
+length(unique(data.all$scientificName[data.all$measurementType == "ear.length" & !is.na(data.all$measurementValue)])) #2720
+length(unique(data.all$scientificName[data.all$measurementType == "forearm.length" & !is.na(data.all$measurementValue)])) #621
+length(unique(data.all$scientificName[data.all$measurementType == "astragalus.length" & !is.na(data.all$measurementValue)])) #78
+length(unique(data.all$scientificName[data.all$measurementType == "hindfoot.length" & !is.na(data.all$measurementValue)])) #2795
+length(unique(data.all$scientificName[data.all$measurementType == "astragalus.width" & !is.na(data.all$measurementValue)])) #76
+length(unique(data.all$scientificName[data.all$measurementType == "tooth.row" & !is.na(data.all$measurementValue)])) #1
+length(unique(data.all$scientificName[data.all$measurementType == "humerus.length" & !is.na(data.all$measurementValue)])) #1
+length(unique(data.all$scientificName[data.all$measurementType == "calcaneus.GB" & !is.na(data.all$measurementValue)])) #1
+length(unique(data.all$scientificName[data.all$measurementType == "calcaneus.GL" & !is.na(data.all$measurementValue)])) #1
+
+
+nrow(data.all[data.all$origin == "ray" & data.all$measurementType == "astragalus.length" & !is.na(data.all$measurementValue),]) #722
+nrow(data.all[data.all$origin == "ray"& data.all$measurementType == "astragalus.width" & !is.na(data.all$measurementValue),]) #688
+
+
 
 

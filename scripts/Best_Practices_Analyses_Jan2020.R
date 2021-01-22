@@ -15,7 +15,7 @@ require(PEIP)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/1F017B4A-694D-41BD-A46D-F57C4E784FAC/data.total.csv", header = TRUE, stringsAsFactors = FALSE)
+data <- read.csv("https://de.cyverse.org/dl/d/CAB6E1AA-186F-4238-B94B-0F5A3DB0FD5A/data.all.csv", header = TRUE, stringsAsFactors = FALSE)
 length(unique(data$scientificName)) #139
 
 ##combine with pantheria----
