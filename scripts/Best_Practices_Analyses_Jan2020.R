@@ -15,12 +15,17 @@ require(PEIP)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/CAB6E1AA-186F-4238-B94B-0F5A3DB0FD5A/data.all.csv", header = TRUE, stringsAsFactors = FALSE)
-length(unique(data$scientificName)) #139
+data <- read.csv("https://de.cyverse.org/dl/d/C37E2FD7-0826-4CA9-9783-A2457CF6FDB0/data.all.csv", header = TRUE, stringsAsFactors = FALSE)
+length(unique(data$scientificName)) #3974
+
+data.clean <- data[data$measurementStatus != "outlier" & 
+                     data$lifeStage != "Juvenile",]
+nrow(data.clean) #2094245
+length(unique(data.clean$scientificName)) #3,958 
 
 ##combine with pantheria----
 sp.data <- unique(data$scientificName) 
-nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #2859 spp shared
+nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #2672 spp shared
 
 taxonomy.data <- merge(pan, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
 
@@ -77,63 +82,50 @@ pan.adult_stats$sig.corr.t.value <- pan.adult_stats$corr.t.value <= 0.05 #TRUE m
 write.csv(pan.adult_stats, "pan.results.csv")
 
 ##test for drivers of patterns----
-plot(x = log10(pan.adult_stats$avg.mass), y = log10(pan.adult_stats$sd.err.mass),
-     xlab = "Log10 Average Mass (g)",
-     ylab = "Log10 Standard Error of Mass",
-     title(main = "Relationship between standard error and average mass",
-           sub = "slope = 1.13, p<0.001"))
-model <- lm(log10(pan.adult_stats$sd.err.mass) ~ log10(pan.adult_stats$avg.mass))
-summary(model)
+plot(x = pan.adult_stats$sample.size, y = pan.adult_stats$mass.diff)
+model.N <- lm(pan.adult_stats$mass.diff ~ pan.adult_stats$sample.size)
+summary(model.N)
 
-plot(x = pan.adult_stats$sample.size, y = pan.adult_stats$abs.mass.diff.se,
-     xlab = "Sample Size",
-     ylab = "Absolute Difference between Pan Mass and Avg. Mass over Standard Error",
-     title(main = "Relationship between Sample Size on Mass differences",
-           sub = "slope = 0, p=0.9"))
-model3 <- lm(pan.adult_stats$abs.mass.diff.se ~ pan.adult_stats$sample.size + pan.adult_stats$avg.mass)
-summary(model3)
-model4 <- lm(pan.adult_stats$abs.mass.diff.se ~ pan.adult_stats$sample.size + pan.adult_stats$sd.err.mass)
-summary(model4)
-
-plot(x = log10(pan.adult_stats$avg.mass), y = log10(pan.adult_stats$mass.diff.se),
-     xlab = "Log10 Average Mass (g)",
-     ylab = "Log10 Mass Difference",
-     title(main = "Relationship between animal size and degree of difference between masses",
-           sub = "slope = -0.155, p=.0175"))
-model2 <- lm(log10(pan.adult_stats$mass.diff.se) ~ log10(pan.adult_stats$avg.mass))
-summary(model2)
+plot(x = pan.adult_stats$avg.mass, y = pan.adult_stats$mass.diff)
+model.mass <- lm(pan.adult_stats$mass.diff ~ pan.adult_stats$avg.mass)
+summary(model.mass)
 
 ##Table 1----
 
+#total
 nrow(pan.adult_stats) #108
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE]) #28  #w/in limits
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE])  #80 #outside limits
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff > 0])  #54 #above; pan mean is greater than ours
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff < 0])  #27 #below; pan mean is less than ours
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0])  #54 #above; pan mean is greater than ours
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0])  #26 #below; pan mean is less than ours
 
+#<100
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100]) #75 #(% of total spp)
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100]) #15
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100]) #60
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100]) #40
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100]) #21
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100]) #40
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100]) #20
 
+#100-1000
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 1000 & pan.adult_stats$avg.mass > 100]) #14 #(% of total spp)
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #7
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #7
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #4
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #3
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #4
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #3
 
+#1000-10000
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #13 #(% of total spp)
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #4
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #9
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #7
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #2
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #7
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #2
 
+#10000-100000
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #4 #(% of total spp)
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #1
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #4
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #2
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #1
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #3
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #2
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #1
 
 ##FIGURE: mass difference----
 pan.adult_stats.trim <- pan.adult_stats[pan.adult_stats$mass.diff.se < 500,]
@@ -155,9 +147,6 @@ deer <- data[data$scientificName == "Odocoileus virginianus" &
                      data$lifeStage != "Juvenile" &
                      !is.na(data$measurementValue),]
 
-##write out data for example----
-write.csv(deer, "deer.csv")
-
 #combine deer by catalogNumber
 deer.mass <- deer[deer$measurementType == "mass",]
 deer.astragalus.length <- deer[deer$measurementType == "astragalus.length",]
@@ -167,10 +156,13 @@ deer.combo <- merge(deer.mass, deer.astragalus.length, by = "catalogNumber", all
 deer.combo$mass <- as.numeric(deer.combo$mass)
 deer.combo$astragalus.length <- as.numeric(deer.combo$astragalus.length)
 
+##write out data for example----
+write.csv(deer.combo, "deer.csv")
+
 ## add paleo deer data----
 #Not creating a long version because this is not yet accessioned into FuTRES
 #for now, it is a separate dataset
-old.deer.full <- read.csv("https://de.cyverse.org/dl/d/47792C1B-EB37-43AB-AE1B-DC90497DECD7/NEW_ArchaeoDeerAstragalusCalcaneus.csv", header = TRUE)
+old.deer.full <- read.csv("https://de.cyverse.org/dl/d/2BB5A147-B39A-4A06-A316-2D645F22613D/NEW_ArchaeoDeerAstragalusCalcaneus.csv", header = TRUE)
 old.deer <- subset(old.deer.full, subset = old.deer.full$Site.Name == "Saint Catherines" | old.deer.full$Site.Name == "Fort Center")
 
 x.species <- deer.combo$astragalus.length
@@ -179,18 +171,20 @@ y.species <- deer.combo$mass
 log.deer.mass.astragalus <- lm(log10(y.species) ~ log10(x.species), na.action = na.exclude)
 log.sum.deer.mass.astragalus <- summary(log.deer.mass.astragalus)
 
-anklepredict <- data.frame(x.species = old.deer$astragalus.length)
+anklepredict <- data.frame(specimenID = old.deer$SpecimenID, old.deer$Acc..., x.species = old.deer$astragalus.length)
 predict.mass <- data.frame(predict(log.deer.mass.astragalus, anklepredict, se.fit = TRUE))
 anklepredict$log.fit.mass <- predict.mass$fit
 anklepredict$log.se.fit.mass <- predict.mass$se.fit
 anklepredict$site <- as.factor(old.deer$Site.Name)
 
+anklepredict$se.fit.mass <- 10^anklepredict$log.se.fit.mass
+anklepredict$fit.mass <- 10^anklepredict$log.fit.mass
+
+anklepredict$lower <- anklepredict$fit.mass - 2*anklepredict$se.fit.mass
+anklepredict$upper <- anklepredict$fit.mass + 2*anklepredict$se.fit.mass
+
 anklepredict$log.lower <- anklepredict$log.fit.mass - anklepredict$log.se.fit.mass
 anklepredict$log.upper <- anklepredict$log.fit.mass + anklepredict$log.se.fit.mass
-
-anklepredict$lower <- 10^anklepredict$log.lower
-anklepredict$upper <- 10^anklepredict$log.upper
-anklepredict$fit.mass <- 10^anklepredict$log.fit.mass
 
 cc_Site = c("lightslateblue", "darkslateblue")
 
@@ -231,9 +225,9 @@ write.csv(log.deer.mass.astragalus.stats, "log.deer.mass.astragalus.stats.csv")
 write.csv(anklepredict, "anklepredict.csv")
 
 #predict using old method: logy = -6.71 + (5.29)logx
-compare <- subset(anklepredict, select = c("site", "x.species", "fit.mass", "lower", "upper"))
+compare <- subset(anklepredict, select = c("specimenID", "site", "x.species", "fit.mass", "lower", "upper", "se.fit.mass"))
 colnames(compare)[colnames(compare) == "x.species"] <- "astragalus.length"
 compare$wing.mass <- 10^((-6.71)+(5.29)*log10(compare$astragalus.length)) * 1000
-compare$withing2se <- (compare$fit.mass - (2*compare$lower)) < compare$wing.mass & compare$wing.mass < (compare$fit.mass + (2*compare$upper))
+compare$within2se <- compare$wing.mass > compare$lower & compare$wing.mass < compare$upper
 
 write.csv(compare, "old.deer.mass.comparison.csv")

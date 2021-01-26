@@ -714,16 +714,25 @@ ggsave(p, file=paste0("check.test.squirrel",".png"), width = 14, height = 10, un
 ##info about outliers----
 outlier_stats <- data.total %>%
   group_by(scientificName) %>%
-  dplyr::summarise(sample.outlier.mass = length(measurementValue[measurementStatus == "outlier" & measurementValue >= 0 & measurementType == "mass"]),
-                   sample.mass = length(measurementValue[measurementStatus == "outlier" & measurementValue >= 0 & measurementType == "mass"])) %>%
+  dplyr::summarise(sample.outlier.mass = length(measurementValue[measurementStatus == "outlier" & 
+                                                                   measurementValue >= 0 & measurementType == "mass" &
+                                                                   lifeStage != "Juvenile"]),
+                   sample.mass = length(measurementValue[measurementStatus == "possibly good" & 
+                                                           measurementValue >= 0 & 
+                                                           measurementType == "mass" &
+                                                           lifeStage != "Juvenile"])) %>%
   as.data.frame()
+
+sum(outlier_stats$sample.outlier.mass) #154672
+
 
 ##write out csv of outlier stats----
 write.csv(outlier_stats, "outliers.csv")
 
-##put Kitty Deer & Ray's Horses into FuTRES----
+##put Ray's Horses into FuTRES----
+#Ray's data was preprocessed separately; see github.com/futres/fovt_data_mapping
 #only focusing on astragalus length, width, mass, and calcaneus length, width
-ray <- read.csv("https://de.cyverse.org/dl/d/2C52A5CE-DBBD-4463-A3C4-099C15777D29/Equid_Bernor_Astragalus_subset.csv", header = TRUE)
+ray <- read.csv("https://de.cyverse.org/dl/d/223A09E1-EFC5-441A-8C1B-91E7AEFEA011/FuTRES_Equid_Bernor_Subset.csv", header = TRUE)
 setdiff(colnames(ray), colnames(data.total))
 
 data.total$individualID <- rep("", nrow(data.total))
@@ -737,6 +746,7 @@ data.total$maximumChronometricAge <- rep("", nrow(data.total))
 data.total$minimumChronometricAgeReferenceSystem <- rep("", nrow(data.total))
 data.total$maximumChronometricAgeReferenceSystem <- rep("", nrow(data.total))
 data.total$measurementMethod <- rep("", nrow(data.total))
+data.total$side <- rep("", nrow(data.total))
 
 ray$lifeStage <- rep("", nrow(ray))
 ray$sex <- rep("", nrow(ray))
@@ -768,6 +778,11 @@ ray$lower.limit.mass <- rep("", nrow(ray))
 ray$origin <- rep("ray", nrow(ray))
 ray$measurementType[ray$measurementType == "astragalus length"] <- "astragalus.length"
 ray$measurementType[ray$measurementType == "talus breadth"] <- "astragalus.width"
+ray$measurementType[ray$measurementType == "calcaneus length"] <- "calcaneus.GL"
+ray$measurementType[ray$measurementType == "calcaneus breadth"] <- "calcaneus.GB"
+ray$measurementType[ray$measurementType == "calcaneus breadth"] <- "calcaneus.GB"
+ray$measurementType[ray$measurementType == "humerus length to ventral tubercle"] <- "humerus.length"
+ray$measurementType[ray$measurementType == "humerus length to caput of humerus"] <- "humerus.length"
 
 ray.sub <- ray %>%
   dplyr::select(scientificName, 
@@ -874,42 +889,46 @@ data.all <- rbind(data.total.sub, ray.sub)
 write.csv(data.all, "data.all.csv")
 
 ##stats about data----
-data.all <- data.all[!is.na(data.all$measurementValue),]
+data.clean <- data.all[!is.na(data.all$measurementValue),]
+data.clean <- data.clean[data.clean$measurementStatus != "outlier" & 
+                     data.clean$lifeStage != "Juvenile",]
 
-nrow(data.all) #2305603
-length(unique(data.all$scientificName)) #3970
-length(unique(data.all$catalogNumber)) + length(unique(data.all$individualID)) #342143
+nrow(data.all[data.all$measurementStatus == "possibly good",]) #107429 records
 
-nrow(data.all[data.all$measurementType == "mass" & !is.na(data.all$measurementValue),]) #351175
-nrow(data.all[data.all$measurementType == "total.length" & !is.na(data.all$measurementValue),]) #539992
-nrow(data.all[data.all$measurementType == "tail.length" & !is.na(data.all$measurementValue),]) #485585
-nrow(data.all[data.all$measurementType == "ear.length" & !is.na(data.all$measurementValue),]) #415244
-nrow(data.all[data.all$measurementType == "forearm.length" & !is.na(data.all$measurementValue),]) #20129
-nrow(data.all[data.all$measurementType == "astragalus.length" & !is.na(data.all$measurementValue),]) #767
-nrow(data.all[data.all$measurementType == "hindfoot.length" & !is.na(data.all$measurementValue),]) #481096
-nrow(data.all[data.all$measurementType == "astragalus.width" & !is.na(data.all$measurementValue),]) #733
-nrow(data.all[data.all$measurementType == "tooth.row" & !is.na(data.all$measurementValue),]) #288
-nrow(data.all[data.all$measurementType == "humerus.length" & !is.na(data.all$measurementValue),]) #14
-nrow(data.all[data.all$measurementType == "calcaneus.GB" & !is.na(data.all$measurementValue),]) #30
-nrow(data.all[data.all$measurementType == "calcaneus.GL" & !is.na(data.all$measurementValue),]) #19
+nrow(data.clean) #2094245
+length(unique(data.clean$scientificName)) #3958
+length(unique(data.clean$catalogNumber)) + length(unique(data.clean$individualID)) #336746
 
-length(unique(data.all$scientificName[data.all$measurementType == "mass" & !is.na(data.all$measurementValue)])) #2468
-length(unique(data.all$scientificName[data.all$measurementType == "total.length" & !is.na(data.all$measurementValue)])) #3771
-length(unique(data.all$scientificName[data.all$measurementType == "tail.length" & !is.na(data.all$measurementValue)])) #2861
-length(unique(data.all$scientificName[data.all$measurementType == "ear.length" & !is.na(data.all$measurementValue)])) #2720
-length(unique(data.all$scientificName[data.all$measurementType == "forearm.length" & !is.na(data.all$measurementValue)])) #621
-length(unique(data.all$scientificName[data.all$measurementType == "astragalus.length" & !is.na(data.all$measurementValue)])) #78
-length(unique(data.all$scientificName[data.all$measurementType == "hindfoot.length" & !is.na(data.all$measurementValue)])) #2795
-length(unique(data.all$scientificName[data.all$measurementType == "astragalus.width" & !is.na(data.all$measurementValue)])) #76
-length(unique(data.all$scientificName[data.all$measurementType == "tooth.row" & !is.na(data.all$measurementValue)])) #1
-length(unique(data.all$scientificName[data.all$measurementType == "humerus.length" & !is.na(data.all$measurementValue)])) #1
-length(unique(data.all$scientificName[data.all$measurementType == "calcaneus.GB" & !is.na(data.all$measurementValue)])) #1
-length(unique(data.all$scientificName[data.all$measurementType == "calcaneus.GL" & !is.na(data.all$measurementValue)])) #1
+nrow(data.clean[data.clean$measurementType == "mass" & !is.na(data.clean$measurementValue),]) #196098
+nrow(data.clean[data.clean$measurementType == "total.length" & !is.na(data.clean$measurementValue),]) #525733
+nrow(data.clean[data.clean$measurementType == "tail.length" & !is.na(data.clean$measurementValue),]) #473211
+nrow(data.clean[data.clean$measurementType == "ear.length" & !is.na(data.clean$measurementValue),]) #406953
+nrow(data.clean[data.clean$measurementType == "forearm.length" & !is.na(data.clean$measurementValue),]) #19346
+nrow(data.clean[data.clean$measurementType == "astragalus.length" & !is.na(data.clean$measurementValue),]) #767
+nrow(data.clean[data.clean$measurementType == "hindfoot.length" & !is.na(data.clean$measurementValue),]) #469877
+nrow(data.clean[data.clean$measurementType == "astragalus.width" & !is.na(data.clean$measurementValue),]) #733
+nrow(data.clean[data.clean$measurementType == "tooth.row" & !is.na(data.clean$measurementValue),]) #288
+nrow(data.clean[data.clean$measurementType == "humerus.length" & !is.na(data.clean$measurementValue),]) #59
+nrow(data.clean[data.clean$measurementType == "calcaneus.GB" & !is.na(data.clean$measurementValue),]) #341
+nrow(data.clean[data.clean$measurementType == "calcaneus.GL" & !is.na(data.clean$measurementValue),]) #308
 
-
-nrow(data.all[data.all$origin == "ray" & data.all$measurementType == "astragalus.length" & !is.na(data.all$measurementValue),]) #722
-nrow(data.all[data.all$origin == "ray"& data.all$measurementType == "astragalus.width" & !is.na(data.all$measurementValue),]) #688
+length(unique(data.clean$scientificName[data.clean$measurementType == "mass" & !is.na(data.clean$measurementValue)])) #2357
+length(unique(data.clean$scientificName[data.clean$measurementType == "total.length" & !is.na(data.clean$measurementValue)])) #3755
+length(unique(data.clean$scientificName[data.clean$measurementType == "tail.length" & !is.na(data.clean$measurementValue)])) #2854
+length(unique(data.clean$scientificName[data.clean$measurementType == "ear.length" & !is.na(data.clean$measurementValue)])) #2714
+length(unique(data.clean$scientificName[data.clean$measurementType == "forearm.length" & !is.na(data.clean$measurementValue)])) #614
+length(unique(data.clean$scientificName[data.clean$measurementType == "astragalus.length" & !is.na(data.clean$measurementValue)])) #78
+length(unique(data.clean$scientificName[data.clean$measurementType == "hindfoot.length" & !is.na(data.clean$measurementValue)])) #2789
+length(unique(data.clean$scientificName[data.clean$measurementType == "astragalus.width" & !is.na(data.clean$measurementValue)])) #76
+length(unique(data.clean$scientificName[data.clean$measurementType == "tooth.row" & !is.na(data.clean$measurementValue)])) #1
+length(unique(data.clean$scientificName[data.clean$measurementType == "humerus.length" & !is.na(data.clean$measurementValue)])) #12
+length(unique(data.clean$scientificName[data.clean$measurementType == "calcaneus.GB" & !is.na(data.clean$measurementValue)])) #51
+length(unique(data.clean$scientificName[data.clean$measurementType == "calcaneus.GL" & !is.na(data.clean$measurementValue)])) #48
 
 
-
+nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "astragalus.length" & !is.na(data.clean$measurementValue),]) #722
+nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "astragalus.width" & !is.na(data.clean$measurementValue),]) #688
+nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "calcaneus.GL" & !is.na(data.clean$measurementValue),]) #289
+nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "calcaneus.GB" & !is.na(data.clean$measurementValue),]) #311
+nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "humerus.length" & !is.na(data.clean$measurementValue),]) #45
 
