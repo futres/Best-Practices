@@ -70,7 +70,8 @@ pan.adult_stats <- pan.data %>%
                    diff.amt = abs.mass.diff.se-critical.t,
                    sig = diff.amt > 0, # true means sig diff
                    p.value.fromt.crit.t = 1-pt(abs.mass.diff.se, df = (sample.size-1)), #if p=0.05 then most of it is outside
-                   p.value = t.test(measurementValue, mu = pan.mass, conf.level = 0.95, alternative = "two.sided")$p.value) %>%
+                   p.value = t.test(measurementValue, mu = pan.mass, conf.level = 0.95, alternative = "two.sided")$p.value,
+                   per.diff = abs(((avg.mass - pan.mass)/avg.mass)*100)) %>%
   as.data.frame()
 
 pan.adult_stats$corr <- p.adjust(pan.adult_stats$p.value, method = "BH")

@@ -102,13 +102,16 @@ setdiff(colnames(bats.2), colnames(mamm.3))
 
 vertnet <- rbind(mamm.3, bats.2) #5075
 
+vertnet$index <- seq(1, nrow(vertnet), 1) #ends at 659543
+
 write.csv(vertnet, "vertnetcombinded.csv")
 
 #vertnet data has a column header "units" which were the original units. All units have been changed to either "g" or "mm"
 #change column names to reflect this
 
 vertnet.sub <- vertnet %>%
-  dplyr::select(scientificName = scientificname, 
+  dplyr::select(index,
+                scientificName = scientificname, 
                 materialSampleID = occurrenceid,
                 lifeStage = lifestage_cor, 
                 sex,
@@ -163,12 +166,12 @@ vertnet.sub <- vertnet %>%
 write.csv(x = vertnet.sub, file = "vertnet.first.meas.csv")
 
 #create long version
-vertnet_mass <- subset(vertnet.sub, select = 1:24)
-vertnet_tail.length <- subset(vertnet.sub, select = c(1:20, 37:40))
-vertnet_total.length <- subset(vertnet.sub, select = c(1:20, 25:28))
-vertnet_hindfoot.length <- subset(vertnet.sub, select = c(1:20, 29:32))
-vertnet_forearm.length <- subset(vertnet.sub, select = c(1:20, 41:44))
-vertnet_ear.length <- subset(vertnet.sub, select = c(1:20, 33:36))
+vertnet_mass <- subset(vertnet.sub, select = 1:25)
+vertnet_tail.length <- subset(vertnet.sub, select = c(1:21, 38:41))
+vertnet_total.length <- subset(vertnet.sub, select = c(1:21, 26:29))
+vertnet_hindfoot.length <- subset(vertnet.sub, select = c(1:21, 30:33))
+vertnet_forearm.length <- subset(vertnet.sub, select = c(1:21, 42:45))
+vertnet_ear.length <- subset(vertnet.sub, select = c(1:21, 34:37))
 
 #change column names
 colnames(vertnet_mass)[colnames(vertnet_mass) %in% 
@@ -241,9 +244,12 @@ write.csv(vertnet_long, "vertnet.long.csv")
 futres$lifeStage[futres$lifeStage == "young adult" | futres$lifeStage == "Adult" | futres$lifeStage == "Prime Adult" | futres$lifeStage == "adult"] <- "Adult"
 futres$lifeStage[futres$lifeStage == "Juvenile" | futres$lifeStage == "juvenile"] <- "Juvenile"
 
+futres$index <- c(659544:659544+nrow(futres))
+
 #trim dataset
 futres.sub <- futres %>%
-  dplyr::select(origin,
+  dplyr::select(index,
+                origin,
                 scientificName, 
                 lifeStage, 
                 sex,
@@ -278,7 +284,7 @@ futres.sub <- futres %>%
               "humerus.length", "femur.length"), as.numeric)
 
 #create long version
-futres_long <- melt(data = futres.sub, id.vars = 1:14, variable.name = "measurementType")
+futres_long <- melt(data = futres.sub, id.vars = 1:15, variable.name = "measurementType")
 colnames(futres_long)[colnames(futres_long) == "value"] <- "measurementValue"
 futres_long$verbatimMeasurementUnit <- ""
 futres_long$measurementUnit <- ""
@@ -311,7 +317,7 @@ write.csv(futres_long, "futres.long.csv")
 
 ##select out columns
 
-col.order <- c("origin", "scientificName", "lifeStage", "sex", "reproductiveCondition",
+col.order <- c("index","origin", "scientificName", "lifeStage", "sex", "reproductiveCondition",
            "catalogNumber", "materialSampleID", "institutionCode", "collectionCode", "eventDate",
            "locality", "higherGeography", "continent", "country", "county",
            "waterBody", "island", "islandGroup",
