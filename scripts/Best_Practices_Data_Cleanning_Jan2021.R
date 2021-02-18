@@ -102,7 +102,7 @@ setdiff(colnames(bats.2), colnames(mamm.3))
 
 vertnet <- rbind(mamm.3, bats.2) #5075
 
-vertnet$index <- seq(1, nrow(vertnet), 1) #ends at 659543
+vertnet$individualID <- seq(1, nrow(vertnet), 1) #ends at 659543
 
 write.csv(vertnet, "vertnetcombinded.csv")
 
@@ -110,7 +110,7 @@ write.csv(vertnet, "vertnetcombinded.csv")
 #change column names to reflect this
 
 vertnet.sub <- vertnet %>%
-  dplyr::select(index,
+  dplyr::select(individualID,
                 scientificName = scientificname, 
                 materialSampleID = occurrenceid,
                 lifeStage = lifestage_cor, 
@@ -244,11 +244,12 @@ write.csv(vertnet_long, "vertnet.long.csv")
 futres$lifeStage[futres$lifeStage == "young adult" | futres$lifeStage == "Adult" | futres$lifeStage == "Prime Adult" | futres$lifeStage == "adult"] <- "Adult"
 futres$lifeStage[futres$lifeStage == "Juvenile" | futres$lifeStage == "juvenile"] <- "Juvenile"
 
-futres$index <- c(659544:659544+nrow(futres))
+futres$individualID <- seq(1,nrow(futres),1)
+futres$individualID <- futres$individualID+max(vertnet$individualID)
 
 #trim dataset
 futres.sub <- futres %>%
-  dplyr::select(index,
+  dplyr::select(individualID,
                 origin,
                 scientificName, 
                 lifeStage, 
@@ -317,7 +318,7 @@ write.csv(futres_long, "futres.long.csv")
 
 ##select out columns
 
-col.order <- c("index","origin", "scientificName", "lifeStage", "sex", "reproductiveCondition",
+col.order <- c("individualID","origin", "scientificName", "lifeStage", "sex", "reproductiveCondition",
            "catalogNumber", "materialSampleID", "institutionCode", "collectionCode", "eventDate",
            "locality", "higherGeography", "continent", "country", "county",
            "waterBody", "island", "islandGroup",
@@ -486,7 +487,13 @@ for(i in 1:length(sp)){
                   data.test[,"lifeStage"] == "Adult", 
                 select = "measurementValue") %>%
     drop_na()
-  if(isTRUE(nrow(sub) >= 10)){
+  if(isTRUE(nrow(sub) == 0)){
+    next
+  }
+  else if(isTRUE(length(unique(sub$measurementValue)) == 1)){
+    next
+  }
+  else if(isTRUE(nrow(sub) >= 10)){
     outlier <- maha(sub, cutoff = 0.95, rnames = FALSE)
     index <- names(outlier[[2]])
     if(isTRUE(length(index) != 0)){
@@ -588,19 +595,34 @@ p <- ggplot() +
   scale_y_continuous(name = "Density", limits = c(0, .01))
 ggsave(p, file=paste0("outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
 
+##create upper and lower limits----
+
 data.noInfer_Adults <- subset(data.mh, subset = c(data.mh$measurementStatus != "outlier" &
                                                     data.mh$measurementStatus != "too few records" &
                                                     data.mh$lifeStage == "Adult" &
                                                     data.mh$measurementValueEstimated != "True"))
 data.noInfer_stats <- data.noInfer_Adults %>%
   dplyr::group_by(scientificName) %>%
-  dplyr::summarise(sample.size.mass = length(measurementValue[measurementType == "mass" & !is.na(measurementValue)]),
-                   avg.mass = mean(measurementValue[measurementType == "mass" & !is.na(measurementValue)], na.rm = TRUE),
-                   sigma.mass = sd(measurementValue[measurementType == "mass" & !is.na(measurementValue)], na.rm = TRUE),
+  dplyr::summarise(sample.size.mass = length(measurementValue[measurementType == "mass" & !is.na(measurementValue) & measurementValue > 0]),
+                   avg.mass = mean(measurementValue[measurementType == "mass" & !is.na(measurementValue) & measurementValue > 0], na.rm = TRUE),
+                   sigma.mass = sd(measurementValue[measurementType == "mass" & !is.na(measurementValue) & measurementValue > 0], na.rm = TRUE),
                    upper.limit.mass = avg.mass + (3*sigma.mass),
-                   lower.limit.mass = avg.mass - (3*sigma.mass)) %>%
+                   lower.limit.mass = avg.mass - (3*sigma.mass),
+                   
+                   sample.size.tail = length(measurementValue[measurementType == "tail.length" & !is.na(measurementValue) & measurementValue > 0]),
+                   avg.tail = mean(measurementValue[measurementType == "tail.length" & !is.na(measurementValue) & measurementValue > 0], na.rm = TRUE),
+                   sigma.tail = sd(measurementValue[measurementType == "tail.length" & !is.na(measurementValue) & measurementValue > 0], na.rm = TRUE),
+                   upper.limit.tail = avg.tail + (3*sigma.tail),
+                   lower.limit.tail = avg.tail - (3*sigma.tail),
+                   
+                   sample.size.length = length(measurementValue[measurementType == "total.length" & !is.na(measurementValue) & measurementValue > 0]),
+                   avg.length = mean(measurementValue[measurementType == "total.length" & !is.na(measurementValue) & measurementValue > 0], na.rm = TRUE),
+                   sigma.length = sd(measurementValue[measurementType == "total.length" & !is.na(measurementValue) & measurementValue > 0], na.rm = TRUE),
+                   upper.limit.length = avg.length + (3*sigma.length),
+                   lower.limit.length = avg.length - (3*sigma.length)) %>%
   as.data.frame()
-nrow(data.noInfer_stats) #251
+nrow(data.noInfer_stats) #271
+length(unique(data.noInfer_stats$scientificName)) #271
 
 ##add stats to dataframe
 data.limit <- merge(data.mh, data.noInfer_stats, by = "scientificName", all.x = TRUE, all.y = FALSE)
@@ -609,7 +631,7 @@ length(unique(data.limit$scientificName)) #4346
 ##write out csv with limits----
 write.csv(data.limit, "data.limit.csv")
 
-##label outliers
+##label outliers----
 #label samples that are outside of limits with outlier, and label those within limits as "g" and inferred = TRUE
 data.limit$index <- rownames(data.limit)
 data.limit$measurementStatus[data.limit$sample.size.length < 10] <- "too few records"
@@ -635,18 +657,53 @@ for(i in 1:length(sp)){
                   data.check$measurementType == "mass",]
   for(j in 1:nrow(sub)){
     if(isTRUE(sub$measurementValue[j] <= sub$lower.limit.mass[1])){
-      data.check$measurementStatus[data.check$index == sub$index[j]] <- "outlier"
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly not adult"
     }
     else if(isTRUE(sub$measurementValue[j] >= sub$upper.limit.mass[1])){
-      data.check$measurementStatus[data.check$index == sub$index[j]] <- "outlier"
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly not adult"
     }
     else{
-      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly good"
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly adult"
+    }
+  }
+} 
+
+#total length
+for(i in 1:length(sp)){
+  sub <- data.check[data.check$scientificName == sp[i] & 
+                      data.check$measurementType == "total.length",]
+  for(j in 1:nrow(sub)){
+    if(isTRUE(sub$measurementValue[j] <= sub$lower.limit.length[1])){
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly not adult"
+    }
+    else if(isTRUE(sub$measurementValue[j] >= sub$upper.limit.length[1])){
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly not adult"
+    }
+    else{
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly adult"
+    }
+  }
+} 
+
+#tail length
+for(i in 1:length(sp)){
+  sub <- data.check[data.check$scientificName == sp[i] & 
+                      data.check$measurementType == "tail.length",]
+  for(j in 1:nrow(sub)){
+    if(isTRUE(sub$measurementValue[j] <= sub$lower.limit.tail[1])){
+      data.check$measurementStatus[data.check$inde == sub$index[j]] <- "possibly not adult"
+    }
+    else if(isTRUE(sub$measurementValue[j] >= sub$upper.limit.tail[1])){
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly not adult"
+    }
+    else{
+      data.check$measurementStatus[data.check$index == sub$index[j]] <- "possibly adult"
     }
   }
 } 
 
 data.total <- rbind(data.check, data.uncheck)
+
 
 ##write out first round of upper and lower limits checking----
 write.csv(data.check, "data.check.csv")
@@ -741,7 +798,6 @@ write.csv(outlier_stats, "outliers.csv")
 ray <- read.csv("https://de.cyverse.org/dl/d/223A09E1-EFC5-441A-8C1B-91E7AEFEA011/FuTRES_Equid_Bernor_Subset.csv", header = TRUE)
 setdiff(colnames(ray), colnames(data.total))
 
-data.total$individualID <- rep("", nrow(data.total))
 data.total$diagnosticID <- paste(data.total$catalogNumber, "-", data.total$institutionCode)
 data.total$basisOfRecord <- rep("preserved specimen", nrow(data.total))
 data.total$samplingProtocol <- rep("", nrow(data.total))
@@ -937,4 +993,7 @@ nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "astr
 nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "calcaneus.GL" & !is.na(data.clean$measurementValue),]) #289
 nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "calcaneus.GB" & !is.na(data.clean$measurementValue),]) #311
 nrow(data.clean[data.clean$origin == "ray" & data.clean$measurementType == "humerus.length" & !is.na(data.clean$measurementValue),]) #45
+
+
+
 
