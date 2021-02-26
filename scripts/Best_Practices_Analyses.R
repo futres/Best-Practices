@@ -15,7 +15,7 @@ require(PEIP)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-data <- read.csv("https://de.cyverse.org/dl/d/C37E2FD7-0826-4CA9-9783-A2457CF6FDB0/data.all.csv", header = TRUE, stringsAsFactors = FALSE)
+data <- read.csv("https://de.cyverse.org/dl/d/7B6941EE-1FED-4AAE-9D8A-8AC76DB0AC98/data.all.csv", header = TRUE, stringsAsFactors = FALSE)
 length(unique(data$scientificName)) #3974
 
 data.clean <- data[data$measurementStatus != "outlier" & 
