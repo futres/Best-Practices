@@ -32,5 +32,5 @@ The script runs the following analyses:
       - Using the variation in both the x and the y values, we create a more accurate estimation of a range of possible mass values for each specimen.
 
 ## Importance
-Dynamic, individual-level data allows users to make informed decisions about quality of data and quality of species-level summaries based on sample size. 
-Additionally, knowing the variation in both the x and y axes for allometric relationships provides a more accurate assessment of mass and can later be used to infer a trait using a transfer funciton.
+* Dynamic, individual-level data allows users to make informed decisions about quality of data and quality of species-level summaries based on sample size. 
+* Additionally, knowing the variation in both the x and y axes for allometric relationships provides a more accurate assessment of mass and can later be used to infer a trait using a transfer funciton.
