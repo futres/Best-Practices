@@ -17,7 +17,7 @@ This script runs the cleaning routine:
   7. Label records greater than the upper limit or lesser than lower limit as "outliers" in measurementStatus
   8. Label remaining records as "possibly good" in measurementStatus
 
-Throughout data cleaning, data visualization plots are created and datasets are saved.
+Throughout data cleaning, data visualization plots are created and datasets are saved. This script created Figure 2.
 
 ### Data Analyses
 Data used in analyses are linked to the DE (see above).
@@ -30,6 +30,8 @@ The script runs the following analyses:
   2. Estimate mass values for zooarchaeological specimens for which a skeletal measurement is known.
      - This is done by creating a regression of skeletal element v. mass for which we have both measurements.
       - Using the variation in both the x and the y values, we create a more accurate estimation of a range of possible mass values for each specimen.
+
+This script created Figures 3, 4, and supplemental figures.
 
 ## Importance
 * Dynamic, individual-level data allows users to make informed decisions about quality of data and quality of species-level summaries based on sample size. 
