@@ -24,12 +24,12 @@ Data used in analyses are linked to the DE (see above).
 The data is trimmed to exclude known juveniles in lifeStage and suspected outliers in measurementStatus.
 The script runs the following analyses:
   1. Calculate the difference between species-level mass values from <a href="https://figshare.com/collections/PanTHERIA_a_species-level_database_of_life_history_ecology_and_geography_of_extant_and_recently_extinct_mammals/3301274" PanTHERIA</a> and the FuTRES data. 
-This is calculated as the difference between PanTHERIA and FuTRES mass divided by the standard error of mass values from FuTRES. 
-We adjusted significant levels based on sample size using critical t-values. We also applied a Bonferroni correction.
-Those greater than 3 standard errors different from FuTRES mass was considered significantly different. 
+      - This is calculated as the difference between PanTHERIA and FuTRES mass divided by the standard error of mass values from FuTRES. 
+      - We adjusted significant levels based on sample size using critical t-values. We also applied a Bonferroni correction.
+      - Those greater than 3 standard errors different from FuTRES mass was considered significantly different. 
   2. Estimate mass values for zooarchaeological specimens for which a skeletal measurement is known.
-This is done by creating a regression of skeletal element v. mass for which we have both measurements.
-Using the variation in both the x and the y values, we create a more accurate estimation of a range of possible mass values for each specimen.
+     - This is done by creating a regression of skeletal element v. mass for which we have both measurements.
+      - Using the variation in both the x and the y values, we create a more accurate estimation of a range of possible mass values for each specimen.
 
 ## Importance
 Dynamic, individual-level data allows users to make informed decisions about quality of data and quality of species-level summaries based on sample size. 
