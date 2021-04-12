@@ -1,6 +1,6 @@
 # Best Practices Paper
 Data and Analyses used for the Best Practices Paper.
-To access data, one needs to create an account on the CyVerse Discovery Environment (DE), which is free.
+To access data, one needs to create an account on the <a href="https://de.cyverse.org/de/"CyVerse Discovery Environment (DE)</a>, which is free.
 
 ## Scripts Folder
 This folder contains two scripts: data cleaning and data analysis.
