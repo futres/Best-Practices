@@ -5,21 +5,22 @@ To access data, one needs to create an account on the <a href="https://de.cyvers
 ## Scripts Folder
 This folder contains two scripts: data cleaning and data analysis.
 
-### Data Cleaning
+### <a href="Best_Practices_Data_Cleanning.R">Data Cleaning</a>
 Original data is linked to the DE (see above).
 This script runs the cleaning routine:
-  1. Create labeling field, "measurementStatus"
-  2. Summarize number of records for each species and each measurementType
-  3. Label those species with fewer that 10 records are labeled "too few records" in measurementStatus
-  4. For those with adult lifeStage and >10 records, run an outlier detection test
-  5. Label outliers as "outliers" in measurement Status
-  6. Calculate upper and lower limits, which are 3 standard deviations from the mean for those species with known adult lifeStage and >10 records
-  7. Label records greater than the upper limit or lesser than lower limit as "outliers" in measurementStatus
-  8. Label remaining records as "possibly good" in measurementStatus
+  1. Added "origin" column to denote who submitted data for the benefit of analyses in the Best_Practices_Analyses.R script.
+  2. Create labeling field, "measurementStatus"
+  3. Summarize number of records for each species and each measurementType
+  4. Label those species with fewer that 10 records are labeled "too few records" in measurementStatus
+  5. For those with adult lifeStage and >10 records, run an outlier detection test
+  6. Label outliers as "outliers" in measurement Status
+  7. Calculate upper and lower limits, which are 3 standard deviations from the mean for those species with known adult lifeStage and >10 records
+  8. Label records greater than the upper limit or lesser than lower limit as "outliers" in measurementStatus
+  9. Label remaining records as "possibly good" in measurementStatus
 
 Throughout data cleaning, data visualization plots are created and datasets are saved. This script created Figure 2 and Table 1.
 
-### Data Analyses
+### <a href="Best_Practices_Analyses.R">Data Analyses</a>
 Data used in analyses are linked to the DE (see above).
 The data is trimmed to exclude known juveniles in lifeStage and suspected outliers in measurementStatus.
 The script runs the following analyses:
