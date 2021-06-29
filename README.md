@@ -2,8 +2,37 @@
 Data and Analyses used for the Best Practices Paper.
 To access data, one needs to create an account on the <a href="https://de.cyverse.org/de/">CyVerse Discovery Environment (DE)</a>, which is free.
 
+## Data
+### VertNet
+The VertNet data was extracted from <a href="https://vertnet.org/">VertNet.org</a> on Aug. 2020. The R package <i>traiter</i> was used to extract trait data. We kept only the first measurement value for each record.
+The data reside in the Data Commons.
+
+* inferred values (TRUE) mean that the value was converted to a standard unit (g, mm).
+* the original unit was retained in the data
+* estimated values are values where a decision was made about which part of the string was the measurement value
+
+### Other datasets
+There were six legacy datasets used for this project that are stored in <a href="https://geome-db.org/">GEOME</a>:
+* Project 277 (Aepyceros_Villseñor_Africa_Modern)
+* Project 278 (Spermophilus.beecheyi_Blois_NorthAmerica_Modern)
+* Project 282 (Florida Museum Environmental Archaeology Program Comparative Collection Data
+* Project 294 (Puma.concolor_ODFW_OR_USA_Modern)
+* Project 314 (Equid_Bernor_Global_Cenozoic)
+
+The original data are stored in The DE. Validated data are stored in both GEOME and the DE.
+
+### Processed data
+Processed data are data that have been triplified and reasoned over. These data are extracted from the <a href="https://futres-data-interface.netlify.app/">FuTRES datastore</a> and are stored on the DE.
+
+### Data used in analyses
+The data that results from Best_Practices_Data_Cleaning.R are stored on the DE and Data Commons.
+
 ## Scripts Folder
 This folder contains two scripts: data cleaning and data analysis.
+
+### <a href="https://cran.r-project.org/src/contrib/Archive/OutlierDetection/">Outlier Detection package</a>
+This package became outdated and was removed from the R package site, but is archived. 
+The Maha.R function is called to perform the outlier test.
 
 ### <a href="https://github.com/futres/Best-Practices/blob/master/scripts/Best_Practices_Data_Cleanning.R">Data Cleaning</a>
 Original data is linked to the DE (see above).
