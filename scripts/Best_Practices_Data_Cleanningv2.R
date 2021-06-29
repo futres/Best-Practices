@@ -10,444 +10,201 @@ require(ggplot2)
 require(reshape2)
 require(plyr)
 require(stringr)
-require(OutlierDetection)
+#require(OutlierDetection)
+#call maha function from https://cran.r-project.org/src/contrib/Archive/OutlierDetection/
+require(utils)
 
 ##Load data----
 
 options(stringsAsFactors = FALSE)
 
 ## FuTRES data
-
-futres <- read.csv("https://de.cyverse.org/dl/d/53BFE69F-EDD2-47FF-B508-723050451FC3/futres.csv", header = TRUE, stringsAsFactors = FALSE)
 #about futres data:
 #has various terms for adult and juvenile
 #currently aligned manually; fixed Amelia's weight data to be g, deleted lone mass that did not have units
 #need to fix OR units (currently in lb and in)
 #note: astragalus width is actually astragalus breadth
-#6 species
-nrow(futres[futres$origin == "EAP",]) #34
-nrow(futres[futres$origin == "Amelia",]) #94
-nrow(futres[futres$origin == "Blois 2008",]) #288
-nrow(futres[futres$origin == "OR",]) #7841
-
-## Vertnet data
+# Vertnet data
 #extracted from R. LaFrance using Traiter to extract traits and trait values in fields like "dynamicProperties"
 #inferred means that units were converted to g or mm
 #estimated means that trait values were in non-standard ways (e.g., [5])
 #lots of lifeStage info missing
 #for traits we're interested in (e.g., not sided traits like testes and ovaries), use first measurement
+#too big for GEOME, stored in the CyVerse datastore in parts and reassembled here
 
-#bats
-bats <- read.csv("https://de.cyverse.org/dl/d/8BE15938-0A21-4712-9FD9-D22B3DF31101/bats_2020-08-11b.csv", header = TRUE)
-length(unique(bats$binomial)) #1074
-length(unique(bats$occurrenceid)) #74678
-nrow(bats) #74678
-ncol(bats) #300
+#futres download from jdeck88
+geome.processed <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/BestPracticesData/V2/futres_data_processed.csv", header = TRUE)
 
-#mamm
-mamm <- read.csv("https://de.cyverse.org/dl/d/C46CED4D-B974-47CD-8BCF-5A04D6DD642B/no_bats_2020-08-12b.csv", header = TRUE)
-length(unique(mamm$binomial)) #4007
-length(unique(mamm$occurrenceid)) #584865
-nrow(mamm) #584865
-ncol(mamm) #368
+#Villaseñor = Project 277
+p277 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/BestPracticesData/V2/project_277.csv", header = TRUE, stringsAsFactors = FALSE)
+#Blois 2018 = Project 278
+p278 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/BestPracticesData/V2/project_278.csv", header = TRUE, stringsAsFactors = FALSE)
+#EAP K.Emery = Project 282
+p282 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/BestPracticesData/V2/project_282.csv", header = TRUE, stringsAsFactors = FALSE)
+#ODFW = Project 294
+p294 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/BestPracticesData/V2/project_294.csv", header = TRUE, stringsAsFactors = FALSE)
+#Bernor = Project 314
+p314 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/BestPracticesData/V2/project_314.csv", header = TRUE, stringsAsFactors = FALSE)
 
-## Combine VertNet Bat & Mammal data----
-#mammals and bats have different ear length measurements; bats additionally have forearm length
+geome <- rbind(p277, p278, p282, p294, p314)
 
-setdiff(colnames(mamm), colnames(bats)) #85 different
-setdiff(colnames(bats), colnames(mamm)) #17 different
+#vertnet
+vertnet1 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/ValidatedData/FuTRES_Mammals_VertNet_Global_Modern_1.csv", header = TRUE)
+vertnet2 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/ValidatedData/FuTRES_Mammals_VertNet_Global_Modern_2.csv", header = TRUE)
+vertnet3 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/ValidatedData/FuTRES_Mammals_VertNet_Global_Modern_3.csv", header = TRUE)
+vertnet4 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/ValidatedData/FuTRES_Mammals_VertNet_Global_Modern_4.csv", header = TRUE)
+vertnet5 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/ValidatedData/FuTRES_Mammals_VertNet_Global_Modern_5.csv", header = TRUE)
+vertnet6 <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/ValidatedData/FuTRES_Mammals_VertNet_Global_Modern_6.csv", header = TRUE)
 
-#important column names
-imp.cols <- c("binomial", "scientificname", "occurrenceid", "institutioncode", "collectioncode", "catalognumber", "eventdate", 
-          "sex", "lifestage_cor", "reproductivecondition", 
-          "locality", "highergeography", "continent", "country", "county",
-          "decimallatitude", "decimallongitude", "verbatimelevation",
-          "waterbody", "island", "islandgroup")
+vertnet <- rbind(vertnet1, vertnet2, vertnet3, vertnet4, vertnet5, vertnet6)
 
-# select out rows that have .1 only, don't need the other values for now
-col.pattern <- "1"
-V.cols.mamm <- grep(col.pattern, colnames(mamm), value = TRUE)
-V.cols.bats <- grep(col.pattern, colnames(bats), value = TRUE)
+#check that they all have same number of columns
+length(geome)
+length(vertnet)
 
-cols.mamm <- c(imp.cols, V.cols.mamm)
-cols.bats <- c(imp.cols, V.cols.bats)
+cols.add <- setdiff(colnames(geome), colnames(vertnet))
+setdiff(colnames(vertnet), colnames(geome))
 
-mamm.1 <- mamm[, colnames(mamm) %in% cols.mamm]
-bats.1 <- bats[, colnames(bats) %in% cols.bats]
+geome$occurrenceRemarks <- ""
 
-#we don't care about these values related to the measurement/specimen for now
-remove.pattern <- "\bhigh|low|ambiguous"
-#create pattern
-remove.mamm <- grep(remove.pattern, colnames(mamm.1), value = TRUE)
-remove.bats <- grep(remove.pattern, colnames(bats.1), value = TRUE)
+vertnet[ , cols.add] <- ""
+vertnet$projectId <- "vertnet"
 
-mamm.2 <- mamm.1[, !(colnames(mamm.1) %in% remove.mamm)]
-bats.2 <- bats.1[, !(colnames(bats.1) %in% remove.bats)]
+nrow(geome)
+length(unique(geome$scientificName))
 
-setdiff(colnames(mamm.2), colnames(bats.2))
-setdiff(colnames(bats.2), colnames(mamm.2))
+nrow(vertnet)
+length(unique(vertnet$scientificName))
 
-mamm.2$forearm_length.1.estimated_value <- NA
-mamm.2$tragus_length.1.estimated_value <- NA
-
-extra.cols <- c("placental_scar_count.2.side1", "placental_scar_count.3.side1")
-mamm.3 <- mamm.2[, !(colnames(mamm.2) %in% extra.cols)]
-
-bats.2$nipple_count.1.notation <- NA
-bats.2$placental_scar_count.1.side1 <- NA
-bats.2$placental_scar_count.1.side2 <- NA
-
-setdiff(colnames(mamm.3), colnames(bats.2))
-setdiff(colnames(bats.2), colnames(mamm.3))
-
-vertnet <- rbind(mamm.3, bats.2) #5075
-
-vertnet$individualID <- seq(1, nrow(vertnet), 1) #ends at 659543
-
-write.csv(vertnet, "vertnetcombinded.csv")
-
-#vertnet data has a column header "units" which were the original units. All units have been changed to either "g" or "mm"
-#change column names to reflect this
-
-vertnet.sub <- vertnet %>%
-  dplyr::select(individualID,
-                scientificName = scientificname, 
-                materialSampleID = occurrenceid,
-                lifeStage = lifestage_cor, 
-                sex,
-                locality,
-                elevation = verbatimelevation,
-                catalogNumber = catalognumber,
-                reproductiveCondition = reproductivecondition,
-                decimalLatitude = decimallatitude,
-                decimalLongitude = decimallongitude,
-                continent,
-                country,
-                county,
-                eventDate = eventdate,
-                institutionCode = institutioncode,
-                collectionCode = collectioncode,
-                higherGeography = highergeography,
-                waterBody = waterbody,
-                island,
-                islandGroup = islandgroup,
-                mass = body_mass.1.value,
-                mass.verbatim.units = body_mass.1.units,
-                mass.units.inferred = body_mass.1.units_inferred,
-                mass.estimated.value = body_mass.1.estimated_value,
-                
-                total.length = total_length.1.value, 
-                total.length.verbatim.units = total_length.1.units,
-                total.length.units.inferred = total_length.1.units_inferred,
-                total.length.estimated.value = total_length.1.estimated_value,
-                
-                hindfoot.length = hind_foot_length.1.value,
-                hindfoot.length.verbatim.units = hind_foot_length.1.units,
-                hindfoot.length.units.inferred = hind_foot_length.1.units_inferred,
-                hindfoot.length.estimated.value = hind_foot_length.1.estimated_value,
-                
-                ear.length = ear_length.1.value,
-                ear.length.verbatim.units = ear_length.1.units,
-                ear.length.units.inferred = ear_length.1.units_inferred,
-                ear.length.estimated.value = ear_length.1.estimated_value,
-                
-                tail.length = tail_length.1.value,
-                tail.length.verbatim.units = tail_length.1.units,
-                tail.length.units.inferred = tail_length.1.units_inferred,
-                tail.length.estimated.value = tail_length.1.estimated_value,
-                
-                forearm.length = forearm_length.1.value,
-                forearm.length.verbatim.units = forearm_length.1.units,
-                forearm.length.units.inferred = forearm_length.1.units_inferred,
-                forearm.length.estimated.value = forearm_length.1.estimated_value) %>%
-  mutate_at(c("elevation", "mass", "total.length", "hindfoot.length", "ear.length",
-              "tail.length", "forearm.length"), as.numeric)
-
-write.csv(x = vertnet.sub, file = "vertnet.first.meas.csv")
-
-#create long version
-vertnet_mass <- subset(vertnet.sub, select = 1:25)
-vertnet_tail.length <- subset(vertnet.sub, select = c(1:21, 38:41))
-vertnet_total.length <- subset(vertnet.sub, select = c(1:21, 26:29))
-vertnet_hindfoot.length <- subset(vertnet.sub, select = c(1:21, 30:33))
-vertnet_forearm.length <- subset(vertnet.sub, select = c(1:21, 42:45))
-vertnet_ear.length <- subset(vertnet.sub, select = c(1:21, 34:37))
-
-#change column names
-colnames(vertnet_mass)[colnames(vertnet_mass) %in% 
-                 c("mass", "mass.verbatim.units",
-                   "mass.units.inferred", "mass.estimated.value")] <- c("measurementValue", 
-                                                                        "verbatimMeasurementUnit",
-                                                                        "measurementUnitInferred",
-                                                                        "measurementValueEstimated")
-vertnet_mass$measurementType <- "mass"
-vertnet_mass$measurementUnit <- "g"
-
-colnames(vertnet_tail.length)[colnames(vertnet_tail.length) %in% 
-                         c("tail.length", "tail.length.verbatim.units",
-                           "tail.length.units.inferred", "tail.length.estimated.value")] <- c("measurementValue", 
-                                                                                "verbatimMeasurementUnit",
-                                                                                "measurementUnitInferred",
-                                                                                "measurementValueEstimated")
-vertnet_tail.length$measurementType <- "tail.length"
-vertnet_tail.length$measurementUnit <- "mm"
-
-colnames(vertnet_total.length)[colnames(vertnet_total.length) %in% 
-                         c("total.length", "total.length.verbatim.units",
-                           "total.length.units.inferred", "total.length.estimated.value")] <- c("measurementValue", 
-                                                                                "verbatimMeasurementUnit",
-                                                                                "measurementUnitInferred",
-                                                                                "measurementValueEstimated")
-vertnet_total.length$measurementType <- "total.length"
-vertnet_total.length$measurementUnit <- "mm"
-
-colnames(vertnet_hindfoot.length)[colnames(vertnet_hindfoot.length) %in% 
-                         c("hindfoot.length", "hindfoot.length.verbatim.units",
-                           "hindfoot.length.units.inferred", "hindfoot.length.estimated.value")] <- c("measurementValue", 
-                                                                                "verbatimMeasurementUnit",
-                                                                                "measurementUnitInferred",
-                                                                                "measurementValueEstimated")
-vertnet_hindfoot.length$measurementType <- "hindfoot.length"
-vertnet_hindfoot.length$measurementUnit <- "mm"
-
-colnames(vertnet_forearm.length)[colnames(vertnet_forearm.length) %in% 
-                         c("forearm.length", "forearm.length.verbatim.units",
-                           "forearm.length.units.inferred", "forearm.length.estimated.value")] <- c("measurementValue", 
-                                                                                "verbatimMeasurementUnit",
-                                                                                "measurementUnitInferred",
-                                                                                "measurementValueEstimated")
-vertnet_forearm.length$measurementType <- "forearm.length"
-vertnet_forearm.length$measurementUnit <- "mm"
-
-colnames(vertnet_ear.length)[colnames(vertnet_ear.length) %in% 
-                         c("ear.length", "ear.length.verbatim.units",
-                           "ear.length.units.inferred", "ear.length.estimated.value")] <- c("measurementValue", 
-                                                                                "verbatimMeasurementUnit",
-                                                                                "measurementUnitInferred",
-                                                                                "measurementValueEstimated")
-vertnet_ear.length$measurementType <- "ear.length"
-vertnet_ear.length$measurementUnit <- "mm"
-
-vertnet_long <- rbind(vertnet_mass, vertnet_tail.length, vertnet_total.length,
-                      vertnet_forearm.length, vertnet_ear.length, vertnet_hindfoot.length)
-
-vertnet_long$measurementStatus <- ""
-vertnet_long$verbatimMeasurementValue <- ""
-
-vertnet_long$origin <- "vertnet"
-
-write.csv(vertnet_long, "vertnet.long.csv")
-
-##clean FuTRES data----
-
-##group lifeStages
-futres$lifeStage[futres$lifeStage == "young adult" | futres$lifeStage == "Adult" | futres$lifeStage == "Prime Adult" | futres$lifeStage == "adult"] <- "Adult"
-futres$lifeStage[futres$lifeStage == "Juvenile" | futres$lifeStage == "juvenile"] <- "Juvenile"
-
-futres$individualID <- seq(1,nrow(futres),1)
-futres$individualID <- futres$individualID+max(vertnet$individualID)
-
-#trim dataset
-futres.sub <- futres %>%
-  dplyr::select(individualID,
-                origin,
-                scientificName, 
-                lifeStage, 
-                sex,
-                reproductiveCondition,
-                catalogNumber,
-                materialSampleID,
-                eventDate,
-                locality,
-                country, 
-                county,
-                decimalLatitude,
-                decimalLongitude,
-                elevation,
-                mass = Total.Fresh.Weight..g.,
-                total.length = TL..mm...Total.Length.,
-                tail.length = TA..mm...Tail.Length.,
-                hindfoot.length = HF..mm...Hind.Foot.Length.,
-                ear.length = En..mm...Ear.Notch...Ear.Length.,
-                calcaneus.GL = Calcaneus.GL...greatest.length..von.den.Driesch..1976...mm,
-                calcaneus.GB =Calcaneus.GB...greatest.breadth..von.den.Driesch.1976...mm,
-                tooth.row = c.toothrow.1.mm,
-                gutted = Weight.field.dressed,
-                skinned = Weight.Skinned,
-                astragalus.length = Astragalus.Length,
-                astragalus.width = Astragalus.Width,
-                humerus.length = Humerus.Length,
-                femur.length = Femur.Length) %>%
-  mutate_at(c("elevation", "mass", 
-              "total.length", "tail.length", "hindfoot.length", "ear.length",
-              "calcaneus.GB", "calcaneus.GL", "tooth.row",
-              "gutted", "skinned", "astragalus.length", "astragalus.width",
-              "humerus.length", "femur.length"), as.numeric)
-
-#create long version
-futres_long <- melt(data = futres.sub, id.vars = 1:15, variable.name = "measurementType")
-colnames(futres_long)[colnames(futres_long) == "value"] <- "measurementValue"
-futres_long$verbatimMeasurementUnit <- ""
-futres_long$measurementUnit <- ""
-futres_long$measurementUnitInferred <- ""
-futres_long$measurementStatus <- ""
-futres_long$verbatimMeasurementValue <- ""
-futres_long$measurementValueEstimated <- ""
-
-futres_long$verbatimMeasurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "skinned"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "skinned"] 
-futres_long$verbatimMeasurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "gutted"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "gutted"]
-futres_long$verbatimMeasurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "mass"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "mass"]
-futres_long$verbatimMeasurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "total.length"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "total.length"]
-
-futres_long$verbatimMeasurementUnit[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "skinned"] <- "lb"
-futres_long$verbatimMeasurementUnit[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "gutted"] <- "lb"
-futres_long$verbatimMeasurementUnit[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "mass"] <- "lb"
-futres_long$verbatimMeasurementUnit[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "total.length"] <- "in"
-
-futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "skinned"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "skinned"] / .0022
-futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "gutted"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "gutted"] / .0022
-futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "mass"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "mass"] / .0022
-futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "total.length"] <- futres_long$measurementValue[futres_long$scientificName == "Puma concolor" & futres_long$measurementType == "total.length"] * 25.4
-
-futres_long$measurementUnit[futres_long$measurementType == "mass" | futres_long$measurementType == "gutted" | futres_long$measurementType == "skinned"] <- "g"
-futres_long$measurementUnit[futres_long$measurementType != "mass" | futres_long$measurementType != "gutted" | futres_long$measurementType != "skinned"] <- "g"
-
-write.csv(futres_long, "futres.long.csv")
-
-##Combine VertNet and FuTRES Data----
-
-##select out columns
-
-col.order <- c("individualID","origin", "scientificName", "lifeStage", "sex", "reproductiveCondition",
-           "catalogNumber", "materialSampleID", "institutionCode", "collectionCode", "eventDate",
-           "locality", "higherGeography", "continent", "country", "county",
-           "waterBody", "island", "islandGroup",
-           "decimalLatitude", "decimalLongitude", "elevation",
-           "measurementType", "measurementValue", "measurementUnit", 
-           "verbatimMeasurementValue", "verbatimMeasurementUnit", 
-           "measurementUnitInferred", "measurementValueEstimated", "measurementStatus")
-
-##futres
-#add in missing columns
-emptyvector <- c("institutionCode", "collectionCode", "higherGeography",
-                "waterBody", "island", "islandGroup", "continent") 
-
-futres_long[ , emptyvector] <- ""
-
-#check that columns are the same
-setdiff(colnames(futres_long), colnames(vertnet_long))
-setdiff(colnames(vertnet_long), colnames(futres_long))
-setdiff(col.order, colnames(vertnet_long))
-setdiff(col.order, colnames(futres_long))
+col.order <- c("projectId", "expeditionCode", "individualID", "materialSampleID", "diagnosticID",  
+               "Event_bcid", "Sample_bcid", "Diagnostics_bcid", "verbatimEventDate",
+               "institutionCode", "collectionCode", "catalogNumber", "otherCatalogNumbers",
+               "basisOfRecord", "materialSampleCondition",
+               "scientificName", "previousIdentifications",
+               "lifeStage", "sex", "reproductiveCondition",
+               "locality", "country", "stateProvince", 
+               "decimalLatitude", "decimalLongitude", "verbatimElevation",
+               "minimumChronometricAge", "maximumChronometricAge",
+               "measurementSide", "measurementType", "measurementValue", "measurementUnit", "measurementMethod")
 
 ##comnbine datasets
-futres.order <- futres_long[, col.order]
-vertnet.order <- vertnet_long[, col.order]
+geome.sort <- geome %>%
+  select(col.order)
+vertnet.sort <- vertnet %>%
+  select(col.order)
 
-data <- rbind(futres.order, vertnet.order)
-length(unique(data$scientificName)) #10329 spp; must be a lot of trinomials...
+df <- rbind(geome.sort, vertnet.sort)
 
 ##clean scientificCNames
-data$scientificName <- word(data$scientificName, 1,2, sep = " ") 
-data.binom<- data[!grepl('sp.', data$scientificName),]
-length(unique(data.binom$scientificName)) #4348
+df$scientificName <- word(df$scientificName, 1,2, sep = " ") 
+df.binom<- df[!grepl('sp.', df$scientificName),]
+length(unique(df.binom$scientificName)) 
+
 # in mamm: 2766 spp; and now 1738 because got rid of trinomials
-data.binom <- data.binom[!is.na(data.binom$scientificName),]
-data.binom <- data.binom[data.binom$scientificName != "(new SW",]
-length(unique(data.binom$scientificName)) #4346
+df.binom <- df.binom[!is.na(df.binom$scientificName),]
+df.binom <- df.binom[df.binom$scientificName != "(new SW",]
+length(unique(df.binom$scientificName))
 
-data.binom$lifeStage[data.binom$lifeStage == "--" | data.binom$lifeStage == ""] <- "NS"
-data.binom$measurementUnitInferred[data.binom$measurementUnitInferred == "False" | data.binom$measurementUnitInferred == "FALSE"] <- ""
-data.binom$measurementUnitInferred[data.binom$measurementUnitInferred == "True" | data.binom$measurementUnitInferred == "TRUE"] <- "T"
+unique(df.binom$lifeStage)
+df.binom$lifeStage[df.binom$lifeStage != "adult" & df.binom$lifeStage != "juvenile"] <- "NS"
+df.binom$lifeStage[is.na(df.binom$lifeStage)] <- "NS"
 
-#make all traits with values of "0" <- NA
-#only like 80 records for mass, so likely not too big of an issue
-
-data.binom$measurementValue[data.binom$measurementValue == 0] <- NA
+df.binom$measurementValue <- as.numeric(df.binom$measurementValue)
+df.binom$measurementValue[df.binom$measurementValue == 0] <- NA
 
 #change known taxonomy error: Spermophilus beecheyi
-data.binom$scientificName[data.binom$scientificName == "Spermophilus beecheyi"] <- "Otospermophilus beecheyi"
+df.binom$scientificName[df.binom$scientificName == "Spermophilus beecheyi"] <- "Otospermophilus beecheyi"
 
-##write data file with futres and vertnet combined----
-write.csv(data.binom, "dirty.data.csv")
+##write df file----
+write.csv(df.binom, "df.before.flagging.csv")
 
 ##Figure 1 panel 1: lifeStage----
-data.fig1 <- data.binom
-length(data.fig1$measurementValue[data.fig1$scientificName == "Peromyscus maniculatus" & 
-                                    data.fig1$measurementType == "mass" & 
-                                    !is.na(data.fig1$measurementValue)]) #31669
-length(data.fig1$measurementValue[data.fig1$scientificName == "Otospermophilus beecheyi" & 
-                                    data.fig1$measurementType == "mass" & 
-                                    !is.na(data.fig1$measurementValue)]) #233
+df.fig1 <- df.binom
+length(df.fig1$measurementValue[df.fig1$scientificName == "Peromyscus maniculatus" & 
+                                    df.fig1$measurementType == "body mass" & 
+                                    !is.na(df.fig1$measurementValue)])
+length(df.fig1$measurementValue[df.fig1$scientificName == "Otospermophilus beecheyi" & 
+                                    df.fig1$measurementType == "body mass" & 
+                                    !is.na(df.fig1$measurementValue)]) #233
 
 #care about estimated and lifeStage
-data.fig1$cat <- paste(data.fig1$lifeStage, data.fig1$measurementValueEstimated)
-unique(data.fig1$cat)
-data.fig1$cat[data.fig1$cat == "NS NA" |
-                data.fig1$cat == "NS "] <- "No stage; data possibly good" #lightgoldenrod3
-data.fig1$cat[data.fig1$cat == "Adult NA" |
-                data.fig1$cat == "Adult "] <- "Adult; data possibly good" #darkorchid4
-data.fig1$cat[data.fig1$cat == "Juvenile NA" |
-                data.fig1$cat == "Juvenile "] <- "Juvenile; data possibly good" #gray74
+#inferred value = already converted units to "mm" or "g"
+#estimated value = made assumptions about which part of the string was the trait value
+#I will called estimated value "inferred value" for the category/figure
 
-data.fig1$cat[data.fig1$cat == "NS True"] <- "No stage; data estimated" #lightgoldenrod1
-data.fig1$cat[data.fig1$cat == "Adult True"] <- "Adult; data estimated" #darkorchid
-data.fig1$cat[data.fig1$cat == "Juvenile True"] <- "Juvenile; data estimated" #gray74
+df.fig1$cat <- paste(df.fig1$lifeStage, df.fig1$measurementMethod)
+unique(df.fig1$cat)
+df.fig1$cat[df.fig1$cat == "NS Unknown" |
+                df.fig1$cat == "NS Extracted with Traiter" | 
+                df.fig1$cat == "NS Extracted with Traiter ; inferred value"] <- "No stage; value possibly good" #lightgoldenrod3
+df.fig1$cat[df.fig1$cat == "adult Unknown" |
+            df.fig1$cat == "adult Extracted with Traiter" | 
+            df.fig1$cat == "adult Extracted with Traiter ; inferred value"] <- "Adult; value possibly good" #darkorchid4
+df.fig1$cat[df.fig1$cat == "juvenile Unknown" |
+            df.fig1$cat == "juvenile Extracted with Traiter" | 
+            df.fig1$cat == "juvenile Extracted with Traiter ; inferred value"] <- "Juvenile; value possibly good" #gray74
 
-data.fig1$cat <- as.factor(data.fig1$cat)
-data.fig1$cat = relevel(data.fig1$cat, "Adult; data possibly good")
-data.fig1$cat <- factor(data.fig1$cat, levels = c("Adult; data possibly good", "Adult; data estimated", 
-                                                  "Juvenile; data possibly good", "Juvenile; data estimated",
-                                                  "No stage; data possibly good", "No stage; data estimated"))
+df.fig1$cat[df.fig1$cat == "NS Extracted with Traiter ; estimated value" |
+            df.fig1$cat == "NS Extracted with Traiter ; estimated value; inferred value"] <- "No stage; value inferred" #lightgoldenrod1
+df.fig1$cat[df.fig1$cat == "adult Extracted with Traiter ; estimated value" |
+            df.fig1$cat == "adult Extracted with Traiter ; estimated value; inferred value"] <- "Adult; value inferred" #darkorchid
+df.fig1$cat[df.fig1$cat == "juvenile Extracted with Traiter ; estimated value" |
+            df.fig1$cat == "juvenile Extracted with Traiter ; estimated value; inferred value"] <- "Juvenile; value inferred" #gray74
 
-df <- subset(data.fig1, data.fig1$scientificName == "Peromyscus maniculatus" & 
-               data.fig1$measurementType == "mass" & 
-               !is.na(data.fig1$measurementValue))
-length(df$measurementValue) #31659
-unique(df$cat)
-length(df$cat[df$cat == "Adult; data possibly good"]) #3021
-length(df$cat[df$cat == "Juvenile; data possibly good"]) #951
-length(df$cat[df$cat == "No stage; data possibly good"]) #27583
-length(df$cat[df$cat == "No stage; data estimated"]) #104
-p <- ggplot(data = df) + 
-  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.6) +
-  scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
-                    name="Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Peromyscus maniculatus N = 31659") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
-  scale_y_continuous(name = "Density", limits = c(0, .25))
+df.fig1$cat <- as.factor(df.fig1$cat)
+df.fig1$cat = relevel(df.fig1$cat, "Adult; value possibly good")
+df.fig1$cat <- factor(df.fig1$cat, levels = c("Adult; value possibly good", "Adult; value inferred", 
+                                              "Juvenile; value possibly good", "Juvenile; value inferred",
+                                              "No stage; value possibly good", "No stage; value inferred"))
+
+df.pema <- subset(df.fig1, df.fig1$scientificName == "Peromyscus maniculatus" & 
+                  df.fig1$measurementType == "body mass" & 
+                  !is.na(df.fig1$measurementValue))
+length(df.pema$measurementValue)
+unique(df.pema$cat)
+length(df.pema$cat[df.pema$cat == "Adult; value possibly good"])
+length(df.pema$cat[df.pema$cat == "Juvenile; value possibly good"])
+length(df.pema$cat[df.pema$cat == "No stage; value possibly good"])
+length(df.pema$cat[df.pema$cat == "No stage; value inferred"])
+p <- ggplot(df = df.pema) + 
+     geom_density(aes(x = df.pema$measurementValue, fill = df.pema$cat), alpha = 0.6) +
+     scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
+                       name="df Quality Category") +
+     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+           panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+     ggtitle("Peromyscus maniculatus N = 31659") +
+     scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
+     scale_y_continuous(name = "Density", limits = c(0, .25))
 ggsave(p, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.fig1, data.fig1$scientificName == "Otospermophilus beecheyi" & 
-               data.fig1$measurementType == "mass" & 
-               !is.na(data.fig1$measurementValue))
-length(df$measurementValue) #233
-length(df$measurementValue[df$lifeStage == "Adult"]) #114
-length(df$measurementValue[df$lifeStage == "NS"]) #108
-length(df$measurementValue[df$lifeStage == "Juvenile"]) #11
-unique(df$cat)
-length(df$cat[df$cat == "Adult; data possibly good"]) #114
-length(df$cat[df$cat == "Juvenile; data possibly good"]) #11
-length(df$cat[df$cat == "No stage; data possibly good"]) #107
-length(df$cat[df$cat == "No stage; data estimated"]) #1
-p <- ggplot(data = df) + 
-  geom_density(aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
-                    name="Data Quality Category") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ggtitle("Otospermophilus beecheyi N = 233") +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-  scale_y_continuous(name = "Density", limits = c(0, .01))
+df.otbe <- subset(df.fig1, df.fig1$scientificName == "Otospermophilus beecheyi" & 
+                  df.fig1$measurementType == "body mass" & 
+                  !is.na(df.fig1$measurementValue))
+length(df.otbe$measurementValue)
+length(df.otbe$measurementValue[df.otbe$lifeStage == "adult"]) 
+length(df.otbe$measurementValue[df.otbe$lifeStage == "NS"]) 
+length(df.otbe$measurementValue[df.otbe$lifeStage == "juvenile"])
+unique(df.otbe$cat)
+length(df.otbe$cat[df.otbe$cat == "Adult; value possibly good"]) 
+length(df.otbe$cat[df.otbe$cat == "Juvenile; value possibly good"]) 
+length(df.otbe$cat[df.otbe$cat == "No stage; value possibly good"]) 
+length(df.otbe$cat[df.otbe$cat == "No stage; value inferred"])
+p <- ggplot(df = df.otbe) + 
+     geom_density(aes(x = df.otbe$measurementValue, fill = df.otbe$cat), alpha = 0.4) +
+     scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
+                       name="df Quality Category") +
+     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+           panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+     ggtitle("Otospermophilus beecheyi N = 233") +
+     scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
+     scale_y_continuous(name = "Density", limits = c(0, .01))
 ggsave(p, file=paste0("orig.dist.lifeStage.squirrel",".png"), width = 14, height = 10, units = "cm")
 
 ##Mahalanobis Outlier test----
-data.test <- data.binom
+df.test <- df.binom
 
 #add rownames for indexing
-rownames(data.test) <- seq(1, nrow(data.test),1)
+rownames(df.test) <- seq(1, nrow(df.test),1)
 
 #need to select out trait
 #remove NAs from trait
@@ -456,26 +213,41 @@ rownames(data.test) <- seq(1, nrow(data.test),1)
 #label those rows as outliers
 
 #want to find outliers for known adults and non-estimated values
-sp <- unique(data.test$scientificName)
-length(sp) #4346
-nrow(data.test) #3824088
+sp <- unique(df.test$scientificName)
+length(sp) 
+nrow(df.test) 
+
+df.test$measurementStatus <- ""
+
+##maha function from https://cran.r-project.org/src/contrib/Archive/OutlierDetection/
+source("Maha.R")
+
+##test with P. maniculatus
+pema <- subset(df.test, subset = df.test[,"scientificName"] == "Peromyscus maniculatus" &
+                 df.test[,"measurementType"] == "body mass" & 
+                 df.test[,"lifeStage"] == "adult", 
+               select = "measurementValue") %>%
+  drop_na()
+
+outlier.pema <- maha(pema, cutoff = 0.95, rnames = FALSE)
+
+##now for all:
 
 for(i in 1:length(sp)){
-  sub <- subset(data.test, subset = data.test[,"scientificName"] == sp[i] & 
-                  data.test[,"measurementValueEstimated"] != "True" & 
-                  data.test[,"measurementType"] == "mass" & 
-                  data.test[,"lifeStage"] == "Adult", 
+  sub <- subset(df.test, subset = df.test[,"scientificName"] == sp[i] &
+                df.test[,"measurementType"] == "body mass" & 
+                df.test[,"lifeStage"] == "adult", 
                 select = "measurementValue") %>%
     drop_na()
   if(isTRUE(nrow(sub) >= 10)){
     outlier <- maha(sub, cutoff = 0.95, rnames = FALSE)
     index <- names(outlier[[2]])
     if(isTRUE(length(index) != 0)){
-      data.test[index,"measurementStatus"] <- "outlier"
+      df.test[index,"measurementStatus"] <- "outlier"
     }
   }
   else if(isTRUE(nrow(sub) <= 10)){
-      data.test$measurementStatus[data.test$scientificName == sp[i]] <- "too few records"
+      df.test$measurementStatus[df.test$scientificName == sp[i]] <- "too few records"
     }
   else{
     next
@@ -483,10 +255,9 @@ for(i in 1:length(sp)){
 }
 
 for(i in 1:length(sp)){
-  sub <- subset(data.test, subset = data.test[,"scientificName"] == sp[i] & 
-                  data.test[,"measurementValueEstimated"] != "True" & 
-                  data.test[,"measurementType"] == "total.length" & 
-                  data.test[,"lifeStage"] == "Adult", 
+  sub <- subset(df.test, subset = df.test[,"scientificName"] == sp[i] & 
+                  df.test[,"measurementType"] == "body length" & 
+                  df.test[,"lifeStage"] == "adult", 
                 select = "measurementValue") %>%
     drop_na()
   if(isTRUE(nrow(sub) == 0)){
@@ -499,11 +270,11 @@ for(i in 1:length(sp)){
     outlier <- maha(sub, cutoff = 0.95, rnames = FALSE)
     index <- names(outlier[[2]])
     if(isTRUE(length(index) != 0)){
-      data.test[index,"measurementStatus"] <- "outlier"
+      df.test[index,"measurementStatus"] <- "outlier"
     }
   }
   else if(isTRUE(nrow(sub) <= 10)){
-    data.test$measurementStatus[data.test$scientificName == sp[i]] <- "too few records"
+    df.test$measurementStatus[df.test$scientificName == sp[i]] <- "too few records"
   }
   else{
     next
@@ -511,10 +282,9 @@ for(i in 1:length(sp)){
 }
 
 for(i in 1:length(sp)){
-  sub <- subset(data.test, subset = data.test[,"scientificName"] == sp[i] & 
-                  data.test[,"measurementValueEstimated"] != "True" & 
-                  data.test[,"measurementType"] == "tail.length" & 
-                  data.test[,"lifeStage"] == "Adult", 
+  sub <- subset(df.test, subset = df.test[,"scientificName"] == sp[i] & 
+                  df.test[,"measurementType"] == "tail.length" & 
+                  df.test[,"lifeStage"] == "adult", 
                 select = "measurementValue") %>%
     drop_na()
   if(isTRUE(nrow(sub) == 0)){
@@ -524,11 +294,11 @@ for(i in 1:length(sp)){
     outlier <- maha(sub, cutoff = 0.95, rnames = FALSE)
     index <- names(outlier[[2]])
     if(isTRUE(length(index) != 0)){
-      data.test[index,"measurementStatus"] <- "outlier"
+      df.test[index,"measurementStatus"] <- "outlier"
     }
   }
   else if(isTRUE(nrow(sub) <= 10)){
-    data.test$measurementStatus[data.test$scientificName == sp[i]] <- "too few records"
+    df.test$measurementStatus[df.test$scientificName == sp[i]] <- "too few records"
   }
   else{
     next
@@ -537,9 +307,9 @@ for(i in 1:length(sp)){
 
 ##write out Mahalanobis outlier test data----
 data.mh <- data.test
-length(unique(data.mh$scientificName)) #4346
-nrow(data.mh) #3824088
-write.csv(data.mh, "mh.outlier.checked.data.csv")
+length(unique(data.mh$scientificName)) #3061
+nrow(data.mh) #2078861
+write.csv(data.mh, "mh.outlier.flagged.data.csv")
 
 ##Figure 1, panel 2: outliers----
 data.fig2 <- data.mh[data.mh$lifeStage != "Juvenile" & 
@@ -610,33 +380,56 @@ data.noInfer_Adults <- subset(data.mh, subset = c(data.mh$measurementStatus != "
 nrow(data.noInfer_Adults) #263674
 length(unique(data.noInfer_Adults$scientificName)) #271
 
-test.pema <- subset(data.noInfer_Adults, subset = data.noInfer_Adults$scientificName == "Peromyscus maniculatus")
+##test using Peromyscus maniculatus
+test.pema <- subset(data.mh, subset = data.mh$scientificName == "Peromyscus maniculatus" &
+                    data.mh$measurementStatus != "outlier" &
+                    data.mh$measurementStatus != "too few records" &
+                    data.mh$lifeStage == "Adult" &
+                    data.mh$measurementValueEstimated != "True")
 normal.pema <- shapiro.test(test.pema$measurementValue[test.pema$measurementType == "mass"]) #if sig then not normally distributed
-
-test.otbe <- subset(data.noInfer_Adults, subset = data.noInfer_Adults$scientificName == "Otospermophilus beecheyi")
-normal.otbe <- shapiro.test(test.otbe$measurementValue[test.otbe$measurementType == "mass"]) #if sig then not normally distributed
 
 #extract sig values
 normal.pema[[2]]
 #isTRUE(normal[[2]] < 0.05)
 
-sp.adult <- unique(data.noInfer_Adults$scientificName)
+##TO DO: make into a function
+
+sp <- unique(data.mh$scientificName)
 
 ##mass
-for(i in 1:length(sp.adult)){
-  sub <- subset(data.noInfer_Adults, subset = data.noInfer_Adults[,"scientificName"] == sp.adult[i])
+for(i in 1:length(sp)){
+  sub <- subset(data.mh, subset = c(data.mh[,"scientificName"] == sp[i] &
+                                    data.mh$measurementStatus != "outlier" &
+                                    data.mh$measurementStatus != "too few records" &
+                                    data.mh$lifeStage == "Adult" &
+                                    data.mh$measurementValueEstimated != "True"))
   sub <- sub %>%
     drop_na(measurementValue)
   if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "mass"])) < 3)){
-    data.noInfer_Adults$normality[data.noInfer_Adults$scientificName == sp.adult[i] & data.noInfer_Adults$measurementType == "mass"] <- "too few records"
+    data.mh$normality[data.mh$scientificName == sp[i] & 
+                      data.mh$measurementType == "mass" &
+                      data.mh$measurementStatus != "outlier" &
+                      data.mh$measurementStatus != "too few records" &
+                      data.mh$lifeStage == "Adult" &
+                      data.mh$measurementValueEstimated != "True"] <- "too few records"
   }
   else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "mass"])) >= 3)){
     normal.mass <- shapiro.test(sub$measurementValue[sub$measurementType == "mass"])
        if(isTRUE(normal.mass[[2]] < 0.5)){
-        data.noInfer_Adults$normality[data.noInfer_Adults$measurementType == "mass" & data.noInfer_Adults$scientificName == sp.adult[i]] <- "non-normal"
+        data.mh$normality[data.mh$measurementType == "mass" & 
+                          data.mhscientificName == sp[i] &
+                          data.mh$measurementStatus != "outlier" &
+                          data.mh$measurementStatus != "too few records" &
+                          data.mh$lifeStage == "Adult" &
+                          data.mh$measurementValueEstimated != "True"] <- "non-normal"
       }
       else if(isTRUE(normal.mass[[2]] >= 0.5)){
-        data.noInfer_Adults$normality[data.noInfer_Adults$measurementType == "mass" & data.noInfer_Adults$scientificName == sp.adult[i]] <- "normal"
+        data.mh$normality[data.mh$measurementType == "mass" & 
+                          data.mh$scientificName == sp[i] &
+                          data.mh$measurementStatus != "outlier" &
+                          data.mh$measurementStatus != "too few records" &
+                          data.mh$lifeStage == "Adult" &
+                          data.mh$measurementValueEstimated != "True"] <- "normal"
       }
   }
   else{
@@ -645,20 +438,39 @@ for(i in 1:length(sp.adult)){
 }
 
 ##total length
-for(i in 1:length(sp.adult)){
-  sub <- subset(data.noInfer_Adults, subset = data.noInfer_Adults[,"scientificName"] == sp.adult[i])
+for(i in 1:length(sp)){
+  sub <- subset(data.mh, subset = c(data.mh[,"scientificName"] == sp[i] &
+                                     data.mh$measurementStatus != "outlier" &
+                                     data.mh$measurementStatus != "too few records" &
+                                     data.mh$lifeStage == "Adult" &
+                                     data.mh$measurementValueEstimated != "True"))
   sub <- sub %>%
     drop_na(measurementValue)
   if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "total.length"])) < 3)){
-    data.noInfer_Adults$normality[data.noInfer_Adults$scientificName == sp.adult[i] & data.noInfer_Adults$measurementType == "total.length"] <- "too few records"
+    data.mh$normality[data.mh$scientificName == sp[i] & 
+                      data.mh$measurementType == "total.length" &
+                      data.mh$measurementStatus != "outlier" &
+                      data.mh$measurementStatus != "too few records" &
+                      data.mh$lifeStage == "Adult" &
+                      data.mh$measurementValueEstimated != "True"] <- "too few records"
   }
   else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "total.length"])) >= 3)){
     normal.total.length <- shapiro.test(sub$measurementValue[sub$measurementType == "total.length"])
     if(isTRUE(normal.total.length[[2]] < 0.5)){
-      data.noInfer_Adults$normality[data.noInfer_Adults$measurementType == "total.length" & data.noInfer_Adults$scientificName == sp.adult[i]] <- "non-normal"
+      data.mh$normality[data.mh$measurementType == "total.length" & 
+                        data.mh$scientificName == sp[i] &
+                        data.mh$measurementStatus != "outlier" &
+                        data.mh$measurementStatus != "too few records" &
+                        data.mh$lifeStage == "Adult" &
+                        data.mh$measurementValueEstimated != "True"] <- "non-normal"
     }
     else if(isTRUE(normal.total.length[[2]] >= 0.5)){
-      data.noInfer_Adults$normality[data.noInfer_Adults$measurementType == "total.length" & data.noInfer_Adults$scientificName == sp.adult[i]] <- "normal"
+      data.mh$normality[data.mh$measurementType == "total.length" & 
+                        data.mh$scientificName == sp[i] &
+                        data.mh$measurementStatus != "outlier" &
+                        data.mh$measurementStatus != "too few records" &
+                        data.mh$lifeStage == "Adult" &
+                        data.mh$measurementValueEstimated != "True"] <- "normal"
     }
   }
   else{
@@ -667,20 +479,39 @@ for(i in 1:length(sp.adult)){
 }
 
 ##tail length
-for(i in 1:length(sp.adult)){
-  sub <- subset(data.noInfer_Adults, subset = data.noInfer_Adults[,"scientificName"] == sp.adult[i])
+for(i in 1:length(sp)){
+  sub <- subset(data.mh, subset = c(data.mh[,"scientificName"] == sp[i] &
+                                      data.mh$measurementStatus != "outlier" &
+                                      data.mh$measurementStatus != "too few records" &
+                                      data.mh$lifeStage == "Adult" &
+                                      data.mh$measurementValueEstimated != "True"))
   sub <- sub %>%
     drop_na(measurementValue)
   if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "tail.length"])) < 3)){
-    data.noInfer_Adults$normality[data.noInfer_Adults$scientificName == sp.adult[i] & data.noInfer_Adults$measurementType == "tail.length"] <- "too few records"
+    data.mh$normality[data.mh$scientificName == sp[i] & 
+                      data.mh$measurementType == "tail.length" &
+                      data.mh$measurementStatus != "outlier" &
+                      data.mh$measurementStatus != "too few records" &
+                      data.mh$lifeStage == "Adult" &
+                      data.mh$measurementValueEstimated != "True"] <- "too few records"
   }
   else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "tail.length"])) >= 3)){
     normal.tail <- shapiro.test(sub$measurementValue[sub$measurementType == "tail.length"])
     if(isTRUE(normal.tail[[2]] < 0.5)){
-      data.noInfer_Adults$normality[data.noInfer_Adults$measurementType == "tail.length" & data.noInfer_Adults$scientificName == sp.adult[i]] <- "non-normal"
+      data.mh$normality[data.mh$measurementType == "tail.length" &
+                        data.mh$scientificName == sp[i] &
+                        data.mh$measurementStatus != "outlier" &
+                        data.mh$measurementStatus != "too few records" &
+                        data.mh$lifeStage == "Adult" &
+                        data.mh$measurementValueEstimated != "True"] <- "non-normal"
     }
     else if(isTRUE(normal.tail[[2]] >= 0.5)){
-      data.noInfer_Adults$normality[data.noInfer_Adults$measurementType == "tail.length" & data.noInfer_Adults$scientificName == sp.adult[i]] <- "normal"
+      data.mh$normality[data.mh$measurementType == "tail.length" & 
+                        data.mh$scientificName == sp[i]&
+                        data.mh$measurementStatus != "outlier" &
+                        data.mh$measurementStatus != "too few records" &
+                        data.mh$lifeStage == "Adult" &
+                        data.mh$measurementValueEstimated != "True"] <- "normal"
     }
   }
   else{
@@ -688,30 +519,17 @@ for(i in 1:length(sp.adult)){
   }
 }
 
-data.norm.test <- subset(data.noInfer_Adults, select = c(individualID, normality))
-nrow(data.norm.test) #should be 263674
+nrow(data.norm.test) #should be nrow(data)
 
-df.norm <- data.mh
-
-sp.norm <- unique(data.noInfer_Adults)
-for(i in 1:length(sp.norm)){
-  df.norm$normality[df.norm$measurementStatus != "outlier" &
-                    df.norm$measurementStatus != "too few records" &
-                    df.norm$lifeStage == "Adult" &
-                    df.norm$measurementValueEstimated != "True" &
-                    df.norm$scientificName == sp.norm[i]] <- data.noInfer_Adults$normality[data.noInfer_Adults$scientificName == sp.norm[i]][1]
-  
-}
-
-df.norm <- merge(data.mh, data.norm.test, by = "individualID", all.x = TRUE, all.y = TRUE)
-length(unique(df.norm$scientificName)) #should be 4346
-nrow(df.norm) #should be 3824088
-write.csv(df.norm,"data.norm.csv")
+##write normality test----
+data.norm <- data.mh
+write.csv(df.norm, "normality.test.flagged.data.csv")
 
 ####log transform data----
 
-df.norm$logMeasurementValue <- log10(df.norm$measurementValue)
-df.norm[!is.finite(df.norm$logMeasurementValue),] <- NA
+data.transform <- data.norm
+data.transform$logMeasurementValue <- log10(data.transform$measurementValue)
+data.transform[!is.finite(data.transform$logMeasurementValue),] <- NA
 
 df.transform <- subset(df.norm, subset = c(df.norm$measurementStatus != "outlier" &
                                            df.norm$measurementStatus != "too few records" &
@@ -720,36 +538,46 @@ df.transform <- subset(df.norm, subset = c(df.norm$measurementStatus != "outlier
                                            df.norm$normality == "non-normal"))
 
 #testing
-df.pema <- df.transform[df.transform$scientificName == "Peromyscus maniculatus",]
+df.pema1 <- data.transform[data.transform$scientificName == "Peromyscus maniculatus", 
+                           data.transform$measurementStatus != "outlier" &
+                           data.transform$measurementStatus != "too few records" &
+                           data.transform$lifeStage == "Adult" &
+                           data.transform$measurementValueEstimated != "True" &
+                           data.transform$normality == "non-normal"]
 
-sd.pema <- sd(df.pema$measurementValue[df.pema$measurementType == "mass"], na.rm = TRUE)
-mean.pema <- mean(df.pema$measurementValue[df.pema$measurementType == "mass"], na.rm = TRUE)
-upper.limit <- mean.pema+3*sd.pema
-lower.limit <- mean.pema-3*sd.pema
+sd.pema1 <- sd(df.pema1$measurementValue[df.pema1$measurementType == "mass"], na.rm = TRUE)
+mean.pema1 <- mean(df.pema1$measurementValue[df.pema1$measurementType == "mass"], na.rm = TRUE)
+upper.limit1 <- mean.pema+3*sd.pema
+lower.limit1 <- mean.pema-3*sd.pema
 
-plot(density(df.pema$measurementValue[df.pema$measurementType == "mass"], bw = .5,na.rm = TRUE))
+plot(density(df.pema1$measurementValue[df.pema1$measurementType == "mass" &
+                                       df.pema1$measurementStatue != "outlier"], bw = .5,na.rm = TRUE))
 
-hist(df.pema$measurementValue[df.pema$measurementType == "mass"], breaks = 100,
+hist(df.pema1$measurementValue[df.pema1$measurementType == "mass" &
+                               df.pema1$measurementStatus != "outlier"], breaks = 100,
      xlim = c(0, 50),
      main = substitute(paste("Histogram of", italic("Peromyscus maniculatus"))),
      xlab = "Body Mass (g)")
      abline(v = upper.limit, col = "black", lty = 2)
      abline(v = lower.limit, col = "black", lty = 2)
   
-df.pema2 <- df.pema
-sub2 <- subset(df.pema2, subset = df.pema2[,"measurementValueEstimated"] != "True" &
-                                  df.pema2[,"measurementType"] == "mass" &
-                                  df.pema2[,"lifeStage"] == "Adult",
-                                  select = "measurementValue") %>%
+df.pema2 <- data.transform[data.transform$scientificName == "Peromyscus maniculatus",
+                           data.transform$measurementStatus != "outlier" &
+                           data.transform$measurementStatus != "too few records" &
+                           data.transform$lifeStage == "Adult" &
+                           data.transform$measurementValueEstimated != "True" &
+                           data.transform$normality == "non-normal"] %>%
   drop_na()
 
-outlier2 <- maha(sub2, cutoff = 0.95, rnames = FALSE)
+outlier2 <- maha(df.pema2$measurementValue[df.pema2$measurementType == "mass"], cutoff = 0.95, rnames = FALSE)
 index <= names(outlier2[[2]])
 
-df.test2[index,"measurementStatus"] <- "outlier"
+df.pema2[index,"measurementStatus"] <- "outlier"
 
-sd.pema2 <- sd(df.test2$measurementValue[df.test2$measurementType == "mass"], na.rm = TRUE)
-mean.pema2 <- mean(df.test2$measurementValue[df.test2$measurementType == "mass"], na.rm = TRUE)
+sd.pema2 <- sd(df.pema2$measurementValue[df.pema2$measurementType == "mass" &
+                                         df.pema2$measurementStatus != "outlier"], na.rm = TRUE)
+mean.pema2 <- mean(df.pema2$measurementValue[df.pema2$measurementType == "mass" &
+                                             df.pema2$measurementStatus != "outlier"], na.rm = TRUE)
 upper.limit2 <- mean.pema+3*sd.pema
 lower.limit2 <- mean.pema-3*sd.pema
 
@@ -762,24 +590,47 @@ hist(df.test2$measurementValue[df.test2$measurementType == "mass"], breaks = 100
 abline(v = upper.limit, col = "black", lty = 2)
 abline(v = lower.limit, col = "black", lty = 2)
 
-df.pema <- subset(df.transform, df.transform$scientificName == "Peromyscus maniculatus")
+#all species
 
 sp.transform <- unique(df.transform$scientificName)
 
 for(i in 1:length(sp.transform)){
-  sub <- subset(df.transform, subset = c(df.transform$scientificName == sp.transform[i]))
+  sub <- subset(df.transform, subset = c(df.transform$scientificName == sp.transform[i] &
+                                         df.transform$measurementStatus != "outlier" &
+                                         df.transform$measurementValueEstimated != "True" &
+                                         df.transform$lifeStage == "Adult" &
+                                         df.transform$measurementStatus != "too few records" &
+                                         df.transform$normality == "non-normal"))
   sub <- sub %>%
     drop_na(measurementValue)
   if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "mass"])) < 3)){
-    df.transform$normality[df.transform$scientificName == sp.transform[i] & df.transform$measurementType == "mass"] <- "too few records"
+    df.transform$normality[df.transform$scientificName == sp.transform[i] & 
+                           df.transform$measurementType == "mass" & 
+                           df.transform$measurementStatus != "outlier" &
+                           df.transform$measurementValueEstimated != "True" &
+                           df.transform$lifeStage == "Adult" &
+                           df.transform$measurementStatus != "too few records" &
+                           df.transform$normality == "non-normal"] <- "too few records"
   }
   else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "mass"])) >= 3)){
     log.normal.mass <- shapiro.test(sub$logMeasurementValue[sub$measurementType == "mass"])
     if(isTRUE(log.normal.mass[[2]] > 0.05)){
-      df.transform$normality[df.transform$scientificName == sp.transform[i] & df.transform$measurementType == "mass"] <- "log normal"
+      df.transform$normality[df.transform$scientificName == sp.transform[i] & 
+                             df.transform$measurementType == "mass" & 
+                             df.transform$measurementStatus != "outlier" &
+                             df.transform$measurementValueEstimated != "True" &
+                             df.transform$lifeStage == "Adult" &
+                             df.transform$measurementStatus != "too few records" &
+                             df.transform$normality == "non-normal"] <- "log normal"
     }
     else if(isTRUE(log.normal.mass[[2]] <= 0.05)){
-      df.transform$normality[df.transform$scientificName == sp.transform[i] & df.transform$measurementType == "mass"] <- "non-normal (even logged)"
+      df.transform$normality[df.transform$scientificName == sp.transform[i] & 
+                             df.transform$measurementType == "mass" & 
+                             df.transform$measurementStatus != "outlier" &
+                             df.transform$measurementValueEstimated != "True" &
+                             df.transform$lifeStage == "Adult" &
+                             df.transform$measurementStatus != "too few records" &
+                             df.transform$normality == "non-normal"] <- "non-normal (even logged)"
     }
   }
   else{
@@ -787,6 +638,7 @@ for(i in 1:length(sp.transform)){
   }
 }
 
+####STOPPED HERE----
 for(i in 1:length(sp.transform)){
   sub <- subset(df.transform, subset = c(df.transform$scientificName == sp.transform[i]))
   sub <- sub %>%

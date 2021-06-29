@@ -141,6 +141,8 @@ p <- ggplot(data = pan.adult_stats.trim, aes(x = mass.diff.se)) +
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ggsave(p, file=paste0("diff.mass", ".png"), width = 14, height = 10, units = "cm")
 
+##central tendencies: median of FuTRES data to mean of PanTHERIA as a two sample t-test; non-parametric----
+
 ##Q2: estimating mass----
 ##Odocoileus virginianus
 
@@ -157,6 +159,10 @@ deer.combo <- merge(deer.mass, deer.astragalus.length, by = "catalogNumber", all
 deer.combo$mass <- as.numeric(deer.combo$mass)
 deer.combo$astragalus.length <- as.numeric(deer.combo$astragalus.length)
 
+normal.odvi <- shapiro.test(deer.combo$mass) #if sig then not normally distributed
+
+#test for normality
+
 ##write out data for example----
 write.csv(deer.combo, "deer.csv")
 
@@ -170,6 +176,7 @@ x.species <- deer.combo$astragalus.length
 y.species <- deer.combo$mass
 #order should be the same
 log.deer.mass.astragalus <- lm(log10(y.species) ~ log10(x.species), na.action = na.exclude)
+#log.deer.mass.astragalus <- glm(log10(y.species) ~ log10(x.species), na.action = na.exclude)
 log.sum.deer.mass.astragalus <- summary(log.deer.mass.astragalus)
 
 anklepredict <- data.frame(specimenID = old.deer$SpecimenID, old.deer$Acc..., x.species = old.deer$astragalus.length)
@@ -223,7 +230,10 @@ log.deer.mass.astragalus.stats <- data.frame(scientificName = "Odocoileus virgin
                                         FortCenter.sample.size = nrow(anklepredict[!is.na(anklepredict$x.species) & anklepredict$site == "Fort Center",]),
                                         StCatherines.sample.size = nrow(anklepredict[!is.na(anklepredict$x.species) & anklepredict$site == "Saint Catherines",]))
 write.csv(log.deer.mass.astragalus.stats, "log.deer.mass.astragalus.stats.csv")
+#write.csv(log.deer.mass.astragalus.stats.glm, "log.deer.mass.astragalus.stats.glm.csv")
+
 write.csv(anklepredict, "anklepredict.csv")
+#write.csv(anklepredict, "anklepredict.glm.csv")
 
 #predict using old method: logy = -6.71 + (5.29)logx
 compare <- subset(anklepredict, select = c("specimenID", "site", "x.species", "fit.mass", "lower", "upper", "se.fit.mass"))
@@ -232,3 +242,6 @@ compare$wing.mass <- 10^((-6.71)+(5.29)*log10(compare$astragalus.length)) * 1000
 compare$within2se <- compare$wing.mass > compare$lower & compare$wing.mass < compare$upper
 
 write.csv(compare, "old.deer.mass.comparison.csv")
+#write.csv(compare, "old.deer.mass.comparison.glm.csv")
+
+
