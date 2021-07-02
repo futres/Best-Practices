@@ -157,48 +157,48 @@ df.fig1$cat <- factor(df.fig1$cat, levels = c("Adult; value possibly good", "Adu
                                               "Juvenile; value possibly good", "Juvenile; value inferred",
                                               "No stage; value possibly good", "No stage; value inferred"))
 
-df.pema <- subset(df.fig1, df.fig1$scientificName == "Peromyscus maniculatus" & 
-                  df.fig1$measurementType == "body mass" & 
-                  !is.na(df.fig1$measurementValue))
-length(df.pema$measurementValue)
-unique(df.pema$cat)
-length(df.pema$cat[df.pema$cat == "Adult; value possibly good"])
-length(df.pema$cat[df.pema$cat == "Juvenile; value possibly good"])
-length(df.pema$cat[df.pema$cat == "No stage; value possibly good"])
-length(df.pema$cat[df.pema$cat == "No stage; value inferred"])
-p <- ggplot(df = df.pema) + 
-     geom_density(aes(x = df.pema$measurementValue, fill = df.pema$cat), alpha = 0.6) +
-     scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
-                       name="df Quality Category") +
-     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-           panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-     ggtitle("Peromyscus maniculatus N = 31659") +
-     scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
-     scale_y_continuous(name = "Density", limits = c(0, .25))
-ggsave(p, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
+df.pema1 <- subset(df.fig1, df.fig1$scientificName == "Peromyscus maniculatus" & 
+                   df.fig1$measurementType == "body mass" & 
+                   !is.na(df.fig1$measurementValue))
+length(df.pema1$measurementValue)
+unique(df.pema1$cat)
+length(df.pema1$cat[df.pema1$cat == "Adult; value possibly good"])
+length(df.pema1$cat[df.pema1$cat == "Juvenile; value possibly good"])
+length(df.pema1$cat[df.pema1$cat == "No stage; value possibly good"])
+length(df.pema1$cat[df.pema1$cat == "No stage; value inferred"])
+p.pema1 <- ggplot(df = df.pema1) + 
+                  geom_density(aes(x = df.pema1$measurementValue, fill = df.pema1$cat), alpha = 0.6) +
+                  scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
+                                    name="df Quality Category") +
+                  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+                  ggtitle("Peromyscus maniculatus N = 31659") +
+                  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
+                  scale_y_continuous(name = "Density", limits = c(0, .25))
+ggsave(p.pema1, file=paste0("orig.dist.lifeStage.mouse",".png"), width = 14, height = 10, units = "cm")
 
-df.otbe <- subset(df.fig1, df.fig1$scientificName == "Otospermophilus beecheyi" & 
-                  df.fig1$measurementType == "body mass" & 
-                  !is.na(df.fig1$measurementValue))
-length(df.otbe$measurementValue)
-length(df.otbe$measurementValue[df.otbe$lifeStage == "adult"]) 
-length(df.otbe$measurementValue[df.otbe$lifeStage == "NS"]) 
-length(df.otbe$measurementValue[df.otbe$lifeStage == "juvenile"])
-unique(df.otbe$cat)
-length(df.otbe$cat[df.otbe$cat == "Adult; value possibly good"]) 
-length(df.otbe$cat[df.otbe$cat == "Juvenile; value possibly good"]) 
-length(df.otbe$cat[df.otbe$cat == "No stage; value possibly good"]) 
-length(df.otbe$cat[df.otbe$cat == "No stage; value inferred"])
-p <- ggplot(df = df.otbe) + 
-     geom_density(aes(x = df.otbe$measurementValue, fill = df.otbe$cat), alpha = 0.4) +
-     scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
-                       name="df Quality Category") +
-     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-           panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-     ggtitle("Otospermophilus beecheyi N = 233") +
-     scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-     scale_y_continuous(name = "Density", limits = c(0, .01))
-ggsave(p, file=paste0("orig.dist.lifeStage.squirrel",".png"), width = 14, height = 10, units = "cm")
+df.otbe1 <- subset(df.fig1, df.fig1$scientificName == "Otospermophilus beecheyi" & 
+                   df.fig1$measurementType == "body mass" & 
+                   !is.na(df.fig1$measurementValue))
+length(df.otbe1$measurementValue)
+length(df.otbe1$measurementValue[df.otbe1$lifeStage == "adult"]) 
+length(df.otbe1$measurementValue[df.otbe1$lifeStage == "NS"]) 
+length(df.otbe1$measurementValue[df.otbe1$lifeStage == "juvenile"])
+unique(df.otbe1$cat)
+length(df.otbe1$cat[df.otbe1$cat == "Adult; value possibly good"]) 
+length(df.otbe1$cat[df.otbe1$cat == "Juvenile; value possibly good"]) 
+length(df.otbe1$cat[df.otbe1$cat == "No stage; value possibly good"]) 
+length(df.otbe1$cat[df.otbe1$cat == "No stage; value inferred"])
+p.otbe1 <- ggplot(df = df.otbe1) + 
+           geom_density(aes(x = df.otbe1$measurementValue, fill = df.otbe1$cat), alpha = 0.4) +
+           scale_fill_manual(values = c("darkorchid4", "gray74", "lightgoldenrod3", "lightgoldenrod1"), 
+                             name="df Quality Category") +
+           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+           ggtitle("Otospermophilus beecheyi N = 233") +
+           scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
+           scale_y_continuous(name = "Density", limits = c(0, .01))
+ggsave(p.otbe1, file=paste0("orig.dist.lifeStage.squirrel",".png"), width = 14, height = 10, units = "cm")
 
 ##Mahalanobis Outlier test----
 df.test <- df.binom
@@ -224,8 +224,8 @@ source("Maha.R")
 
 ##test with P. maniculatus
 pema <- subset(df.test, subset = df.test[,"scientificName"] == "Peromyscus maniculatus" &
-                 df.test[,"measurementType"] == "body mass" & 
-                 df.test[,"lifeStage"] == "adult", 
+               df.test[,"measurementType"] == "body mass" & 
+               df.test[,"lifeStage"] == "adult", 
                select = "measurementValue") %>%
   drop_na()
 
@@ -238,7 +238,7 @@ for(i in 1:length(sp)){
                 df.test[,"measurementType"] == "body mass" & 
                 df.test[,"lifeStage"] == "adult", 
                 select = "measurementValue") %>%
-    drop_na()
+         drop_na()
   if(isTRUE(nrow(sub) >= 10)){
     outlier <- maha(sub, cutoff = 0.95, rnames = FALSE)
     index <- names(outlier[[2]])
@@ -256,10 +256,10 @@ for(i in 1:length(sp)){
 
 for(i in 1:length(sp)){
   sub <- subset(df.test, subset = df.test[,"scientificName"] == sp[i] & 
-                  df.test[,"measurementType"] == "body length" & 
-                  df.test[,"lifeStage"] == "adult", 
+                df.test[,"measurementType"] == "body length" & 
+                df.test[,"lifeStage"] == "adult", 
                 select = "measurementValue") %>%
-    drop_na()
+         drop_na()
   if(isTRUE(nrow(sub) == 0)){
     next
   }
@@ -283,10 +283,10 @@ for(i in 1:length(sp)){
 
 for(i in 1:length(sp)){
   sub <- subset(df.test, subset = df.test[,"scientificName"] == sp[i] & 
-                  df.test[,"measurementType"] == "tail.length" & 
-                  df.test[,"lifeStage"] == "adult", 
+                df.test[,"measurementType"] == "tail.length" & 
+                df.test[,"lifeStage"] == "adult", 
                 select = "measurementValue") %>%
-    drop_na()
+         drop_na()
   if(isTRUE(nrow(sub) == 0)){
     next
   }
@@ -306,130 +306,130 @@ for(i in 1:length(sp)){
 }
 
 ##write out Mahalanobis outlier test data----
-data.mh <- data.test
-length(unique(data.mh$scientificName)) #3061
-nrow(data.mh) #2078861
-write.csv(data.mh, "mh.outlier.flagged.data.csv")
+write.csv(df.test, "mh.outlier.flagged.data.csv")
+length(unique(df.test$scientificName)) 
+nrow(df.test) 
 
 ##Figure 1, panel 2: outliers----
-data.fig2 <- data.mh[data.mh$lifeStage != "Juvenile" & 
-                       data.mh$measurementStatus != "too few records",]
+df.fig2 <- df.test[df.test$lifeStage != "juvenile" & 
+                   df.test$measurementStatus != "too few records",]
 
-data.fig2$cat <- paste(data.fig2$lifeStage, data.fig2$measurementStatus)
-unique(data.fig2$cat)
-data.fig2$cat[data.fig2$cat == "Adult "] <- "Adult; possibly good" #darkorchid4
-data.fig2$cat[data.fig2$cat == "Adult outlier"] <- "Adult; outlier" #darkorchid1
-data.fig2$cat[data.fig2$cat == "NS "] <- "No stage; untested" #lightgoldenrod1
+df.fig2$cat <- paste(df.fig2$lifeStage, df.fig2$measurementStatus)
+unique(df.fig2$cat)
+df.fig2$cat[df.fig2$cat == "adult "] <- "Adult; possibly good" #darkorchid4
+df.fig2$cat[df.fig2$cat == "adult outlier"] <- "Adult; outlier" #darkorchid1
+df.fig2$cat[df.fig2$cat == "NS "] <- "No stage; untested" #lightgoldenrod1
 
-data.fig2$cat <- as.factor(data.fig2$cat)
-data.fig2$cat = relevel(data.fig2$cat, "Adult; possibly good")
-data.fig2$cat <- factor(data.fig2$cat, levels = c("Adult; possibly good", "Adult; outlier", "No stage; untested"))
+df.fig2$cat <- as.factor(df.fig2$cat)
+df.fig2$cat = relevel(df.fig2$cat, "Adult; possibly good")
+df.fig2$cat <- factor(df.fig2$cat, levels = c("Adult; possibly good", "Adult; outlier", "No stage; untested"))
 
-df <- subset(data.fig2, data.fig2$scientificName == "Peromyscus maniculatus" & 
-               data.fig2$measurementType == "mass" &
-               !is.na(data.fig2$measurementValue))
-length(df$measurementType) #30708
-unique(df$cat)
-length(df$cat[df$cat == "Adult; possibly good"]) #3020
-length(df$cat[df$cat == "Adult; outlier"]) #1
-length(df$cat[df$cat == "No stage; untested"]) #27687
-p <- ggplot() + 
-  geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
-  geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod1"),
-                    name = "Data Quality Category") +
-  ggtitle("Peromyscus maniculatus N = 30708, Noutlier = 1") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
-  scale_y_continuous(name = "Density", limits = c(0, .25))
+df.pema2 <- subset(df.fig2, df.fig2$scientificName == "Peromyscus maniculatus" & 
+                   df.fig2$measurementType == "body mass" &
+                   !is.na(df.fig2$measurementValue))
+length(df.pema2$measurementType)
+unique(df.pema2$cat)
+length(df.pema2$cat[df.pema2$cat == "Adult; possibly good"])
+length(df.pema2$cat[df.pema2$cat == "Adult; outlier"]) 
+length(df.pema2$cat[df.pema2$cat == "No stage; untested"]) 
+p.pema2 <- ggplot() + 
+           geom_density(data = filter(df.pema2, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
+           geom_rug(data = filter(df.pema2, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
+           geom_density(data = df.pema2, aes(x = measurementValue, fill = cat), alpha = 0.4) +
+           scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod1"),
+                             name = "Data Quality Category") +
+           ggtitle("Peromyscus maniculatus N = 30708, Noutlier = 1") +
+           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+           scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
+           scale_y_continuous(name = "Density", limits = c(0, .25))
+df.pema2$measurementValue[df.pema2$cat == "Adult; outlier"]
 #outlier @17100g
-ggsave(p, file=paste0("outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
+ggsave(p.pema2, file=paste0("outlier.test.mouse",".png"), width = 14, height = 10, units = "cm")
 
-df <- subset(data.fig2, data.fig2$scientificName == "Otospermophilus beecheyi" & 
-               data.fig2$measurementType == "mass" &
-               !is.na(data.fig2$measurementValue))
-length(df$measurementType) #222
-unique(df$cat)
-length(df$cat[df$cat == "Adult; possibly good"]) #107
-length(df$cat[df$cat == "Adult; outlier"]) #7
-length(df$cat[df$cat == "No stage; untested"]) #108
-p <- ggplot() + 
-  geom_density(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
-  geom_rug(data = filter(df, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
-  geom_density(data = df, aes(x = measurementValue, fill = cat), alpha = 0.4) +
-  scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod1"),
-                    name = "Data Quality Category") +
-  ggtitle("Otospermophilus beecheyi N = 222, Noutlier = 7") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
-  scale_y_continuous(name = "Density", limits = c(0, .01))
-ggsave(p, file=paste0("outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
+df.otbe2 <- subset(df.fig2, df.fig2$scientificName == "Otospermophilus beecheyi" & 
+                   df.fig2$measurementType == "body mass" &
+                   !is.na(df.fig2$measurementValue))
+length(df.otbe2$measurementType) 
+unique(df.otbe2$cat)
+length(df.otbe2$cat[df.otbe2$cat == "Adult; possibly good"]) 
+length(df.otbe2$cat[df.otbe2$cat == "Adult; outlier"]) 
+length(df.otbe2$cat[df.otbe2$cat == "No stage; untested"]) 
+p.otbe2 <- ggplot() + 
+           geom_density(data = filter(df.otbe2, measurementStatus == "outlier"), aes(x = measurementValue), color = NA, alpha = 0.4) + 
+           geom_rug(data = filter(df.otbe2, measurementStatus == "outlier"), aes(x = measurementValue), sides = "b", col = "gray34") +
+           geom_density(data = df.otbe2, aes(x = measurementValue, fill = cat), alpha = 0.4) +
+           scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod1"),
+                             name = "Data Quality Category") +
+           ggtitle("Otospermophilus beecheyi N = 222, Noutlier = 1") +
+           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+           scale_x_continuous(name = "Body Mass (g)", limits = c(0, 1500)) +
+           scale_y_continuous(name = "Density", limits = c(0, .01))
+df.otbe2$measurementValue[df.otbe2$cat == "Adult; outlier"]
+#outlier @169.5
+ggsave(p.otbe2, file=paste0("outlier.test.squirrel",".png"), width = 14, height = 10, units = "cm")
 
 ##test for normality----
-
-data.mh$normality <- ""
-
-data.noInfer_Adults <- subset(data.mh, subset = c(data.mh$measurementStatus != "outlier" &
-                                                  data.mh$measurementStatus != "too few records" &
-                                                  data.mh$lifeStage == "Adult" &
-                                                  data.mh$measurementValueEstimated != "True"))
-
-nrow(data.noInfer_Adults) #263674
-length(unique(data.noInfer_Adults$scientificName)) #271
+df.norm <- df.test
+df.norm$normality <- ""
 
 ##test using Peromyscus maniculatus
-test.pema <- subset(data.mh, subset = data.mh$scientificName == "Peromyscus maniculatus" &
-                    data.mh$measurementStatus != "outlier" &
-                    data.mh$measurementStatus != "too few records" &
-                    data.mh$lifeStage == "Adult" &
-                    data.mh$measurementValueEstimated != "True")
-normal.pema <- shapiro.test(test.pema$measurementValue[test.pema$measurementType == "mass"]) #if sig then not normally distributed
+test.pema <- subset(df.norm, subset = df.norm$scientificName == "Peromyscus maniculatus" &
+                    df.norm$measurementStatus != "outlier" &
+                    df.norm$measurementStatus != "too few records" &
+                    df.norm$lifeStage == "adult" &
+                    df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                    df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value")
+normal.pema <- shapiro.test(test.pema$measurementValue[test.pema$measurementType == "body mass"]) #if sig then not normally distributed
 
 #extract sig values
 normal.pema[[2]]
 #isTRUE(normal[[2]] < 0.05)
 
+
 ##TO DO: make into a function
 
-sp <- unique(data.mh$scientificName)
+sp <- unique(df.norm$scientificName)
 
 ##mass
 for(i in 1:length(sp)){
-  sub <- subset(data.mh, subset = c(data.mh[,"scientificName"] == sp[i] &
-                                    data.mh$measurementStatus != "outlier" &
-                                    data.mh$measurementStatus != "too few records" &
-                                    data.mh$lifeStage == "Adult" &
-                                    data.mh$measurementValueEstimated != "True"))
+  sub <- subset(df.norm, subset = c(df.norm[,"scientificName"] == sp[i] &
+                                    df.norm$measurementStatus != "outlier" &
+                                    df.norm$measurementStatus != "too few records" &
+                                    df.norm$lifeStage == "adult" &
+                                    df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                                    df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"))
   sub <- sub %>%
     drop_na(measurementValue)
-  if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "mass"])) < 3)){
-    data.mh$normality[data.mh$scientificName == sp[i] & 
-                      data.mh$measurementType == "mass" &
-                      data.mh$measurementStatus != "outlier" &
-                      data.mh$measurementStatus != "too few records" &
-                      data.mh$lifeStage == "Adult" &
-                      data.mh$measurementValueEstimated != "True"] <- "too few records"
+  if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "body mass"])) < 3)){
+    df.norm$normality[df.norm$scientificName == sp[i] & 
+                      df.norm$measurementType == "body mass" &
+                      df.norm$measurementStatus != "outlier" &
+                      df.norm$measurementStatus != "too few records" &
+                      df.norm$lifeStage == "adult" &
+                      df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                      df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "too few records"
   }
-  else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "mass"])) >= 3)){
-    normal.mass <- shapiro.test(sub$measurementValue[sub$measurementType == "mass"])
+  else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "body mass"])) >= 3)){
+    normal.mass <- shapiro.test(sub$measurementValue[sub$measurementType == "body mass"])
        if(isTRUE(normal.mass[[2]] < 0.5)){
-        data.mh$normality[data.mh$measurementType == "mass" & 
-                          data.mhscientificName == sp[i] &
-                          data.mh$measurementStatus != "outlier" &
-                          data.mh$measurementStatus != "too few records" &
-                          data.mh$lifeStage == "Adult" &
-                          data.mh$measurementValueEstimated != "True"] <- "non-normal"
+        df.norm$normality[df.norm$measurementType == "body mass" & 
+                          df.norm$scientificName == sp[i] &
+                          df.norm$measurementStatus != "outlier" &
+                          df.norm$measurementStatus != "too few records" &
+                          df.norm$lifeStage == "adult" &
+                          df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                          df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "non-normal"
       }
       else if(isTRUE(normal.mass[[2]] >= 0.5)){
-        data.mh$normality[data.mh$measurementType == "mass" & 
-                          data.mh$scientificName == sp[i] &
-                          data.mh$measurementStatus != "outlier" &
-                          data.mh$measurementStatus != "too few records" &
-                          data.mh$lifeStage == "Adult" &
-                          data.mh$measurementValueEstimated != "True"] <- "normal"
+        df.norm$normality[df.norm$measurementType == "body mass" & 
+                          df.norm$scientificName == sp[i] &
+                          df.norm$measurementStatus != "outlier" &
+                          df.norm$measurementStatus != "too few records" &
+                          df.norm$lifeStage == "adult" &
+                          df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                          df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "normal"
       }
   }
   else{
@@ -439,38 +439,42 @@ for(i in 1:length(sp)){
 
 ##total length
 for(i in 1:length(sp)){
-  sub <- subset(data.mh, subset = c(data.mh[,"scientificName"] == sp[i] &
-                                     data.mh$measurementStatus != "outlier" &
-                                     data.mh$measurementStatus != "too few records" &
-                                     data.mh$lifeStage == "Adult" &
-                                     data.mh$measurementValueEstimated != "True"))
+  sub <- subset(df.norm, subset = c(df.norm[,"scientificName"] == sp[i] &
+                                    df.norm$measurementStatus != "outlier" &
+                                    df.norm$measurementStatus != "too few records" &
+                                    df.norm$lifeStage == "adult" &
+                                    df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                                    df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"))
   sub <- sub %>%
     drop_na(measurementValue)
-  if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "total.length"])) < 3)){
-    data.mh$normality[data.mh$scientificName == sp[i] & 
-                      data.mh$measurementType == "total.length" &
-                      data.mh$measurementStatus != "outlier" &
-                      data.mh$measurementStatus != "too few records" &
-                      data.mh$lifeStage == "Adult" &
-                      data.mh$measurementValueEstimated != "True"] <- "too few records"
+  if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "body length"])) < 3)){
+    df.norm$normality[df.norm$scientificName == sp[i] & 
+                      df.norm$measurementType == "total.length" &
+                      df.norm$measurementStatus != "outlier" &
+                      df.norm$measurementStatus != "too few records" &
+                      df.norm$lifeStage == "adult" &
+                      df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                      df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "too few records"
   }
-  else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "total.length"])) >= 3)){
-    normal.total.length <- shapiro.test(sub$measurementValue[sub$measurementType == "total.length"])
+  else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "body length"])) >= 3)){
+    normal.total.length <- shapiro.test(sub$measurementValue[sub$measurementType == "body length"])
     if(isTRUE(normal.total.length[[2]] < 0.5)){
-      data.mh$normality[data.mh$measurementType == "total.length" & 
-                        data.mh$scientificName == sp[i] &
-                        data.mh$measurementStatus != "outlier" &
-                        data.mh$measurementStatus != "too few records" &
-                        data.mh$lifeStage == "Adult" &
-                        data.mh$measurementValueEstimated != "True"] <- "non-normal"
+      df.norm$normality[df.norm$measurementType == "body length" & 
+                        df.norm$scientificName == sp[i] &
+                        df.norm$measurementStatus != "outlier" &
+                        df.norm$measurementStatus != "too few records" &
+                        df.norm$lifeStage == "adult" &
+                        df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                        df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "non-normal"
     }
     else if(isTRUE(normal.total.length[[2]] >= 0.5)){
-      data.mh$normality[data.mh$measurementType == "total.length" & 
-                        data.mh$scientificName == sp[i] &
-                        data.mh$measurementStatus != "outlier" &
-                        data.mh$measurementStatus != "too few records" &
-                        data.mh$lifeStage == "Adult" &
-                        data.mh$measurementValueEstimated != "True"] <- "normal"
+      df.norm$normality[df.norm$measurementType == "body length" & 
+                        df.norm$scientificName == sp[i] &
+                        df.norm$measurementStatus != "outlier" &
+                        df.norm$measurementStatus != "too few records" &
+                        df.norm$lifeStage == "adult" &
+                        df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                        df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "normal"
     }
   }
   else{
@@ -480,38 +484,42 @@ for(i in 1:length(sp)){
 
 ##tail length
 for(i in 1:length(sp)){
-  sub <- subset(data.mh, subset = c(data.mh[,"scientificName"] == sp[i] &
-                                      data.mh$measurementStatus != "outlier" &
-                                      data.mh$measurementStatus != "too few records" &
-                                      data.mh$lifeStage == "Adult" &
-                                      data.mh$measurementValueEstimated != "True"))
+  sub <- subset(df.norm, subset = c(df.norm[,"scientificName"] == sp[i] &
+                                    df.norm$measurementStatus != "outlier" &
+                                    df.norm$measurementStatus != "too few records" &
+                                    df.norm$lifeStage == "adult" &
+                                    df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                                    df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"))
   sub <- sub %>%
     drop_na(measurementValue)
   if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "tail.length"])) < 3)){
-    data.mh$normality[data.mh$scientificName == sp[i] & 
-                      data.mh$measurementType == "tail.length" &
-                      data.mh$measurementStatus != "outlier" &
-                      data.mh$measurementStatus != "too few records" &
-                      data.mh$lifeStage == "Adult" &
-                      data.mh$measurementValueEstimated != "True"] <- "too few records"
+    df.norm$normality[df.norm$scientificName == sp[i] & 
+                      df.norm$measurementType == "tail length" &
+                      df.norm$measurementStatus != "outlier" &
+                      df.norm$measurementStatus != "too few records" &
+                      df.norm$lifeStage == "adult" &
+                      df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                      df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "too few records"
   }
   else if(isTRUE(length(unique(sub$measurementValue[sub$measurementType == "tail.length"])) >= 3)){
     normal.tail <- shapiro.test(sub$measurementValue[sub$measurementType == "tail.length"])
     if(isTRUE(normal.tail[[2]] < 0.5)){
-      data.mh$normality[data.mh$measurementType == "tail.length" &
-                        data.mh$scientificName == sp[i] &
-                        data.mh$measurementStatus != "outlier" &
-                        data.mh$measurementStatus != "too few records" &
-                        data.mh$lifeStage == "Adult" &
-                        data.mh$measurementValueEstimated != "True"] <- "non-normal"
+      df.norm$normality[df.norm$measurementType == "tail length" &
+                        df.norm$scientificName == sp[i] &
+                        df.norm$measurementStatus != "outlier" &
+                        df.norm$measurementStatus != "too few records" &
+                        df.norm$lifeStage == "adult" &
+                        df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                        df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "non-normal"
     }
     else if(isTRUE(normal.tail[[2]] >= 0.5)){
-      data.mh$normality[data.mh$measurementType == "tail.length" & 
-                        data.mh$scientificName == sp[i]&
-                        data.mh$measurementStatus != "outlier" &
-                        data.mh$measurementStatus != "too few records" &
-                        data.mh$lifeStage == "Adult" &
-                        data.mh$measurementValueEstimated != "True"] <- "normal"
+      df.norm$normality[df.norm$measurementType == "tail length" & 
+                        df.norm$scientificName == sp[i]&
+                        df.norm$measurementStatus != "outlier" &
+                        df.norm$measurementStatus != "too few records" &
+                        df.norm$lifeStage == "adult" &
+                        df.norm$measurementMethod != "Extracted with Traiter ; estimated value" &
+                        df.norm$measurementMethod != "Extracted with Traiter ; estimated value; inferred value"] <- "normal"
     }
   }
   else{
@@ -519,7 +527,8 @@ for(i in 1:length(sp)){
   }
 }
 
-nrow(data.norm.test) #should be nrow(data)
+#make sure no data was lost
+nrow(df.test)
 
 ##write normality test----
 data.norm <- data.mh
