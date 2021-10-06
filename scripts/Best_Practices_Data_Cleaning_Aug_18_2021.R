@@ -1682,8 +1682,8 @@ df.stats <- df.mass %>%
   group_by(scientificName, sex, lifeStage) %>%
   dplyr::summarise(N = n())
 
+#### FINALL DATA ----
 
-
-
+write.csv(df.logSigma, "BPP.data.csv")
 
 
