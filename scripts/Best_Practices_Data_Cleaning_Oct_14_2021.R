@@ -1699,7 +1699,9 @@ length(df.pema3$cat[df.pema3$cat == "Adult; outlier"]) #248
 length(df.pema3$cat[df.pema3$cat == "No stage; possibly good"]) #24266
 length(df.pema3$cat[df.pema3$cat == "No stage; outlier"]) #3421
 
-outlier <- c("outlier", "outlier.log.sd", "juvenile.sd", "juvenile.log.sd", "juvenile.quant", "outlier.quant")
+outlier <- c("outlier", "outlier.sd", "outlier.log.sd", "outlier.quant",
+             "juvenile.sd", "juvenile.log.sd", "juvenile.quant",
+             "too few records", "less than 10 recoreds")
 
 p.pema3 <- ggplot() + 
   geom_density(data = filter(df.pema3, measurementStatus %in% outlier), aes(x = measurementValue), color = NA, alpha = 0.4) + 
@@ -1707,7 +1709,7 @@ p.pema3 <- ggplot() +
   geom_density(data = df.pema3, aes(x = measurementValue, fill = cat), alpha = 0.4) +
   scale_fill_manual(values = c("darkorchid4", "darkorchid1", "lightgoldenrod3", "lightgoldenrodyellow"),
                     name = "Data Quality Category") +
-  ggtitle("Peromyscus maniculatus N = 30708, Noutlier = 3673") +
+  ggtitle("Peromyscus maniculatus N = 30708, Noutlier = 3669") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   scale_x_continuous(name = "Body Mass (g)", limits = c(0, 50)) +
@@ -1738,7 +1740,9 @@ p.otbe3 <- ggplot() +
 ggsave(p.otbe3, file=paste0("check.test.squirrel",".png"), width = 14, height = 10, units = "cm")
 
 ##info about outliers----
-outlier <- c("juvenile.quant", "juvenile.sd", "juvenile.log.sd", "outlier", "outlier.quant", "outlier.sd", "outlier.log.sd")
+outlier <- c("juvenile.quant", "juvenile.sd", "juvenile.log.sd", 
+             "outlier", "outlier.quant", "outlier.sd", "outlier.log.sd",
+             "too few records", "less than 10 records")
 good <- c("possible adult; possibly good", "", NA)
 
 outlier_stats <- df.logSigma %>%

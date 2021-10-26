@@ -19,32 +19,42 @@ pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C
 length(unique(data$scientificName)) #3740
 
 data.clean <- data[data$measurementStatus != "outlier" & 
-                   data$lifeStage != "Juvenile",]
-nrow(data.clean) #2261361
-length(unique(data.clean$scientificName)) #3740
+                   data$lifeStage != "juvenile",]
+nrow(data.clean) #2207262
+length(unique(data.clean$scientificName)) #3724
 
 #remove outliers
+outlier <- c("outlier", "outlier.sd", "outlier.log.sd", "outlier.quant", 
+             "juvenile.sd", "juvenile.log.sd", "juvenile.quant",
+             "too few records", "less than 10 records")
+
+data.trim <- data.clean[!(data.clean$measurementStatus %in% outlier),]
+nrow(data.trim) #2044824
+unique(data.trim$measurementStatus)
+unique(data.trim$lifeStage)
+length(unique(data.trim$scientificName)) #3104
+
+write.csv(data.trim, "BPP.data.trim.csv")
 
 ##combine with pantheria----
-sp.data <- unique(data$scientificName) 
-nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #2672 spp shared
+sp.data <- unique(data.trim$scientificName) 
+nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #2363 spp shared
 
-taxonomy.data <- merge(pan, data, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
+taxonomy.data <- merge(pan, data.trim, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
 
 ##write taxonomy----
-write.csv(taxonomy.data, "taxonomy.data.csv")
+write.csv(taxonomy.data, "BPP.pan.data.csv")
 
 ##data for pan analyses
-pan.data <- taxonomy.data[taxonomy.data$measurementType == "mass" &
-                            taxonomy.data$lifeStage != "Juvenile" &
-                            taxonomy.data$measurementStatus == "possibly good" &
-                            !is.na(taxonomy.data$measurementValue) &
-                            !is.na(taxonomy.data$X5.1_AdultBodyMass_g),]
+pan.data <- taxonomy.data[taxonomy.data$measurementType == "body mass" &
+                          !is.na(taxonomy.data$measurementValue) &
+                          !is.na(taxonomy.data$X5.1_AdultBodyMass_g),]
 
-length(unique(pan.data$MSW05_Binomial)) #110
+length(unique(pan.data$MSW05_Binomial)) #1604
+min(pan.data$measurementValue)
 
 ##write data for pan analyses----
-write.csv(pan.data, "pan.data.csv")
+write.csv(pan.data, "pan.data.mass.csv")
 
 ##Q1 compare to pantheria----
 stats <- pan.data %>%
@@ -53,7 +63,7 @@ stats <- pan.data %>%
   as.data.frame()
 keep <- stats$MSW05_Binomial[stats$N >= 10]
 pan.data <- pan.data[pan.data$MSW05_Binomial %in% keep,]
-length(unique(pan.data$MSW05_Binomial)) #108
+length(unique(pan.data$MSW05_Binomial)) #773
 pan.data$measurementValue <- as.numeric(pan.data$measurementValue)
 
 pan.adult_stats <- pan.data %>%
@@ -96,39 +106,39 @@ summary(model.mass)
 ##Table 1----
 
 #total
-nrow(pan.adult_stats) #108
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE]) #28  #w/in limits
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE])  #80 #outside limits
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0])  #54 #above; pan mean is greater than ours
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0])  #26 #below; pan mean is less than ours
+nrow(pan.adult_stats) #773
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE]) #241  #w/in limits (31.2%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE])  #532 #outside limits (68.8)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0])  #425 #above; pan mean is greater than ours (79.9%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0])  #107 #below; pan mean is less than ours (20.1%)
 
 #<100
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100]) #75 #(% of total spp)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100]) #15
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100]) #60
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100]) #40
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100]) #20
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100]) #558 #(72.2% of total spp)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100]) #169 (30.3%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100]) #389 (69.7%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100]) #303 (77.9%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100]) #86 (22.1%)
 
 #100-1000
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 1000 & pan.adult_stats$avg.mass > 100]) #14 #(% of total spp)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #7
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #7
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #4
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #3
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 1000 & pan.adult_stats$avg.mass > 100]) #125 #(16.2% of total spp)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #43 (34.4%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #82 (65.6%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #64 (78%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #18 (22%)
 
 #1000-10000
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #13 #(% of total spp)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #4
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #9
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #7
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #2
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #46 #6(% of total spp)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #18 (39.1%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #28 (60.9%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #26 (92.9%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #2 (7.1%)
 
 #10000-100000
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #4 #(% of total spp)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #1
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #3
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #2
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #1
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #32 #4.1% of total spp)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #7 (22%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #25 (78%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #24 (96%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #1 (4%)
 
 ##FIGURE: mass difference----
 pan.adult_stats.trim <- pan.adult_stats[pan.adult_stats$mass.diff.se < 500,]
@@ -148,13 +158,15 @@ ggsave(p, file=paste0("diff.mass", ".png"), width = 14, height = 10, units = "cm
 ##Q2: estimating mass----
 ##Odocoileus virginianus
 
-deer <- data[data$scientificName == "Odocoileus virginianus" &
-                     data$lifeStage != "Juvenile" &
-                     !is.na(data$measurementValue),]
+keep.status <- c("possible adult; possibly good", "", "too few records")
+
+deer <- data.clean[data.clean$scientificName == "Odocoileus virginianus" &
+                  !is.na(data.clean$measurementValue),]
 
 #combine deer by catalogNumber
-deer.mass <- deer[deer$measurementType == "mass",]
-deer.astragalus.length <- deer[deer$measurementType == "astragalus.length",]
+deer.mass <- deer[deer$measurementType == "body mass" &
+                  deer$measurementStatus %in% keep.status,]
+deer.astragalus.length <- deer[deer$measurementType == "talus lateral length",] #talus lateral length is GLl in VDD
 colnames(deer.mass)[colnames(deer.mass) == "measurementValue"] <- "mass"
 colnames(deer.astragalus.length)[colnames(deer.astragalus.length) == "measurementValue"] <- "astragalus.length"
 deer.combo <- merge(deer.mass, deer.astragalus.length, by = "catalogNumber", all.x = FALSE, all.y = TRUE)
