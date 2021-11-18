@@ -4,15 +4,14 @@ To access data, one needs to create an account on the <a href="https://de.cyvers
 
 ## Data
 ### VertNet
-The VertNet data was extracted from <a href="https://vertnet.org/">VertNet.org</a> on Aug. 2020. The R package <i>traiter</i> was used to extract trait data. We kept only the first measurement value for each record.
-The data reside in the Data Commons <a href="">DOI</a>.
+The VertNet data was extracted from <a href="https://vertnet.org/">VertNet.org</a> on Aug. 2020. The R package <i>traiter</i> was used to extract trait data. We kept only the first measurement value for each record. The VertNet data reside in the Data Commons <a href="https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/OriginalData/VertNet/all_mammals_2021-11-09a.csv">DOI</a>.
 
-* inferred values (TRUE) mean that the value was converted to a standard unit (g, mm).
-* the original unit was retained in the data
+* inferred values (TRUE) mean that the value was converted to a standard unit (g, mm)
+* the original unit was retained in the data under "verbatimUnit"
 * estimated values are values where a decision was made about which part of the string was the measurement value
 
 ### Other datasets
-There were six legacy datasets used for this project that are stored in <a href="https://geome-db.org/">GEOME</a>:
+There were six legacy datasets used for this project that are stored in <a href="https://geome-db.org/">GEOME</a> under the FuTRES Team:
 * Project 277 (Aepyceros_Villseñor_Africa_Modern)
 * Project 278 (Spermophilus.beecheyi_Blois_NorthAmerica_Modern)
 * Project 282 (Florida Museum Environmental Archaeology Program Comparative Collection Data
@@ -23,6 +22,10 @@ The original data are stored in The DE. Validated data are stored in both GEOME 
 
 ### Processed data
 Processed data are data that have been triplified and reasoned over. These data are extracted from the <a href="https://futres-data-interface.netlify.app/">FuTRES datastore</a> and are stored on the DE.
+
+### Versioning
+The VertNet data extraction before ingestion into FuTRES and the FuTRES data extraction from the FuTRES datastore are in the Data Commons under the DOI:.
+This repository has also been versioned as scripts have been significantly modified.
 
 ### Data used in analyses
 The data that results from Best_Practices_Data_Cleaning.R are stored on the DE and Data Commons.
