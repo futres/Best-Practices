@@ -4,7 +4,7 @@ To access data, one needs to create an account on the <a href="https://de.cyvers
 
 ## Data
 ### VertNet
-The VertNet data was extracted from <a href="https://vertnet.org/">VertNet.org</a> on Aug. 2020. The R package <i>traiter</i> was used to extract trait data. We kept only the first measurement value for each record. The VertNet data reside in the Data Commons <a href="https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/OriginalData/VertNet/all_mammals_2021-11-09a.csv">DOI</a>.
+The VertNet data was extracted from <a href="https://vertnet.org/">VertNet.org</a> on using <a href="https://github.com/rafelafrance/traiter_vertnet">traiter</a> in November 2021. The R package <i>traiter</i> was used to extract trait data. We kept only the first measurement value for each record. The VertNet data reside in the Data Commons <a href="https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/OriginalData/VertNet/all_mammals_2021-11-09a.csv">DOI</a>.
 
 * inferred values (TRUE) mean that the value was converted to a standard unit (g, mm)
 * the original unit was retained in the data under "verbatimUnit"
