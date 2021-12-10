@@ -37,7 +37,7 @@ This folder contains two scripts: data cleaning and data analysis.
 This package became outdated and was removed from the R package site, but is archived. 
 The Maha.R function is called to perform the outlier test.
 
-### <a href="https://github.com/futres/Best-Practices/blob/master/scripts/Best_Practices_Data_Cleanning.R">Data Cleaning</a>
+### Data Cleaning
 Original data is linked to the DE (see above).
 This script runs the cleaning routine:
   1. Added "origin" column to denote who submitted data for the benefit of analyses in the <a href="https://github.com/futres/Best-Practices/blob/master/scripts/Best_Practices_Analyses.R">Data Analyses</a> script.
@@ -52,8 +52,8 @@ This script runs the cleaning routine:
 
 Throughout data cleaning, data visualization plots are created and datasets are saved. This script created Figure 2 and Table 1.
 
-### <a href="https://github.com/futres/Best-Practices/blob/master/scripts/Best_Practices_Analyses.R">Data Analyses</a>
-Data used in analyses are linked to the DE (see above). We use a file called "data.all.csv", which is the resulting data file from Data Cleaning.
+### Data Analyses
+Data used in analyses are linked to the DE (see above). We use a file called <a href="https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/Projects/BestPracticesData/BPP.data.csv">"BPP.data.csv"</a>, which is the resulting data file from Data Cleaning script.
 The data is trimmed to exclude known juveniles in lifeStage and suspected outliers in measurementStatus.
 The script runs the following analyses:
   1. Calculate the difference between species-level mass values from <a href="https://figshare.com/collections/PanTHERIA_a_species-level_database_of_life_history_ecology_and_geography_of_extant_and_recently_extinct_mammals/3301274">PanTHERIA</a> and the FuTRES data. 
