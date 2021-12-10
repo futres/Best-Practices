@@ -15,7 +15,8 @@ require(PEIP)
 
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
-#data <- read.csv("https://de.cyverse.org/dl/d/7B6941EE-1FED-4AAE-9D8A-8AC76DB0AC98/data.all.csv", header = TRUE, stringsAsFactors = FALSE)
+#data derived from Best_Practices_Data_Cleaning script
+data <- read.csv("https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/Projects/BestPracticesData/BPP.data.csv", header = TRUE, stringsAsFactors = FALSE)
 length(unique(data$scientificName)) #3164
 
 #remove outliers and juveniles
