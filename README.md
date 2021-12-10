@@ -4,7 +4,7 @@ To access data, one needs to create an account on the <a href="https://de.cyvers
 
 ## Data
 ### VertNet
-The VertNet data was extracted from <a href="https://vertnet.org/">VertNet.org</a> on using <a href="https://github.com/rafelafrance/traiter_vertnet">traiter</a> in November 2021. The R package <i>traiter</i> was used to extract trait data. We kept only the first measurement value for each record. The VertNet data reside in the Data Commons <a href="https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/OriginalData/VertNet/all_mammals_2021-11-09a.csv">DOI</a>.
+The VertNet data was extracted from <a href="https://vertnet.org/">VertNet.org</a> on using <a href="https://github.com/rafelafrance/traiter_vertnet">traiter</a> in November 2021. The R package <i>traiter</i> was used to extract trait data. We kept only the first measurement value for each record. The VertNet data reside in the Data Commons.
 
 * inferred values (TRUE) mean that the value was converted to a standard unit (g, mm)
 * the original unit was retained in the data under "verbatimUnit"
@@ -24,7 +24,8 @@ The original data are stored in The DE. Validated data are stored in both GEOME 
 Processed data are data that have been triplified and reasoned over. These data are extracted from the <a href="https://futres-data-interface.netlify.app/">FuTRES datastore</a> and are stored on the DE.
 
 ### Versioning
-The VertNet data extraction before ingestion into FuTRES and the FuTRES data extraction from the FuTRES datastore are in the Data Commons under the DOI:.
+The <a href="https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/Projects/BestPracticesData/Balk_etal_BestPracticesData_Dec2021/VertNet_2021_11.zip">VertNet data</a> extraction before ingestion into FuTRES and the <a href="https://data.cyverse.org/dav-anon/iplant/home/rwalls/FuTRES_data/Projects/BestPracticesData/Balk_etal_BestPracticesData_Dec2021/futres.data.csv.zip
+">FuTRES data</a> extraction from the FuTRES datastore are in the Data Commons with a DOI pending.
 This repository has also been versioned as scripts have been significantly modified.
 
 ### Data used in analyses
