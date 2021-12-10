@@ -1,4 +1,4 @@
-# Best Practices Data Clean Up
+# Best Practices Analyses
 # Meghan A. Balk
 # meghan.balk@gmail.com
 
@@ -16,29 +16,24 @@ require(PEIP)
 ##Upload data----
 pan <- read.csv("https://de.cyverse.org/dl/d/88B409B3-8626-471C-BC8E-1925EBE2A6C5/pantheria.csv", header = TRUE, stringsAsFactors = FALSE)
 #data <- read.csv("https://de.cyverse.org/dl/d/7B6941EE-1FED-4AAE-9D8A-8AC76DB0AC98/data.all.csv", header = TRUE, stringsAsFactors = FALSE)
-length(unique(data$scientificName)) #3740
+length(unique(data$scientificName)) #3164
 
-data.clean <- data[data$measurementStatus != "outlier" & 
+#remove outliers and juveniles
+outlier <- c("outlier", "possible juvenile",
+             "too few records", "less than 10 recoreds")
+
+data.trim <- data[!(data$measurementStatus %in% outlier) & 
                    data$lifeStage != "juvenile",]
-nrow(data.clean) #2207262
-length(unique(data.clean$scientificName)) #3724
-
-#remove outliers
-outlier <- c("outlier", "outlier.sd", "outlier.log.sd", "outlier.quant", 
-             "juvenile.sd", "juvenile.log.sd", "juvenile.quant",
-             "too few records", "less than 10 records")
-
-data.trim <- data.clean[!(data.clean$measurementStatus %in% outlier),]
-nrow(data.trim) #2044824
+nrow(data.trim) #1668901
+length(unique(data.trim$scientificName)) #2898
 unique(data.trim$measurementStatus)
 unique(data.trim$lifeStage)
-length(unique(data.trim$scientificName)) #3104
 
 write.csv(data.trim, "BPP.data.trim.csv")
 
 ##combine with pantheria----
 sp.data <- unique(data.trim$scientificName) 
-nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #2363 spp shared
+nrow(pan[pan$MSW05_Binomial %in% sp.data,]) #2269 spp shared
 
 taxonomy.data <- merge(pan, data.trim, by.x = "MSW05_Binomial", by.y = "scientificName", all.y = TRUE, all.x = FALSE)
 
@@ -50,7 +45,7 @@ pan.data <- taxonomy.data[taxonomy.data$measurementType == "body mass" &
                           !is.na(taxonomy.data$measurementValue) &
                           !is.na(taxonomy.data$X5.1_AdultBodyMass_g),]
 
-length(unique(pan.data$MSW05_Binomial)) #1604
+length(unique(pan.data$MSW05_Binomial)) #1601
 min(pan.data$measurementValue)
 
 ##write data for pan analyses----
@@ -95,11 +90,15 @@ pan.adult_stats$sig.corr.t.value <- pan.adult_stats$corr.t.value <= 0.05 #TRUE m
 write.csv(pan.adult_stats, "pan.results.csv")
 
 ##test for drivers of patterns----
-plot(x = pan.adult_stats$sample.size, y = pan.adult_stats$mass.diff)
+plot(x = pan.adult_stats$sample.size, y = pan.adult_stats$mass.diff,
+     ylab = "Mass difference",
+     xlab = "Sample size")
 model.N <- lm(pan.adult_stats$mass.diff ~ pan.adult_stats$sample.size)
 summary(model.N)
 
-plot(x = pan.adult_stats$avg.mass, y = pan.adult_stats$mass.diff)
+plot(x = pan.adult_stats$avg.mass, y = pan.adult_stats$mass.diff,
+     xlab = "Average mass (g)",
+     ylab = "Mass difference")
 model.mass <- lm(pan.adult_stats$mass.diff ~ pan.adult_stats$avg.mass)
 summary(model.mass)
 
@@ -107,24 +106,24 @@ summary(model.mass)
 
 #total
 nrow(pan.adult_stats) #773
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE]) #241  #w/in limits (31.2%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE])  #532 #outside limits (68.8)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0])  #425 #above; pan mean is greater than ours (79.9%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0])  #107 #below; pan mean is less than ours (20.1%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE]) #244  #w/in limits (31.6%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE])  #529 #outside limits (68.4)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0])  #422 #above; pan mean is greater than ours (79.8%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0])  #107 #below; pan mean is less than ours (20.2%)
 
 #<100
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100]) #558 #(72.2% of total spp)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100]) #169 (30.3%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100]) #389 (69.7%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100]) #303 (77.9%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100]) #86 (22.1%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100]) #559 #(72.2% of total spp)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100]) #171 (30.6%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100]) #388 (69.4%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100]) #301 (77.6%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100]) #83 (21.4%)
 
 #100-1000
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 1000 & pan.adult_stats$avg.mass > 100]) #125 #(16.2% of total spp)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #43 (34.4%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #82 (65.6%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #64 (78%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #18 (22%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #44 (35.2%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #81 (64.8%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #64 (79%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #17 (21%)
 
 #1000-10000
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #46 #6(% of total spp)
@@ -134,11 +133,11 @@ length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adu
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #2 (7.1%)
 
 #10000-100000
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #32 #4.1% of total spp)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #7 (22%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #25 (78%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #24 (96%)
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #1 (4%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #31 #4.1% of total spp)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #7 (22.6%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 100000 & pan.adult_stats$avg.mass > 10000]) #24 (77.4%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #23 (95.8%)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 100000  & pan.adult_stats$avg.mass > 10000]) #1 (4.2%)
 
 ##FIGURE: mass difference----
 pan.adult_stats.trim <- pan.adult_stats[pan.adult_stats$mass.diff.se < 500,]
@@ -158,22 +157,23 @@ ggsave(p, file=paste0("diff.mass", ".png"), width = 14, height = 10, units = "cm
 ##Q2: estimating mass----
 ##Odocoileus virginianus
 
-keep.status <- c("possible adult; possibly good", "", "too few records")
-
-deer <- data.clean[data.clean$scientificName == "Odocoileus virginianus" &
-                  !is.na(data.clean$measurementValue),]
+#all of Kitty's mass values are ok
+deer <- data[data$scientificName == "Odocoileus virginianus" &
+             data$lifeStage != "juvenile" &
+             !is.na(data$measurementValue) &
+             !(data$measurementStatus %in% outlier),]
+nrow(deer) #3766
 
 #combine deer by catalogNumber
-deer.mass <- deer[deer$measurementType == "body mass" &
-                  deer$measurementStatus %in% keep.status,]
-deer.astragalus.length <- deer[deer$measurementType == "talus lateral length",] #talus lateral length is GLl in VDD
+deer.mass <- deer[deer$measurementType == "body mass",] #925 records
+deer.astragalus.length <- deer[deer$measurementType == "talus lateral length",] #30 #talus lateral length is GLl in VDD
 colnames(deer.mass)[colnames(deer.mass) == "measurementValue"] <- "mass"
 colnames(deer.astragalus.length)[colnames(deer.astragalus.length) == "measurementValue"] <- "astragalus.length"
-deer.combo <- merge(deer.mass, deer.astragalus.length, by = "catalogNumber", all.x = FALSE, all.y = TRUE)
+deer.combo <- merge(deer.mass, deer.astragalus.length, by = "individualID", all.x = TRUE, all.y = TRUE)
 deer.combo$mass <- as.numeric(deer.combo$mass)
 deer.combo$astragalus.length <- as.numeric(deer.combo$astragalus.length)
 
-normal.odvi <- shapiro.test(deer.combo$mass) #if sig then not normally distributed
+normal.odvi <- shapiro.test(deer.combo$mass[!is.na(deer.combo$mass)]) #if sig then not normally distributed
 
 #test for normality
 
@@ -186,12 +186,23 @@ write.csv(deer.combo, "deer.csv")
 old.deer.full <- read.csv("https://de.cyverse.org/dl/d/2BB5A147-B39A-4A06-A316-2D645F22613D/NEW_ArchaeoDeerAstragalusCalcaneus.csv", header = TRUE)
 old.deer <- subset(old.deer.full, subset = old.deer.full$Site.Name == "Saint Catherines" | old.deer.full$Site.Name == "Fort Center")
 
-x.species <- deer.combo$astragalus.length
-y.species <- deer.combo$mass
+x.species <- as.numeric(deer.combo$astragalus.length)
+y.species <- as.numeric(deer.combo$mass)
 #order should be the same
 log.deer.mass.astragalus <- lm(log10(y.species) ~ log10(x.species), na.action = na.exclude)
 #log.deer.mass.astragalus <- glm(log10(y.species) ~ log10(x.species), na.action = na.exclude)
 log.sum.deer.mass.astragalus <- summary(log.deer.mass.astragalus)
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)   
+# (Intercept)        1.4504     0.9676   1.499  0.14641   
+# log10(x.species)   2.0382     0.6359   3.205  0.00367 **
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 0.07776 on 25 degrees of freedom
+# (901 observations deleted due to missingness)
+# Multiple R-squared:  0.2912,	Adjusted R-squared:  0.2629 
+# F-statistic: 10.27 on 1 and 25 DF,  p-value: 0.003671
 
 anklepredict <- data.frame(specimenID = old.deer$SpecimenID, old.deer$Acc..., x.species = old.deer$astragalus.length)
 predict.mass <- data.frame(predict(log.deer.mass.astragalus, anklepredict, se.fit = TRUE))
