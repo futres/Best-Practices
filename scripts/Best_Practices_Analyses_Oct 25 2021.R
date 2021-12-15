@@ -271,3 +271,34 @@ write.csv(compare, "old.deer.mass.comparison.csv")
 #write.csv(compare, "old.deer.mass.comparison.glm.csv")
 
 
+####ADW comparisons ----
+mc.mass <- data[data$scientificName == "Microtus californicus" &
+                data$measurementType == "body mass" &
+                !(data$measurementStatus %in% outlier) &
+                data$lifeStage != "juvenile",] %>%
+  drop_na(measurementValue)
+nrow(mc.mass) #3004
+mean(mc.mass$measurementValue) #38.02868
+
+mr.mass <- data[data$scientificName == "Myodes rutilus" &
+                data$measurementType == "body mass" &
+                !(data$measurementStatus %in% outlier) &
+                data$lifeStage != "juvenile",] %>%
+  drop_na(measurementValue) 
+nrow(mr.mass) #15334
+mean(mr.mass$measurementValue) #22.21885
+
+pd.mass <- data[data$scientificName == "Pteronotus davyi" &
+                  data$measurementType == "body mass" &
+                  !(data$measurementStatus %in% outlier) &
+                  data$lifeStage != "juvenile",] %>%
+  drop_na(measurementValue) 
+nrow(pd.mass) #80
+mean(pd.mass$measurementValue) #7.511875
+pd.diff <- pan.adult_stats[pan.adult_stats$MSW05_Binomial == "Pteronotus davyi",] 
+pd.diff$abs.mass.diff.se #24.93468
+pd.diff$sd.err.mass #0.08053541
+pd.diff$sd.err.mass*pd.diff$abs.mass.diff.se #2g
+
+
+
