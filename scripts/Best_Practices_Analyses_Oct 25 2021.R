@@ -94,14 +94,50 @@ write.csv(pan.adult_stats, "pan.results.csv")
 plot(x = pan.adult_stats$sample.size, y = pan.adult_stats$mass.diff,
      ylab = "Mass difference",
      xlab = "Sample size")
-model.N <- lm(pan.adult_stats$mass.diff ~ pan.adult_stats$sample.size)
+model.N <- lm(pan.adult_stats$mass.diff ~ pan.adult_stats$sample.size, na.action = na.exclude)
 summary(model.N)
+# Call:
+#   lm(formula = pan.adult_stats$mass.diff ~ pan.adult_stats$sample.size, 
+#      na.exclude = TRUE)
+# 
+# Residuals:
+#   Min      1Q  Median      3Q     Max 
+# -755017   -4555   -4532   -4448 1479610 
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)  
+# (Intercept)                 4564.7800  2396.5358   1.905   0.0572 .
+# pan.adult_stats$sample.size   -0.2911     1.6117  -0.181   0.8567  
+# ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 64780 on 771 degrees of freedom
+# Multiple R-squared:  4.232e-05,	Adjusted R-squared:  -0.001255 
+# F-statistic: 0.03263 on 1 and 771 DF,  p-value: 0.8567
 
 plot(x = pan.adult_stats$avg.mass, y = pan.adult_stats$mass.diff,
      xlab = "Average mass (g)",
      ylab = "Mass difference")
-model.mass <- lm(pan.adult_stats$mass.diff ~ pan.adult_stats$avg.mass)
+model.mass <- lm(pan.adult_stats$mass.diff ~ pan.adult_stats$avg.mass, na.action = na.exclude)
 summary(model.mass)
+# Call:
+#   lm(formula = pan.adult_stats$mass.diff ~ pan.adult_stats$avg.mass, 
+#      na.action = na.exclude)
+# 
+# Residuals:
+#   Min       1Q   Median       3Q      Max 
+# -1111951       78       96      102   424572 
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)              -104.75695 1700.52631  -0.062    0.951    
+# pan.adult_stats$avg.mass    0.45277    0.01722  26.298   <2e-16 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 47030 on 771 degrees of freedom
+# Multiple R-squared:  0.4728,	Adjusted R-squared:  0.4722 
+# F-statistic: 691.6 on 1 and 771 DF,  p-value: < 2.2e-16
 
 ##Table 1----
 
@@ -237,8 +273,16 @@ p <- ggplot() +
   ggtitle("Odocoileus virginianus") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"),
-        legend.position = "none") +
-  scale_y_continuous(name = expression(log[10]~Body~Mass~(g))) +
+        legend.position = "none",
+        aspect.ratio = .70,
+        axis.text = element_text(size = 14, color = "black"), 
+        axis.ticks.length=unit(0.2,"cm"),
+        axis.title.y = element_text(size = 16, margin = margin(r = 7)),
+        axis.title.x = element_text(size = 16, margin = margin(t = 10)),
+        text = element_text(family = 'Helvetica'),
+        title = element_text(size = 18)) +
+  scale_y_continuous(name = expression(log[10]~Body~Mass~(g)),
+                     limits = c(4.3, 4.8)) +
   scale_x_continuous(name = expression(log[10]~Astragalus~Length~(mm)))
 ggsave(p, file=paste0("plot_log_Odocoileus virginianus_astragalus_mass_predict.png"), width = 14, height = 10, units = "cm")
 
