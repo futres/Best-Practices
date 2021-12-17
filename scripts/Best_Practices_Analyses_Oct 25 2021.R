@@ -163,7 +163,7 @@ length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adu
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff < 0 & pan.adult_stats$avg.mass < 1000  & pan.adult_stats$avg.mass > 100]) #17 (21%)
 
 #1000-10000
-length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #46 #6(% of total spp)
+length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #46 #(6% of total spp)
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == FALSE & pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #18 (39.1%)
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$avg.mass < 10000 & pan.adult_stats$avg.mass > 1000]) #28 (60.9%)
 length(pan.adult_stats$MSW05_Binomial[pan.adult_stats$sig.corr == TRUE & pan.adult_stats$mass.diff > 0 & pan.adult_stats$avg.mass < 10000  & pan.adult_stats$avg.mass > 1000]) #26 (92.9%)
